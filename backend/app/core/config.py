@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = Field(default="")
     s3_kyc_bucket: str = Field(default="")
     s3_audio_bucket: str = Field(default="")
+    s3_transcribe_output_prefix: str = Field(default="transcribe-output")
 
     # DashScope / Qwen
     dashscope_api_key: str = Field(default="")
