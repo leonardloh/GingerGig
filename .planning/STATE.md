@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T18:23:15.412Z"
+last_updated: "2026-04-25T18:28:31Z"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 31
-  completed_plans: 20
-  percent: 65
+  completed_plans: 21
+  percent: 68
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 05 plan 02 complete)
+**Last updated:** 2026-04-25 (Phase 05 plan 03 complete)
 
 ## Project Reference
 
@@ -26,14 +26,14 @@ progress:
 ## Current Position
 
 Phase: 05 (frontend-wiring-type-extensions) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 **Phase:** 05 of 6 (frontend wiring + type extensions)
-**Plan:** Ready for 05-03
+**Plan:** Ready for 05-04
 **Status:** Executing Phase 05
-**Progress:** [███████░░░] 65%
+**Progress:** [███████░░░] 68%
 
 ```
-[███████░░░] 65% (20 of 31 plans)
+[███████░░░] 68% (21 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -49,11 +49,11 @@ Plan: 3 of 7
 
 ## Performance Metrics
 
-- **Plans complete:** 20
+- **Plans complete:** 21
 - **Verifications passed:** 3
 - **Phases shipped:** 3
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 05 plan 02 — auth quick-login, signout, and onboarding register now use typed auth endpoints; frontend typecheck and build passed
+- **Latest phase metric:** Phase 05 plan 03 — elder dashboard, booking responses, listings, and profile now use typed API data; frontend typecheck and build passed
 
 ## Accumulated Context
 
@@ -89,6 +89,7 @@ Plan: 3 of 7
 | 04-04 batch worker boundary | Yes | `POST /voice-to-profile/batch` returns `pending` immediately; background work is scheduled with `asyncio.create_task` and opens a fresh session via `get_sessionmaker(app.state.engine)` |
 | 06 deployment split | Yes | AWS/Alibaba provisioning plans can run before Phase 5; backend rollout, frontend publication, hardening, and smoke test stay gated on Phase 4/5 completion |
 | 05-02 frontend auth boundary | Yes | Login/register/logout are wired through typed auth helpers; `getMe().role` drives persona routing; token ownership remains in auth/http helpers |
+| 05-03 elder frontend boundary | Yes | Elder-owned dashboard/listing calls use authenticated `user.id`; screen-local adapters preserve existing display shapes while removing elder mock-data imports |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -108,8 +109,8 @@ Plan: 3 of 7
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `05-02-PLAN.md`
-**Next action:** Execute `05-03-PLAN.md` (elder screens mock import removal and API adapters).
+**Last session ended:** 2026-04-25 — completed `05-03-PLAN.md`
+**Next action:** Execute `05-04-PLAN.md` (requestor screens mock import removal, search, and listing detail adapters).
 
 **Resume context for next session:**
 
@@ -136,3 +137,4 @@ Plan: 3 of 7
 **Completed Plan:** 04-05 (502 unification, contract completion, and full phase verification) — 2026-04-25T17:49:56Z
 **Completed Plan:** 05-01 (Frontend API contracts, endpoint gaps, voice helper, and barrel export) — 2026-04-25T18:16:55Z
 **Completed Plan:** 05-02 (Auth quick-login, signout, and onboarding register wiring) — 2026-04-25T18:22:21Z
+**Completed Plan:** 05-03 (Elder screens mock import removal and API adapters) — 2026-04-25T18:28:31Z
