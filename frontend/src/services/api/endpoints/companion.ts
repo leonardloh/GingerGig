@@ -1,5 +1,5 @@
 import { apiRequest } from "../http";
-import type { CompanionAlert, CompanionDashboard } from "../types";
+import type { CompanionAlert, CompanionDashboard, TimelineEvent } from "../types";
 
 /**
  * Each companion is paired with one elder they watch over.
@@ -11,7 +11,7 @@ export function getCompanionDashboard(elderId: string): Promise<CompanionDashboa
 }
 
 /**
- * GET /api/v1/companions/elders/:elderId/alerts
+ * GET /companions/elders/:elderId/alerts
  *
  * Returns active care alerts for the elder this companion is watching over.
  * Alert types include inactivity warnings, overwork signals, earning milestones,
@@ -22,6 +22,10 @@ export function getCompanionDashboard(elderId: string): Promise<CompanionDashboa
  */
 export function getCompanionAlerts(elderId: string): Promise<CompanionAlert[]> {
   return apiRequest<CompanionAlert[]>(`/companions/elders/${elderId}/alerts`);
+}
+
+export function getCompanionTimeline(elderId: string): Promise<TimelineEvent[]> {
+  return apiRequest<TimelineEvent[]>(`/companions/elders/${elderId}/timeline`);
 }
 
 /** Notification preferences for a companion's alert subscriptions. */
@@ -39,7 +43,7 @@ export interface AlertPreferences {
 }
 
 /**
- * PUT /api/v1/companions/elders/:elderId/alert-preferences
+ * PUT /companions/elders/:elderId/alert-preferences
  *
  * Replaces the companion's alert notification preferences for this elder.
  * All preference fields must be provided (full replacement, not partial update).
