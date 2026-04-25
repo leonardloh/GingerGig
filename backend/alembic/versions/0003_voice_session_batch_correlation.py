@@ -1,6 +1,6 @@
 """voice session batch correlation columns.
 
-Revision ID: 0003_voice_session_batch_correlation
+Revision ID: 0003_voice_batch_correlation
 Revises: 0002_listing_demo_match_fields
 Create Date: 2026-04-26 01:13:00.000000
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0003_voice_session_batch_correlation"
+revision: str = "0003_voice_batch_correlation"
 down_revision: str | None = "0002_listing_demo_match_fields"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
