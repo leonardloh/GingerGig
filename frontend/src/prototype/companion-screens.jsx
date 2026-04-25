@@ -38,33 +38,6 @@ const COMPANION_DEMO_UPCOMING_BOOKINGS = [
   },
 ];
 
-const companionAlertFallbacks = [
-  {
-    id: "alert-1",
-    type: "celebration",
-    message: "Mum earned her first RM100 this month - RM680 total!",
-  },
-  {
-    id: "alert-2",
-    type: "care",
-    message: "Mum may be eligible for i-Saraan retirement matching. Tap to learn more.",
-  },
-  {
-    id: "alert-3",
-    type: "care",
-    title: "Rest day suggestion",
-    message: "Mum has been active 6 days this week. She might need a rest day.",
-  },
-];
-
-const companionTimelineFallbacks = [
-  { id: "tl-1", time: "Today, 4:20 PM", text: "Confirmed booking with Amir for tomorrow" },
-  { id: "tl-2", time: "Today, 9:15 AM", text: "Posted new listing: Kuih Lapis" },
-  { id: "tl-3", time: "Yesterday, 7:00 PM", text: "Completed delivery to Nadia (5 portions)" },
-  { id: "tl-4", time: "Yesterday, 11:30 AM", text: "Earned RM75 from Sat booking" },
-  { id: "tl-5", time: "Mon, 22 Apr", text: "Received 5-star review from Lim family" },
-];
-
 function alertVisualTone(alert) {
   if (alert.type === "celebration") return "success";
   const warningText = `${alert.title || ""} ${alert.message || ""}`.toLowerCase();
@@ -89,13 +62,57 @@ function mapAlertPrefsToApi(alertPrefs) {
   };
 }
 
-function CompanionDashboard() {
+function CompanionDashboard({ elderId, user }) {
   const t = useT();
-  const lang = useLang();
+  const [dashboard, setDashboard] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [timeline, setTimeline] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [count, setCount] = useState(0);
-  const target = 680;
-  const elder = elderSnapshotFallback();
+  const elder = dashboard ? dashboard.elder : elderSnapshotFallback(user);
+  const target = Number(dashboard?.weeklyEarnings ?? 0);
+
   useEffect(() => {
+    let active = true;
+    if (!elderId) {
+      setDashboard(null);
+      setAlerts([]);
+      setTimeline([]);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLoading(true);
+    setError("");
+    Promise.all([
+      getCompanionDashboard(elderId),
+      getCompanionAlerts(elderId),
+      getCompanionTimeline(elderId),
+    ])
+      .then(([dashboardData, alertData, timelineData]) => {
+        if (!active) return;
+        setDashboard(dashboardData);
+        setAlerts(alertData);
+        setTimeline(timelineData);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err.message || "Unable to load companion dashboard");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [elderId]);
+
+  useEffect(() => {
+    setCount(0);
+    if (!target) return undefined;
     let r = 0;
     const id = setInterval(() => {
       r += target / 32;
@@ -105,7 +122,7 @@ function CompanionDashboard() {
       } else setCount(Math.floor(r));
     }, 22);
     return () => clearInterval(id);
-  }, []);
+  }, [target]);
 
   const alertStyles = {
     success: {
@@ -341,11 +358,11 @@ function CompanionDashboard() {
       <div style={{ padding: "32px 16px 0" }}>
         <h2 className="section-h">{t("alerts")}</h2>
         <div className="three-col">
-          {companionAlertFallbacks.map((a) => {
-            const s = alertStyles[alertVisualTone(a)];
+          {alerts.map((alert) => {
+            const s = alertStyles[alertVisualTone(alert)];
             return (
               <Card
-                key={a.id}
+                key={alert.id}
                 style={{
                   padding: 18,
                   background: s.bg,
@@ -385,7 +402,7 @@ function CompanionDashboard() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {a.message}
+                    {alert.message}
                   </div>
                 </div>
               </Card>
@@ -409,12 +426,12 @@ function CompanionDashboard() {
                 background: "var(--border)",
               }}
             />
-            {companionTimelineFallbacks.map((e, i) => (
+            {timeline.map((event, i) => (
               <div
-                key={e.id}
+                key={event.id}
                 style={{
                   position: "relative",
-                  paddingBottom: i < companionTimelineFallbacks.length - 1 ? 18 : 0,
+                  paddingBottom: i < timeline.length - 1 ? 18 : 0,
                 }}
               >
                 <div
@@ -436,7 +453,7 @@ function CompanionDashboard() {
                     fontWeight: 600,
                   }}
                 >
-                  {e.time}
+                  {event.time}
                 </div>
                 <div
                   style={{
@@ -446,7 +463,7 @@ function CompanionDashboard() {
                     lineHeight: 1.4,
                   }}
                 >
-                  {e.text}
+                  {event.text}
                 </div>
               </div>
             ))}
