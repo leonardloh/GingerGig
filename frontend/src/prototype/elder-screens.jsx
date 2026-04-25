@@ -2660,18 +2660,20 @@ function BookingRow({ booking, t }) {
   const [status, setStatus] = useState(booking.status);
   const [justChanged, setJustChanged] = useState(false);
 
-  const accept = () => {
-    setStatus("confirmed");
+  const accept = async () => {
+    const updated = await respondToBooking(booking.id, "accept");
+    setStatus(updated.status);
     setJustChanged(true);
     setTimeout(() => setJustChanged(false), 2400);
   };
-  const decline = () => {
-    setStatus("declined");
+  const decline = async () => {
+    const updated = await respondToBooking(booking.id, "decline");
+    setStatus(updated.status);
     setJustChanged(true);
     setTimeout(() => setJustChanged(false), 2400);
   };
 
-  if (status === "declined") return null;
+  if (status === "declined" || status === "cancelled") return null;
 
   return (
     <Card
