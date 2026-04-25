@@ -51,6 +51,19 @@ function adaptListingToProvider(listing) {
   };
 }
 
+function adaptReview(review) {
+  return {
+    id: review.id,
+    author: review.reviewerName,
+    date: new Date(review.createdAt).toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    }),
+    text: review.comment,
+    rating: review.rating,
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
 // ═══════════════════════════════════════════════════════════════
@@ -741,10 +754,55 @@ function RequestorSearch({ onProvider, onBack, query }) {
 // ═══════════════════════════════════════════════════════════════
 function ProviderDetail({ providerId, onBack }) {
   const t = useT();
-  const p = PROVIDERS.find((x) => x.id === providerId) || PROVIDERS[0];
+  const [provider, setProvider] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const p =
+    provider || {
+      id: providerId || "",
+      name: "Provider",
+      initials: "GG",
+      area: "",
+      service: "",
+      description: "",
+      rating: 0,
+      reviews: 0,
+      price: "RM0",
+      priceUnit: "",
+      days: [],
+      menu: null,
+    };
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [faved, setFaved] = useState(false);
   const [favToast, setFavToast] = useState(false);
+
+  useEffect(() => {
+    if (!providerId) return;
+    let active = true;
+
+    setLoading(true);
+    setError(null);
+    getListingById(providerId)
+      .then((detail) => {
+        if (!active) return;
+        setProvider(adaptListingToProvider(detail));
+        setReviews(detail.reviews.map(adaptReview));
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [providerId]);
+
   const toggleFav = () => {
     const next = !faved;
     setFaved(next);
@@ -859,9 +917,7 @@ function ProviderDetail({ providerId, onBack }) {
               src={p.portrait}
               initials={p.initials}
               size={120}
-              tone={
-                p.id === "chen" ? "teal" : p.id === "raju" ? "gold" : "warm"
-              }
+              tone={providerTone(p)}
               border
             />
             <h1
@@ -1019,7 +1075,7 @@ function ProviderDetail({ providerId, onBack }) {
 
           <div style={{ marginTop: 24 }}>
             <h3 className="section-h">{t("reviews")}</h3>
-            {REVIEWS.map((r) => (
+            {reviews.map((r) => (
               <Card key={r.id} style={{ padding: 16, marginBottom: 10 }}>
                 <div
                   style={{
