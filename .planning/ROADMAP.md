@@ -7,7 +7,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
+- [x] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
 - [ ] **Phase 2: Auth + Bearer Middleware** - Real JWT auth with bcrypt; the prototype's 3 quick-login chips authenticate against the real backend and return working tokens.
 - [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [ ] **Phase 4: eKYC Pipeline** - The 8-step KYC stepper completes end-to-end against AWS S3 + Textract `AnalyzeDocument` + Rekognition `CompareFaces` with a 3-tier (approved / manual_review / failed) outcome.
