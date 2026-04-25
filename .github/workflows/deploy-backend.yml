@@ -1,0 +1,68 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Build Docker image
+        run: docker build -t gingergig-api:ci .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Alibaba ECS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/GingerGig
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            cd backend
+            docker build -t gingergig-api:prod .
+            docker rm -f gingergig-api 2>/dev/null || true
+            docker run -d \
+              --name gingergig-api \
+              --restart unless-stopped \
+              --env-file /opt/GingerGig/backend/.env.prod \
+              -p 127.0.0.1:8000:8000 \
+              gingergig-api:prod
+            curl -fsS http://127.0.0.1:8000/health
