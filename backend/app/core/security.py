@@ -1,30 +1,28 @@
-"""JWT encode/decode helpers. Centralised here per CONTEXT.md PROJECT decisions to
-prevent the algorithm-confusion CVE-2022-29217 / CVE-2024-33663.
-
-Phase 2 implements; Phase 1 only locks the API surface so Phase 2 can't deviate.
-"""
+"""JWT encode/decode helpers centralised to prevent algorithm-confusion bugs."""
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-# Phase 2 will: import jwt  (from pyjwt[crypto])
-# Phase 2 will: from app.core.config import settings
+import jwt
+
+from app.core.config import settings
+
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_SECONDS = 24 * 60 * 60
 
 
 def encode_jwt(payload: dict[str, Any]) -> str:
-    """Phase 2: jwt.encode(payload, settings.jwt_secret, algorithm="HS256")."""
-    raise NotImplementedError("Phase 2 implements")
+    to_encode = payload.copy()
+    to_encode.setdefault(
+        "exp",
+        datetime.now(UTC) + timedelta(seconds=ACCESS_TOKEN_EXPIRE_SECONDS),
+    )
+    return jwt.encode(to_encode, settings.jwt_secret, algorithm=JWT_ALGORITHM)
 
 
 def decode_jwt(token: str) -> dict[str, Any]:
-    """Phase 2 MUST call:
-
-        jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=["HS256"],                       # explicit allowlist
-            options={"require": ["exp", "sub"]},        # mandatory claims
-        )
-
-    DO NOT use `jwt.decode(token, secret)` with two args — algorithm-confusion
-    vulnerability (CVE-2022-29217). DO NOT touch python-jose.
-    """
-    raise NotImplementedError("Phase 2 implements")
+    return jwt.decode(
+        token,
+        settings.jwt_secret,
+        algorithms=[JWT_ALGORITHM],
+        options={"require": ["exp", "sub"]},
+    )
