@@ -3,8 +3,17 @@ from typing import Any, cast
 
 import boto3  # type: ignore[import-untyped]
 from botocore.config import Config  # type: ignore[import-untyped]
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from app.core.config import settings
+
+
+class AudioObjectNotFoundError(Exception):
+    """Raised when a submitted audio key does not exist in S3."""
+
+
+class AudioObjectContentTypeError(Exception):
+    """Raised when submitted audio metadata does not match the upload policy."""
 
 
 def _s3_client() -> Any:
@@ -48,3 +57,29 @@ def presign_put_audio(
         ),
     )
     return {"uploadUrl": upload_url, "s3Key": key, "expiresIn": expires_in}
+
+
+def head_audio_object(key: str) -> dict[str, Any]:
+    if not settings.s3_audio_bucket:
+        raise RuntimeError("S3_AUDIO_BUCKET is not configured")
+
+    try:
+        response = _s3_client().head_object(Bucket=settings.s3_audio_bucket, Key=key)
+    except ClientError as exc:
+        error_code = str(exc.response.get("Error", {}).get("Code", ""))
+        if error_code in {"404", "NoSuchKey", "NotFound"}:
+            raise AudioObjectNotFoundError("Audio upload not found") from exc
+        raise
+    return cast(dict[str, Any], response)
+
+
+def validate_audio_object(
+    *,
+    key: str,
+    allowed_content_types: set[str],
+) -> str:
+    metadata = head_audio_object(key)
+    content_type = metadata.get("ContentType")
+    if not isinstance(content_type, str) or content_type not in allowed_content_types:
+        raise AudioObjectContentTypeError("Unsupported content type")
+    return content_type

@@ -98,6 +98,7 @@ async def submit_voice_batch(
 ) -> VoiceBatchSubmitResponse:
     require_role(current_user, "elder")
     _require_elder_audio_key(elder_id=current_user.id, key=payload.s3Key)
+    await _require_uploaded_audio_object(payload.s3Key)
 
     voice_session = VoiceSession(
         id=uuid.uuid4(),
@@ -228,6 +229,25 @@ def _require_elder_audio_key(*, elder_id: uuid.UUID, key: str) -> None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported audio format",
+        ) from None
+
+
+async def _require_uploaded_audio_object(key: str) -> None:
+    try:
+        await asyncio.to_thread(
+            s3_audio.validate_audio_object,
+            key=key,
+            allowed_content_types=set(SUPPORTED_BATCH_CONTENT_TYPES),
+        )
+    except s3_audio.AudioObjectNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        ) from None
+    except s3_audio.AudioObjectContentTypeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported content type",
         ) from None
 
 

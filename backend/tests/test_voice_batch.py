@@ -16,10 +16,16 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 class FakeS3Client:
     def __init__(self) -> None:
         self.presign_calls: list[dict[str, object]] = []
+        self.head_calls: list[dict[str, object]] = []
+        self.head_response: dict[str, object] = {"ContentType": "audio/wav"}
 
     def generate_presigned_url(self, **kwargs: object) -> str:
         self.presign_calls.append(kwargs)
         return "https://example.test/audio-put"
+
+    def head_object(self, **kwargs: object) -> dict[str, object]:
+        self.head_calls.append(kwargs)
+        return self.head_response
 
 
 class SpySessionMaker:
@@ -145,6 +151,9 @@ async def test_batch_submit_returns_pending_and_status_ready(
     assert body["jobId"]
     assert elapsed < 2
 
+    assert mocks.fake_s3.head_calls == [
+        {"Bucket": "test-audio-bucket", "Key": s3_key},
+    ]
     assert len(mocks.scheduled_jobs) == 1
     await mocks.scheduled_jobs[0]
     status_response = await client.get(
@@ -222,6 +231,55 @@ async def test_batch_rejects_audio_key_extensions_not_allowed_by_upload_policy(
 
     assert response.status_code == 400
     assert response.json() == {"status": 400, "message": "Unsupported audio format"}
+    assert mocks.fake_s3.head_calls == []
+    assert mocks.scheduled_jobs == []
+
+
+async def test_batch_rejects_allowed_extension_with_unsupported_content_type(
+    client,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mocks = _install_voice_mocks(monkeypatch, db_session)
+    mocks.fake_s3.head_response = {"ContentType": "application/octet-stream"}
+    token, elder_id = await _login(client, "siti@gingergig.my")
+    s3_key = f"elders/{elder_id}/voice/test.wav"
+
+    response = await client.post(
+        "/api/v1/voice-to-profile/batch",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"s3Key": s3_key, "language": "ms-MY"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"status": 400, "message": "Unsupported content type"}
+    assert mocks.fake_s3.head_calls == [
+        {"Bucket": "test-audio-bucket", "Key": s3_key},
+    ]
+    assert mocks.scheduled_jobs == []
+
+
+async def test_batch_rejects_allowed_extension_with_missing_content_type(
+    client,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mocks = _install_voice_mocks(monkeypatch, db_session)
+    mocks.fake_s3.head_response = {}
+    token, elder_id = await _login(client, "siti@gingergig.my")
+    s3_key = f"elders/{elder_id}/voice/test.wav"
+
+    response = await client.post(
+        "/api/v1/voice-to-profile/batch",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"s3Key": s3_key, "language": "ms-MY"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"status": 400, "message": "Unsupported content type"}
+    assert mocks.fake_s3.head_calls == [
+        {"Bucket": "test-audio-bucket", "Key": s3_key},
+    ]
     assert mocks.scheduled_jobs == []
 
 
