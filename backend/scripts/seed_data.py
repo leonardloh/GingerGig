@@ -11,7 +11,7 @@ All 4-locale text columns for COMPANION_ALERTS + TIMELINE are hand-written here
 judging signal.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -400,7 +400,7 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "2 portions",
         "item_description": "Rendang + Nasi Lemak",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 26, 10, 30, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 26, 10, 30, tzinfo=UTC),
         "amount": Decimal("36.00"),
         "currency": "MYR",
         "status": "pending",
@@ -417,7 +417,7 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "5 portions",
         "item_description": "Ayam Masak Merah",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 27, 4, 0, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 27, 4, 0, tzinfo=UTC),
         "amount": Decimal("75.00"),
         "currency": "MYR",
         "status": "confirmed",
@@ -434,7 +434,7 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "1 box",
         "item_description": "Kuih Lapis",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 28, 3, 0, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 28, 3, 0, tzinfo=UTC),
         "amount": Decimal("12.00"),
         "currency": "MYR",
         "status": "confirmed",
@@ -454,11 +454,11 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "3 portions",
         "item_description": "Nasi Lemak Bungkus",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 25, 5, 30, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 25, 5, 30, tzinfo=UTC),
         "amount": Decimal("21.00"),
         "currency": "MYR",
         "status": "completed",
-        "completed_at": datetime(2026, 4, 25, 5, 30, tzinfo=timezone.utc),
+        "completed_at": datetime(2026, 4, 25, 5, 30, tzinfo=UTC),
     },
     {
         "slug": "siti-c2",
@@ -474,11 +474,11 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "2 portions",
         "item_description": "Rendang Daging",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 25, 4, 0, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 25, 4, 0, tzinfo=UTC),
         "amount": Decimal("30.00"),
         "currency": "MYR",
         "status": "completed",
-        "completed_at": datetime(2026, 4, 25, 4, 0, tzinfo=timezone.utc),
+        "completed_at": datetime(2026, 4, 25, 4, 0, tzinfo=UTC),
     },
     {
         "slug": "siti-c3",
@@ -494,11 +494,11 @@ BOOKINGS: list[dict[str, Any]] = [
         "quantity_label": "4 portions",
         "item_description": "Ayam Masak Merah",
         "notes": None,
-        "scheduled_at": datetime(2026, 4, 24, 10, 0, tzinfo=timezone.utc),
+        "scheduled_at": datetime(2026, 4, 24, 10, 0, tzinfo=UTC),
         "amount": Decimal("48.00"),
         "currency": "MYR",
         "status": "completed",
-        "completed_at": datetime(2026, 4, 24, 10, 0, tzinfo=timezone.utc),
+        "completed_at": datetime(2026, 4, 24, 10, 0, tzinfo=UTC),
     },
 ]
 
@@ -609,7 +609,7 @@ TIMELINE: list[dict[str, Any]] = [
     {
         "slug": "tl-1",
         "elder_slug": "siti",
-        "occurred_at": datetime(2026, 4, 25, 8, 20, tzinfo=timezone.utc),
+        "occurred_at": datetime(2026, 4, 25, 8, 20, tzinfo=UTC),
         "relative_label": "Today, 4:20 PM",
         "event_type": "booking_confirmed",
         "related_id": None,
@@ -621,7 +621,7 @@ TIMELINE: list[dict[str, Any]] = [
     {
         "slug": "tl-2",
         "elder_slug": "siti",
-        "occurred_at": datetime(2026, 4, 25, 1, 15, tzinfo=timezone.utc),
+        "occurred_at": datetime(2026, 4, 25, 1, 15, tzinfo=UTC),
         "relative_label": "Today, 9:15 AM",
         "event_type": "listing_posted",
         "related_id": None,
@@ -633,7 +633,7 @@ TIMELINE: list[dict[str, Any]] = [
     {
         "slug": "tl-3",
         "elder_slug": "siti",
-        "occurred_at": datetime(2026, 4, 24, 11, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2026, 4, 24, 11, 0, tzinfo=UTC),
         "relative_label": "Yesterday, 7:00 PM",
         "event_type": "booking_completed",
         "related_id": None,
@@ -645,7 +645,7 @@ TIMELINE: list[dict[str, Any]] = [
     {
         "slug": "tl-4",
         "elder_slug": "siti",
-        "occurred_at": datetime(2026, 4, 24, 3, 30, tzinfo=timezone.utc),
+        "occurred_at": datetime(2026, 4, 24, 3, 30, tzinfo=UTC),
         "relative_label": "Yesterday, 11:30 AM",
         "event_type": "earnings_posted",
         "related_id": None,
@@ -657,7 +657,7 @@ TIMELINE: list[dict[str, Any]] = [
     {
         "slug": "tl-5",
         "elder_slug": "siti",
-        "occurred_at": datetime(2026, 4, 22, 1, 0, tzinfo=timezone.utc),
+        "occurred_at": datetime(2026, 4, 22, 1, 0, tzinfo=UTC),
         "relative_label": "Mon, 22 Apr",
         "event_type": "review_received",
         "related_id": None,
