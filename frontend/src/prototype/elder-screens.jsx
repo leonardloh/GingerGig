@@ -93,6 +93,38 @@ const adaptDraftToGeneratedListing = (draft) => {
   };
 };
 
+const isStreamingLanguage = (language) => language === "en-US" || language === "zh-CN";
+
+const floatTo16BitPCM = (float32Array) => {
+  const pcm = new Int16Array(float32Array.length);
+  for (let i = 0; i < float32Array.length; i++) {
+    const sample = Math.max(-1, Math.min(1, float32Array[i]));
+    pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return pcm;
+};
+
+const downsampleTo16k = (input, inputSampleRate) => {
+  if (inputSampleRate === 16000) return input;
+  const ratio = inputSampleRate / 16000;
+  const outputLength = Math.max(1, Math.round(input.length / ratio));
+  const output = new Float32Array(outputLength);
+
+  for (let i = 0; i < outputLength; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(Math.floor((i + 1) * ratio), input.length);
+    let sum = 0;
+    let count = 0;
+    for (let j = start; j < end; j++) {
+      sum += input[j];
+      count += 1;
+    }
+    output[i] = count ? sum / count : input[start] || 0;
+  }
+
+  return output;
+};
+
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
 // ═══════════════════════════════════════════════════════════════
@@ -272,14 +304,17 @@ function ElderVoice({ onConfirm, accessToken }) {
   const [draft, setDraft] = useState(null);
   const recogRef = useRef(null);
   const tickRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const processorRef = useRef(null);
+  const workletNodeRef = useRef(null);
+  const wsRef = useRef(null);
+  const pcmChunksRef = useRef([]);
 
   const voiceLanguage =
     { ms: "ms-MY", en: "en-US", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
 
-  const startRecord = () => {
-    setSeconds(0);
-    setTranscript("");
-    setDraft(null);
+  const startSpeechRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       const r = new SR();
@@ -297,6 +332,74 @@ function ElderVoice({ onConfirm, accessToken }) {
         r.start();
         recogRef.current = r;
       } catch (_) {}
+    }
+  };
+  const handleVoiceStreamMessage = (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "partial") {
+        setTranscript(message.text || "");
+      } else if (message.type === "final") {
+        clearInterval(tickRef.current);
+        setDraft(message.listing);
+        setSteps([2, 2, 2]);
+        setState("generated");
+      } else if (message.type === "error") {
+        clearInterval(tickRef.current);
+        setDraft(null);
+        runProcessing("voice");
+      }
+    } catch (_) {}
+  };
+  const startStreamingCapture = async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!navigator.mediaDevices?.getUserMedia || !AudioContextClass || !window.WebSocket) {
+      throw new Error("Voice streaming is unavailable");
+    }
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContextClass();
+    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    const processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+    const ws = createVoiceStream({ token: accessToken, language: voiceLanguage });
+
+    mediaStreamRef.current = mediaStream;
+    audioContextRef.current = audioContext;
+    processorRef.current = processorNode;
+    workletNodeRef.current = null;
+    wsRef.current = ws;
+    pcmChunksRef.current = [];
+
+    ws.addEventListener("message", handleVoiceStreamMessage);
+    ws.addEventListener("error", () => {
+      setDraft(null);
+      runProcessing("voice");
+    });
+
+    processorNode.onaudioprocess = (event) => {
+      const input = event.inputBuffer.getChannelData(0);
+      const downsampled = downsampleTo16k(input, audioContext.sampleRate);
+      const pcm = floatTo16BitPCM(downsampled);
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength));
+      }
+    };
+
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+  };
+  const startRecord = async () => {
+    setSeconds(0);
+    setTranscript("");
+    setDraft(null);
+    if (isStreamingLanguage(voiceLanguage) && accessToken) {
+      try {
+        await startStreamingCapture();
+      } catch (_) {
+        startSpeechRecognition();
+      }
+    } else {
+      startSpeechRecognition();
     }
     tickRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
     setState("recording");
