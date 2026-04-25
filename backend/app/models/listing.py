@@ -34,6 +34,10 @@ class Listing(Base, TimestampMixin):
             name="price_unit_in_enum",
         ),
         CheckConstraint("currency = 'MYR'", name="currency_myr"),
+        CheckConstraint(
+            "match_score IS NULL OR (match_score >= 0 AND match_score <= 100)",
+            name="ck_listings_match_score_range",
+        ),
         Index("ix_listings_elder_id", "elder_id"),
         Index(
             "ix_listings_category_active",
@@ -64,6 +68,12 @@ class Listing(Base, TimestampMixin):
     review_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     days: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default="{}")
+    distance_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    match_score: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    match_reason_ms: Mapped[str | None] = mapped_column(Text, nullable=True)
+    match_reason_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+    match_reason_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
+    match_reason_ta: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class ListingMenuItem(Base, TimestampMixin):
