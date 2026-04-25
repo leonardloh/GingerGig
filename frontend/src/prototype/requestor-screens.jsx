@@ -1,4 +1,4 @@
-import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
+import { AILabel, Avatar, Badge, Button, Card, GingerLogo, Icon, Stars, useLang, useT } from './components';
 // requestor-screens.jsx — Home, Search results, Provider detail
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getListingById, searchListings } from '../services/api/endpoints/requestor';
