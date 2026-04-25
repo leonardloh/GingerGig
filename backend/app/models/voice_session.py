@@ -39,5 +39,7 @@ class VoiceSession(Base, TimestampMixin):
     mode: Mapped[str] = mapped_column(String(8), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="recording")
     transcript: Mapped[str | None] = mapped_column(Text)
+    audio_s3_key: Mapped[str | None] = mapped_column(Text)
+    transcribe_job_name: Mapped[str | None] = mapped_column(Text)
     listing_draft: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(Text)
