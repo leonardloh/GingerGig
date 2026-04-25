@@ -36,6 +36,7 @@ const adaptBooking = (booking) => ({
   qty: booking.qty,
   price: formatMoney(booking.amount, booking.currency),
   date: formatBookingDate(booking.scheduledAt),
+  scheduledAt: booking.scheduledAt,
   status: booking.status,
   rating: booking.rating,
 });
@@ -1671,10 +1672,14 @@ const DetailCell = ({ icon, label, value, sub }) => (
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 3 — Elder Dashboard (responsive multi-col on desktop)
 // ═══════════════════════════════════════════════════════════════
-function ElderDashboard() {
+function ElderDashboard({ user }) {
   const t = useT();
+  const [bookings, setBookings] = useState([]);
+  const [earnings, setEarnings] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [count, setCount] = useState(0);
-  const target = 99; // RM 99 earned today
+  const target = earnings?.monthTotal ?? 99; // preserve the existing animation fallback until data loads
   useEffect(() => {
     let r = 0;
     const id = setInterval(() => {
@@ -1685,12 +1690,42 @@ function ElderDashboard() {
       } else setCount(Math.floor(r));
     }, 22);
     return () => clearInterval(id);
-  }, []);
+  }, [target]);
 
-  const pending = ELDER_BOOKINGS.filter((b) => b.status === "pending");
-  const confirmed = ELDER_BOOKINGS.filter((b) => b.status === "confirmed");
-  const completed =
-    typeof ELDER_COMPLETED !== "undefined" ? ELDER_COMPLETED : [];
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    Promise.all([getElderBookings(user.id), getElderEarnings(user.id)])
+      .then(([bookingRows, earningsSummary]) => {
+        if (cancelled) return;
+        setBookings(bookingRows.map(adaptBooking));
+        setEarnings(earningsSummary);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setBookings([]);
+        setEarnings(null);
+        setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const pending = bookings.filter((b) => b.status === "pending");
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+  const completed = bookings.filter((b) => b.status === "completed");
+  const todayCompletedCount = completed.filter((c) => {
+    if (!c.scheduledAt) return /Today/i.test(c.date);
+    const scheduled = new Date(c.scheduledAt);
+    const now = new Date();
+    return scheduled.toDateString() === now.toDateString();
+  }).length;
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1723,12 +1758,12 @@ function ElderDashboard() {
               textOverflow: "ellipsis",
             }}
           >
-            {HERO_ELDER.name}
+            {user.name}
           </h1>
         </div>
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={user.avatarUrl}
+          initials={user.initials}
           size={56}
           tone="warm"
           border
@@ -1798,7 +1833,7 @@ function ElderDashboard() {
             RM <span>{count}</span>
           </div>
           <div style={{ fontSize: 14, color: "#8a6614", marginTop: 8 }}>
-            {completed.filter((c) => /Today/i.test(c.date)).length}{" "}
+            {todayCompletedCount}{" "}
             {t("totalToday")}
           </div>
 
