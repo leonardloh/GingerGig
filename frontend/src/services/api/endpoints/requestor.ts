@@ -1,5 +1,5 @@
 import { apiRequest } from "../http";
-import type { Booking, Listing } from "../types";
+import type { Booking, Listing, ListingDetail } from "../types";
 
 /** Filters for searching available elder service listings. */
 export interface SearchListingsParams {
@@ -14,7 +14,7 @@ export interface SearchListingsParams {
 }
 
 /**
- * GET /api/v1/requestor/listings/search
+ * GET /requestor/listings/search
  *
  * Searches available elder service listings with optional filters.
  * Only active listings are returned. Results are sorted by distance
@@ -37,8 +37,12 @@ export function searchListings(params: SearchListingsParams) {
   );
 }
 
+export function getListingById(listingId: string) {
+  return apiRequest<ListingDetail>(`/listings/${listingId}`);
+}
+
 /**
- * POST /api/v1/requestor/bookings
+ * POST /requestor/bookings
  *
  * Creates a new booking for a listing. The booking starts in `pending` status
  * and the elder must accept or decline via `respondToBooking()`.
@@ -60,7 +64,7 @@ export function createBooking(payload: {
 }
 
 /**
- * GET /api/v1/requestor/bookings
+ * GET /requestor/bookings
  *
  * Returns all bookings made by the authenticated requestor, across all statuses.
  * The requestor is identified from the JWT `sub` claim — no ID parameter needed.
