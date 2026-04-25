@@ -1,10 +1,10 @@
 import json
 import time
 import urllib.request
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
-import boto3
+import boto3  # type: ignore[import-untyped]
 
 from app.core.config import settings
 
@@ -81,14 +81,14 @@ def _fetch_transcript_payload(uri: str) -> dict[str, Any]:
             body = response.read()
     else:
         raise RuntimeError("Unsupported Transcribe transcript URI scheme")
-    return json.loads(body.decode("utf-8"))
+    return cast(dict[str, Any], json.loads(body.decode("utf-8")))
 
 
 def _transcript_text_from_payload(payload: dict[str, Any]) -> str:
     transcripts = payload.get("results", {}).get("transcripts", [])
     if not transcripts:
         raise RuntimeError("Transcribe transcript was empty")
-    transcript = transcripts[0].get("transcript", "").strip()
+    transcript = cast(str, transcripts[0].get("transcript", "")).strip()
     if not transcript:
         raise RuntimeError("Transcribe transcript was empty")
     return transcript

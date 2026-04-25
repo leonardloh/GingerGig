@@ -1,8 +1,8 @@
 import uuid
-from typing import Any
+from typing import Any, cast
 
-import boto3
-from botocore.config import Config
+import boto3  # type: ignore[import-untyped]
+from botocore.config import Config  # type: ignore[import-untyped]
 
 from app.core.config import settings
 
@@ -34,14 +34,17 @@ def presign_put_audio(
     if not settings.s3_audio_bucket:
         raise RuntimeError("S3_AUDIO_BUCKET is not configured")
 
-    upload_url = _s3_client().generate_presigned_url(
-        ClientMethod="put_object",
-        Params={
-            "Bucket": settings.s3_audio_bucket,
-            "Key": key,
-            "ContentType": content_type,
-        },
-        ExpiresIn=expires_in,
-        HttpMethod="PUT",
+    upload_url = cast(
+        str,
+        _s3_client().generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": settings.s3_audio_bucket,
+                "Key": key,
+                "ContentType": content_type,
+            },
+            ExpiresIn=expires_in,
+            HttpMethod="PUT",
+        ),
     )
     return {"uploadUrl": upload_url, "s3Key": key, "expiresIn": expires_in}
