@@ -22,7 +22,11 @@ from app.integrations.transcribe_streaming import (
 from app.models.user import User
 from app.models.voice_session import VoiceSession
 from app.schemas.voice import ListingDraft, VoiceStreamHandshake
-from app.services.qwen_service import ListingExtractionError, extract_listing
+from app.services.qwen_service import (
+    LISTING_EXTRACTION_FAILED_MSG,
+    ListingExtractionError,
+    extract_listing,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -144,12 +148,12 @@ async def run_streaming_session(
             try:
                 listing = await listing_extractor(transcript, handshake.language)
             except ListingExtractionError:
-                await _send_error(websocket, "Listing extraction failed")
+                await _send_error(websocket, LISTING_EXTRACTION_FAILED_MSG)
                 await _mark_voice_session(
                     db_session,
                     voice_session,
                     "failed",
-                    error="Listing extraction failed",
+                    error=LISTING_EXTRACTION_FAILED_MSG,
                 )
                 return
 

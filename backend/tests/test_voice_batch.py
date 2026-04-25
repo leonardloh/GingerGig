@@ -1,12 +1,14 @@
+import json
 import time
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
 from app.routers import voice as voice_router
 from app.schemas.voice import ListingDraft
-from app.services.qwen_service import ListingExtractionError
+from app.services import qwen_service
+from app.services.qwen_service import LISTING_EXTRACTION_FAILED_MSG
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -210,21 +212,28 @@ async def test_batch_qwen_failure_maps_to_502(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     mocks = _install_voice_mocks(monkeypatch, db_session)
-    monkeypatch.setattr(
-        voice_router,
-        "extract_listing",
-        AsyncMock(side_effect=ListingExtractionError("Listing extraction failed")),
+    invalid = json.dumps({"category": "not_a_category"})
+    create = AsyncMock(
+        side_effect=[
+            SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=invalid))]),
+            SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=invalid))]),
+        ]
     )
+    qwen_client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(voice_router, "extract_listing", qwen_service.extract_listing)
     token, elder_id = await _login(client, "siti@gingergig.my")
 
-    submit = await client.post(
-        "/api/v1/voice-to-profile/batch",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"s3Key": f"elders/{elder_id}/voice/test.wav", "language": "ms-MY"},
-    )
-    assert submit.status_code == 201
-    assert len(mocks.scheduled_jobs) == 1
-    await mocks.scheduled_jobs[0]
+    with patch("app.services.qwen_service.AsyncOpenAI", Mock(return_value=qwen_client)):
+        submit = await client.post(
+            "/api/v1/voice-to-profile/batch",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"s3Key": f"elders/{elder_id}/voice/test.wav", "language": "ms-MY"},
+        )
+        assert submit.status_code == 201
+        assert len(mocks.scheduled_jobs) == 1
+        await mocks.scheduled_jobs[0]
+
+    assert create.await_count == 2
 
     response = await client.get(
         f"/api/v1/voice-to-profile/batch/{submit.json()['jobId']}",
@@ -232,4 +241,4 @@ async def test_batch_qwen_failure_maps_to_502(
     )
 
     assert response.status_code == 502
-    assert response.json() == {"status": 502, "message": "Listing extraction failed"}
+    assert response.json() == {"status": 502, "message": LISTING_EXTRACTION_FAILED_MSG}

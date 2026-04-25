@@ -7,6 +7,8 @@ from pydantic import ValidationError
 from app.core.config import settings
 from app.schemas.voice import ListingDraft
 
+LISTING_EXTRACTION_FAILED_MSG = "Listing extraction failed"
+
 
 class ListingExtractionError(Exception):
     """Raised when Qwen output cannot be validated into a listing draft."""
@@ -96,4 +98,4 @@ async def extract_listing(transcript: str, language: str) -> ListingDraft:
             )
             return ListingDraft.model_validate_json(raw_json)
         except ValidationError as second_error:
-            raise ListingExtractionError("Listing extraction failed") from second_error
+            raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from second_error

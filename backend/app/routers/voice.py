@@ -34,7 +34,11 @@ from app.schemas.voice import (
     VoiceBatchSubmitResponse,
 )
 from app.services.persona_queries import require_role
-from app.services.qwen_service import ListingExtractionError, extract_listing
+from app.services.qwen_service import (
+    LISTING_EXTRACTION_FAILED_MSG,
+    ListingExtractionError,
+    extract_listing,
+)
 from app.services.voice_service import STREAMING_CLOSE_AUTH, run_streaming_session
 
 router = APIRouter(prefix="/voice-to-profile", tags=["voice"])
@@ -42,7 +46,6 @@ router = APIRouter(prefix="/voice-to-profile", tags=["voice"])
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
-EXTRACTION_FAILED_MESSAGE = "Listing extraction failed"
 SUPPORTED_BATCH_CONTENT_TYPES = {
     "audio/wav": "wav",
     "audio/x-wav": "wav",
@@ -128,10 +131,10 @@ async def get_voice_batch_status(
     if voice_session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    if voice_session.status == "failed" and voice_session.error == EXTRACTION_FAILED_MESSAGE:
+    if voice_session.status == "failed" and voice_session.error == LISTING_EXTRACTION_FAILED_MSG:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=EXTRACTION_FAILED_MESSAGE,
+            detail=LISTING_EXTRACTION_FAILED_MSG,
         )
 
     response_status = "pending" if voice_session.status == "recording" else voice_session.status
@@ -190,7 +193,7 @@ async def run_batch_voice_job(
             await session.commit()
         except ListingExtractionError:
             voice_session.status = "failed"
-            voice_session.error = EXTRACTION_FAILED_MESSAGE
+            voice_session.error = LISTING_EXTRACTION_FAILED_MSG
             await session.commit()
         except Exception as exc:
             voice_session.status = "failed"

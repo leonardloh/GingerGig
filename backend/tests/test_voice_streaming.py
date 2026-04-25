@@ -9,6 +9,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from app.integrations.transcribe_streaming import TranscribeStreamingSession
 from app.main import app
+from app.services.qwen_service import LISTING_EXTRACTION_FAILED_MSG, ListingExtractionError
 from app.services.voice_service import (
     STREAMING_CLOSE_AUTH,
     STREAMING_CLOSE_BATCH_ONLY,
@@ -49,6 +50,10 @@ async def _empty_transcript_events():
 async def _many_partial_events():
     for index in range(20):
         yield TranscriptResult(text=f"partial {index}", is_partial=True)
+
+
+async def _one_final_event():
+    yield TranscriptResult(text="I cook nasi lemak for neighbours.", is_partial=False)
 
 
 def _patch_ws_db(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -154,6 +159,48 @@ async def test_streaming_session_ends_transcribe_stream_on_disconnect() -> None:
     )
 
     assert input_stream.end_stream.await_count >= 1
+
+
+@pytest.mark.asyncio
+async def test_streaming_extraction_failure_sends_safe_error_message() -> None:
+    websocket = SimpleNamespace(
+        receive_json=AsyncMock(return_value={"language": "en-US"}),
+        receive=AsyncMock(
+            side_effect=[
+                {"type": "websocket.receive", "bytes": b"\x00\x00"},
+                {"type": "websocket.receive", "text": '{"type":"end"}'},
+            ]
+        ),
+        send_json=AsyncMock(),
+        close=AsyncMock(),
+    )
+    input_stream = SimpleNamespace(send_audio_event=AsyncMock(), end_stream=AsyncMock())
+    raw_validation_text = "password-like model output should not leak"
+
+    async def fake_session_factory(language_code: str) -> TranscribeStreamingSession:
+        assert language_code == "en-US"
+        return TranscribeStreamingSession(
+            input_stream=input_stream,
+            transcript_events=_one_final_event(),
+        )
+
+    async def failing_extractor(transcript: str, language: str) -> object:
+        assert transcript == "I cook nasi lemak for neighbours."
+        assert language == "en-US"
+        raise ListingExtractionError(raw_validation_text)
+
+    await run_streaming_session(
+        websocket,
+        SimpleNamespace(id=uuid.uuid4()),
+        FakeDbSession(),
+        streaming_session_factory=fake_session_factory,
+        listing_extractor=failing_extractor,
+    )
+
+    websocket.send_json.assert_any_await(
+        {"type": "error", "message": LISTING_EXTRACTION_FAILED_MSG}
+    )
+    assert raw_validation_text not in str(websocket.send_json.await_args_list)
 
 
 @pytest.mark.asyncio
