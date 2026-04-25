@@ -49,6 +49,17 @@ class VoiceBatchRequest(BaseModel):
     language: BatchVoiceLanguage
 
 
+class AudioUploadUrlRequest(BaseModel):
+    contentType: str
+    language: BatchVoiceLanguage
+
+
+class AudioUploadUrlResponse(BaseModel):
+    uploadUrl: str
+    s3Key: str
+    expiresIn: int
+
+
 class VoiceBatchSubmitResponse(BaseModel):
     jobId: UUID | str
     status: Literal["pending"] = "pending"
