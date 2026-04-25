@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-04-25T16:24:17.395Z"
+status: executing
+last_updated: "2026-04-25T16:30:12Z"
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 13
-  completed_plans: 8
-  percent: 62
+  completed_plans: 9
+  percent: 69
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 02 complete)
+**Last updated:** 2026-04-25 (Phase 03 plan 01 complete)
 
 ## Project Reference
 
@@ -25,10 +25,12 @@ progress:
 
 ## Current Position
 
+Phase: 03 (persona-routers-elder-requestor-companion) — EXECUTING
+Plan: 2 of 5
 **Phase:** 03 of 7 (persona routers elder requestor companion)
-**Plan:** Ready to plan
-**Status:** Phase 02 complete; ready for Phase 03 planning
-**Progress:** 2/7 phases complete
+**Plan:** Ready to execute 03-02 (Shared persona schemas, query helpers, and seeded match persistence)
+**Status:** Executing Phase 03
+**Progress:** [███████░░░] 69%
 
 ```
 [██████░░░░░░░░░░░░░░] 29% (Phase 2 of 7)
@@ -40,7 +42,7 @@ progress:
 |---|-------|--------|------------|
 | 1 | Backend Scaffold + Schema + Seed | Complete | — |
 | 2 | Auth + Bearer Middleware | Complete | 1 |
-| 3 | Persona Routers (Elder + Requestor + Companion) | Not started | 2 |
+| 3 | Persona Routers (Elder + Requestor + Companion) | In progress | 2 |
 | 4 | eKYC Pipeline | Not started | 2 |
 | 5 | Voice-to-Profile Pipeline | Not started | 2 |
 | 6 | Frontend Wiring + Type Extensions | Not started | 3, 4, 5 |
@@ -48,11 +50,11 @@ progress:
 
 ## Performance Metrics
 
-- **Plans complete:** 8
+- **Plans complete:** 9
 - **Verifications passed:** 2
 - **Phases shipped:** 2
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 02 — 1 plan, 25 backend tests passed with `backend/.env` exported
+- **Latest phase metric:** Phase 03 plan 01 — 4 persona contract test files, 25 tests collected with `uv run pytest --collect-only`
 
 ## Accumulated Context
 
@@ -101,8 +103,8 @@ progress:
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `02-01-PLAN.md`
-**Next action:** Plan Phase 03 (Persona Routers).
+**Last session ended:** 2026-04-25 — completed `03-01-PLAN.md`
+**Next action:** Execute `03-02-PLAN.md` (Shared persona schemas, query helpers, and seeded match persistence).
 
 **Resume context for next session:**
 
@@ -117,3 +119,5 @@ progress:
 **Completed Plan:** 02-01 (Demo auth shim and bearer dependencies) — 2026-04-25T16:16:37Z
 
 **Planned Phase:** 03 (Persona Routers (Elder + Requestor + Companion)) — 5 plans — 2026-04-25T16:24:17.391Z
+
+**Completed Plan:** 03-01 (Persona router contract test harness) — 2026-04-25T16:30:12Z
