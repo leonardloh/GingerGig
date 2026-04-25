@@ -14,7 +14,6 @@ from app.schemas.persona import Booking, CreateBookingPayload, Listing
 from app.services.persona_queries import (
     booking_snapshot_fields,
     booking_to_response,
-    initials,
     listing_to_response,
     locale_expr,
     menu_items_for_listings,
@@ -101,14 +100,7 @@ async def get_requestor_bookings(
         .where(BookingModel.requestor_user_id == current_user.id)
         .order_by(BookingModel.scheduled_at.desc(), BookingModel.created_at.desc())
     )
-    bookings = []
-    for booking in result.scalars():
-        response = booking_to_response(booking)
-        response.requestorName = current_user.name
-        response.requestorInitials = initials(current_user.name)
-        response.requestorAvatarUrl = current_user.avatar_url
-        bookings.append(response)
-    return bookings
+    return [booking_to_response(booking) for booking in result.scalars()]
 
 
 @router.post("/bookings", response_model=Booking)
@@ -124,7 +116,7 @@ async def create_booking(
         select(ListingModel, title_expr, User)
         .join(User, User.id == ListingModel.elder_id)
         .where(
-            ListingModel.id == UUID(payload.listingId),
+            ListingModel.id == payload.listingId,
             ListingModel.is_active.is_(True),
         )
     )
@@ -158,7 +150,7 @@ async def create_booking(
 
 
 def _parse_max_distance(value: str | None) -> float | None:
-    if value in (None, ""):
+    if value is None or value == "":
         return None
     try:
         return float(value)

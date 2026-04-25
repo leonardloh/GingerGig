@@ -4,6 +4,7 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
@@ -23,14 +24,14 @@ KL_TZ = ZoneInfo("Asia/Kuala_Lumpur")
 VALID_LOCALES = {"ms", "en", "zh", "ta"}
 
 
-def locale_column(model: type, stem: str, locale: str) -> ColumnElement[str]:
+def locale_column(model: Any, stem: str, locale: str) -> ColumnElement[str]:
     normalized_locale = locale if locale in VALID_LOCALES else "en"
     columns = _locale_columns(model, stem)
     return columns.get(normalized_locale, columns["en"])
 
 
 def locale_expr(
-    model: type,
+    model: Any,
     stem: str,
     locale: str,
     label: str | None = None,
@@ -269,7 +270,7 @@ def listing_locale_select(locale: str) -> Select[tuple[ListingModel, str, str | 
     )
 
 
-def _locale_columns(model: type, stem: str) -> dict[str, ColumnElement[str]]:
+def _locale_columns(model: Any, stem: str) -> dict[str, ColumnElement[str]]:
     if stem == "title":
         return {
             "ms": model.title_ms,

@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -88,7 +89,7 @@ class BookingResponsePayload(BaseModel):
 
 
 class CreateBookingPayload(BaseModel):
-    listingId: str
+    listingId: UUID
     scheduledAt: datetime
     notes: str | None = None
 
@@ -109,7 +110,7 @@ class CompanionElderSnapshot(BaseModel):
 
 class CompanionDashboard(BaseModel):
     status: str
-    weeklyEarnings: EarningsSummary
+    weeklyEarnings: Decimal | float
     activeDays: int
     completedBookings: int
     elder: CompanionElderSnapshot

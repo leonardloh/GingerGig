@@ -1,6 +1,10 @@
+from uuid import UUID
+
 import pytest
+from sqlalchemy import select
 
 from app.core.ids import entity_id
+from app.models.booking import Booking as BookingModel
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -173,8 +177,9 @@ async def test_create_booking_for_missing_listing_returns_404(client) -> None:
     assert_api_error(response.json())
 
 
-async def test_amir_requestor_bookings_are_filtered_to_his_bookings(client) -> None:
+async def test_amir_requestor_bookings_are_filtered_to_his_bookings(client, db_session) -> None:
     headers = await login_headers(client, AMIR_EMAIL)
+    amir_id = entity_id("user", "amir")
 
     response = await client.get(
         "/api/v1/requestor/bookings",
@@ -184,7 +189,11 @@ async def test_amir_requestor_bookings_are_filtered_to_his_bookings(client) -> N
     assert response.status_code == 200
     bookings = response.json()
     assert bookings
-    assert all(booking["requestorName"].lower().startswith("amir") for booking in bookings)
+    booking_ids = [UUID(booking["id"]) for booking in bookings]
+    result = await db_session.execute(
+        select(BookingModel.requestor_user_id).where(BookingModel.id.in_(booking_ids))
+    )
+    assert all(requestor_id == amir_id for requestor_id in result.scalars())
 
 
 async def test_elder_and_companion_cannot_use_requestor_booking_endpoints(client) -> None:

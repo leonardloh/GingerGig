@@ -4,8 +4,6 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +19,7 @@ from app.schemas.persona import (
     AlertPreferences,
     CompanionAlert,
     CompanionDashboard,
+    CompanionElderSnapshot,
     TimelineEvent,
 )
 from app.services.persona_queries import (
@@ -43,7 +42,7 @@ async def get_companion_dashboard(
     elderId: UUID,
     db: DbDep,
     current_user: CurrentUserDep,
-) -> JSONResponse:
+) -> CompanionDashboard:
     require_role(current_user, "companion")
     await require_companion_link(db, current_user.id, elderId)
 
@@ -93,20 +92,19 @@ async def get_companion_dashboard(
     )
     completed_bookings = completed_bookings_result.scalar_one()
 
-    dashboard = {
-        "status": "Active this week",
-        "weeklyEarnings": float(weekly_earnings),
-        "activeDays": active_days,
-        "completedBookings": completed_bookings,
-        "elder": {
-            "id": str(elder.id),
-            "name": elder.name,
-            "initials": _demo_elder_initials(elder.name),
-            "area": elder.area,
-            "portraitUrl": elder.avatar_url,
-        },
-    }
-    return JSONResponse(content=jsonable_encoder(dashboard))
+    return CompanionDashboard(
+        status="Active this week",
+        weeklyEarnings=float(weekly_earnings),
+        activeDays=active_days,
+        completedBookings=completed_bookings,
+        elder=CompanionElderSnapshot(
+            id=str(elder.id),
+            name=elder.name,
+            initials=_demo_elder_initials(elder.name),
+            area=elder.area,
+            portraitUrl=elder.avatar_url,
+        ),
+    )
 
 
 def _demo_elder_initials(name: str) -> str:
