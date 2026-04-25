@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,16 @@ def _envelope(status: int, message: str, detail: Any | None = None) -> JSONRespo
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.middleware("http")
+    async def unhandled_exception_middleware(
+        request: Request, call_next: Any
+    ) -> Response:
+        try:
+            return await call_next(request)
+        except Exception:
+            logger.exception("unhandled", extra={"path": request.url.path})
+            return _envelope(500, "Internal server error")
+
     @app.exception_handler(HTTPException)
     async def http_exception_handler(
         request: Request, exc: HTTPException

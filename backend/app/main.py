@@ -9,11 +9,23 @@ from app.core.errors import register_exception_handlers
 from app.db.session import build_engine, dispose_engine
 from app.routers import (
     auth as auth_router,
+)
+from app.routers import (
     companion as companion_router,
+)
+from app.routers import (
     elder as elder_router,
+)
+from app.routers import (
     health as health_router,
+)
+from app.routers import (
     kyc as kyc_router,
+)
+from app.routers import (
     requestor as requestor_router,
+)
+from app.routers import (
     voice as voice_router,
 )
 
