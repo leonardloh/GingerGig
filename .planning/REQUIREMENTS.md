@@ -9,13 +9,13 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 
 ### Foundation
 
-- [ ] **FOUND-01**: FastAPI app scaffolded with `uv` (Python ≥3.12), runs at `http://localhost:8000`, exposes `GET /health` returning `200 {"status":"ok"}`
-- [ ] **FOUND-02**: `pyproject.toml` declares the locked stack: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `pydantic`, `pydantic-settings`, `boto3`, `amazon-transcribe>=0.6.4`, `alibabacloud-oss-v2>=1.2.5`, `openai>=2.32.0`, `redis>=7.4.0`, `pyjwt[crypto]`, `bcrypt>=4.2.0,<5.0.0`
+- [x] **FOUND-01**: FastAPI app scaffolded with `uv` (Python ≥3.12), runs at `http://localhost:8000`, exposes `GET /health` returning `200 {"status":"ok"}`
+- [x] **FOUND-02**: `pyproject.toml` declares the locked stack: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `pydantic`, `pydantic-settings`, `boto3`, `amazon-transcribe>=0.6.4`, `alibabacloud-oss-v2>=1.2.5`, `openai>=2.32.0`, `redis>=7.4.0`, `pyjwt[crypto]`, `bcrypt>=4.2.0,<5.0.0`
 - [ ] **FOUND-03**: All routers mounted under `/api/v1/*` matching the frontend's `apiRequest` prefix; CORS configured to accept the frontend origin (no `*` allowlist)
-- [ ] **FOUND-04**: Module layout mirrors frontend: `routers/{auth,elder,requestor,companion,kyc,voice}.py`, `services/`, `models/`, `schemas/`, `integrations/`, `core/`, `deps/`, `db.py`, `main.py`
-- [ ] **FOUND-05**: Pydantic-settings reads typed config from environment (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `AWS_*`, `DASHSCOPE_API_KEY`, `OSS_*`, region pins); `.env.example` lists every required variable
+- [x] **FOUND-04**: Module layout mirrors frontend: `routers/{auth,elder,requestor,companion,kyc,voice}.py`, `services/`, `models/`, `schemas/`, `integrations/`, `core/`, `deps/`, `db.py`, `main.py`
+- [x] **FOUND-05**: Pydantic-settings reads typed config from environment (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `AWS_*`, `DASHSCOPE_API_KEY`, `OSS_*`, region pins); `.env.example` lists every required variable
 - [ ] **FOUND-06**: Global exception handler returns `{status, message, detail?}` JSON matching the frontend's `ApiError` shape; `debug=False` in production; tracebacks logged but not surfaced
-- [ ] **FOUND-07**: Per-request `AsyncSession` via `Depends(get_db)`; engine + Redis pool + boto3 clients are process-singletons built in FastAPI `lifespan`
+- [x] **FOUND-07**: Per-request `AsyncSession` via `Depends(get_db)`; engine + Redis pool + boto3 clients are process-singletons built in FastAPI `lifespan`
 
 ### Database & Seed
 
@@ -181,13 +181,13 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
+| FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
-| FOUND-05 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Complete |
+| FOUND-05 | Phase 1 | Complete |
 | FOUND-06 | Phase 1 | Pending |
-| FOUND-07 | Phase 1 | Pending |
+| FOUND-07 | Phase 1 | Complete |
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
 | DATA-03 | Phase 1 | Pending |
