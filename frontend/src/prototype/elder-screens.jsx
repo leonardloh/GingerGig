@@ -1,8 +1,8 @@
-import { LANGUAGES } from './i18n';
-import { ELDER_BOOKINGS, ELDER_COMPLETED, ELDER_LISTINGS, HERO_ELDER } from './mock-data';
-import { AILabel, Avatar, Badge, Button, Card, EarningsHeroCard, Icon, Stars, useLang, useT } from './components';
 // elder-screens.jsx — Language pick, Voice flow, Elder dashboard
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { LANGUAGES } from './i18n';
+import { AILabel, Avatar, Badge, Button, Card, EarningsHeroCard, Icon, Stars, useLang, useT } from './components';
+import { api } from '../services/api';
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
@@ -1511,10 +1511,10 @@ function MockMapPreview({ area }) {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 3 — Elder Dashboard (responsive multi-col on desktop)
 // ═══════════════════════════════════════════════════════════════
-function ElderDashboard() {
+function ElderDashboard({ user, onAddListing }) {
   const t = useT();
   const [count, setCount] = useState(0);
-  const target = 99; // RM 99 earned today
+  const target = 99;
   useEffect(() => {
     let r = 0;
     const id = setInterval(() => {
@@ -1527,10 +1527,14 @@ function ElderDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const pending = ELDER_BOOKINGS.filter((b) => b.status === "pending");
-  const confirmed = ELDER_BOOKINGS.filter((b) => b.status === "confirmed");
-  const completed =
-    typeof ELDER_COMPLETED !== "undefined" ? ELDER_COMPLETED : [];
+  const [bookings, setBookings] = useState([]);
+  useEffect(() => {
+    if (user?.userId) api.elder.getElderBookings(user.userId).then(setBookings).catch(() => {});
+  }, [user?.userId]);
+
+  const pending = bookings.filter((b) => b.status === "pending");
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+  const completed = bookings.filter((b) => b.status === "completed");
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1563,12 +1567,12 @@ function ElderDashboard() {
               textOverflow: "ellipsis",
             }}
           >
-            {HERO_ELDER.name}
+            {user?.name ?? ''}
           </h1>
         </div>
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={null}
+          initials={user?.initials ?? '?'}
           size={56}
           tone="warm"
           border
@@ -1926,11 +1930,19 @@ function CompletedRow({ booking }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderListings — dedicated listings tab
 // ═══════════════════════════════════════════════════════════════
-function ElderListings({ onAddListing }) {
+function ElderListings({ user, onAddListing }) {
   const t = useT();
-  const [activeListings, setActiveListings] = useState(
-    () => Object.fromEntries(ELDER_LISTINGS.map((l) => [l.id, l.active]))
-  );
+  const [listings, setListings] = useState([]);
+  const [activeListings, setActiveListings] = useState({});
+
+  useEffect(() => {
+    if (user?.userId) {
+      api.elder.getElderListings(user.userId).then((data) => {
+        setListings(data);
+        setActiveListings(Object.fromEntries(data.map((l) => [l.id, l.isActive])));
+      }).catch(() => {});
+    }
+  }, [user?.userId]);
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div
@@ -1980,7 +1992,7 @@ function ElderListings({ onAddListing }) {
           alignItems: "stretch",
         }}
       >
-        {ELDER_LISTINGS.map((l) => (
+        {listings.map((l) => (
           <Card
             key={l.id}
             style={{
@@ -2133,18 +2145,28 @@ function ElderListings({ onAddListing }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderEarnings — full earnings view
 // ═══════════════════════════════════════════════════════════════
-function ElderEarnings() {
+function ElderEarnings({ user }) {
   const t = useT();
+  const [earnings, setEarnings] = useState(null);
 
-  const months = [
-    { label: "Nov", v: 320 },
-    { label: "Dec", v: 410 },
-    { label: "Jan", v: 480 },
-    { label: "Feb", v: 510 },
-    { label: "Mar", v: 500 },
-    { label: "Apr", v: 680 },
-  ];
-  const max = 700;
+  useEffect(() => {
+    if (user?.userId) {
+      api.elder.getElderEarnings(user.userId).then(setEarnings).catch(() => {});
+    }
+  }, [user?.userId]);
+
+  // Bar chart data — use weeklyBar from API or fall back to placeholder
+  const months = earnings?.weeklyBar
+    ? earnings.weeklyBar.map((v, i) => ({ label: `W${i + 1}`, v }))
+    : [
+        { label: "Nov", v: 320 },
+        { label: "Dec", v: 410 },
+        { label: "Jan", v: 480 },
+        { label: "Feb", v: 510 },
+        { label: "Mar", v: 500 },
+        { label: "Apr", v: 680 },
+      ];
+  const max = Math.max(...months.map((m) => m.v), 100);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -2174,8 +2196,8 @@ function ElderEarnings() {
 
       <div className="wide-grid" style={{ padding: "0 16px" }}>
         <EarningsHeroCard
-          monthlyAmount={680}
-          deltaLabel={`+RM 180 ${t("moreThanLast")}`}
+          monthlyAmount={earnings?.monthTotal ?? 680}
+          deltaLabel={`${t("moreThanLast")}`}
           style={{ padding: 28 }}
         >
           {/* Bar chart */}
@@ -2302,15 +2324,15 @@ function ElderEarnings() {
 // ═══════════════════════════════════════════════════════════════
 // ElderProfile — settings / language / logout
 // ═══════════════════════════════════════════════════════════════
-function ElderProfile({ onChangeLanguage }) {
+function ElderProfile({ user, onChangeLanguage }) {
   const t = useT();
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div style={{ padding: "0 16px", textAlign: "center", marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Avatar
-            src={HERO_ELDER.portrait}
-            initials={HERO_ELDER.initials}
+            src={null}
+            initials={user?.initials ?? '?'}
             size={104}
             tone="warm"
             border
@@ -2324,10 +2346,10 @@ function ElderProfile({ onChangeLanguage }) {
             fontWeight: 400,
           }}
         >
-          {HERO_ELDER.name}
+          {user?.name ?? ''}
         </h1>
         <div style={{ fontSize: 14, color: "var(--text-2)" }}>
-          {HERO_ELDER.area}
+          {/* area comes from the full user profile — TODO: add to UserProfile type */}
         </div>
         <div style={{ marginTop: 12 }}>
           <Badge tone="success">

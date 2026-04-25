@@ -7,13 +7,19 @@ All API contracts are already typed in `src/services/api/` — no guesswork need
 
 ## Current state
 
-The app runs as a React prototype from `src/prototype/`. All API calls are
-**mocked locally** — the real service functions in `src/services/api/` are
-written and typed, but the prototype screens still call inline mock functions.
+The app runs as a React prototype from `src/prototype/`. All screens are **fully
+wired to the `api` object** in `src/services/api/api.ts` — no inline mock
+functions remain in any screen file.
 
-**Plugging in the backend = two steps per screen:**
-1. Replace the mock inline call with the real import from `src/services/api/`.
-2. Remove the mock delay / hardcoded return value.
+**Plugging in the backend = one env var flip:**
+
+```env
+VITE_USE_MOCK_API=false
+VITE_API_BASE_URL=https://api.gingergig.my
+```
+
+`api.ts` picks mock or real implementations at build time based on
+`VITE_USE_MOCK_API`. Every screen already calls `api.*` — nothing else changes.
 
 The HTTP client, auth header injection, timeout, and error handling are
 already implemented in `src/services/api/http.ts`.
@@ -22,20 +28,22 @@ already implemented in `src/services/api/http.ts`.
 
 ## Environment setup
 
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Set backend base URL:
+`.env` already exists with safe committed defaults. To connect the real backend,
+create `.env.local` (never committed) and set:
 
 ```env
-VITE_API_BASE_URL=https://your-backend.example.com
+VITE_USE_MOCK_API=false
+VITE_API_BASE_URL=https://api.gingergig.my
 ```
 
-All API calls prefix `VITE_API_BASE_URL` automatically. Default is
-`http://localhost:8000` for local development.
+For local development against a running FastAPI server:
+
+```env
+VITE_USE_MOCK_API=false
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+All API calls prefix `VITE_API_BASE_URL` automatically via `src/services/api/http.ts`.
 
 ---
 
@@ -446,17 +454,21 @@ Response: `204 No Content`
 
 ---
 
-## Type gaps to fix before going live
+## Type gaps — what the backend must return
 
-These are fields shown in the prototype UI that are **not yet in the TypeScript
-types** in `src/services/api/types.ts`. Add them before removing the mock data.
+The UI uses richer types than the base contract types. The backend endpoints
+must return these extended shapes (already defined in `src/services/api/types.ts`):
 
-| Type | Missing fields |
-|---|---|
-| `Listing` | `category`, `priceUnit`, `priceMax`, `rating`, `reviewCount`, `halal`, `titleMs/En/Zh/Ta`, `days: string[]`, `menu: { name, price }[]`, `matchScore`, `matchReason`, `distance` |
-| `Booking` | `requestorName`, `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription` |
-| `UserProfile` | `kycStatus`, `avatarUrl`, `area`, `age`, `phone` |
-| `CompanionAlert` | `title` (currently missing from prototype — use for push notification heading) |
+| Endpoint | Type returned | Notes |
+|---|---|---|
+| `GET /requestor/listings/search` | `Provider[]` | includes `rating`, `distance`, `halal`, `matchScore`, `matchReason`, `menu[]`, `days[]` |
+| `GET /requestor/providers/:id` | `Provider` | full detail card — added in this sprint |
+| `GET /elders/:id/listings` | `ElderListing[]` | includes `category`, `priceUnit`, `rating`, `bookings`, `isActive` |
+| `GET /elders/:id/bookings` | `BookingItem[]` | includes `requestorInitials`, `portrait`, `qty`, `item`, `date`, `price` |
+| `GET /elders/:id/earnings/summary` | `ElderEarningsData` | includes `weeklyBar: number[]` (8 weeks) in addition to totals |
+| `GET /companions/elders/:id/dashboard` | `CompanionDashboardData` | includes `elderName`, `elderStatus`, `lastActiveText`, `timeline[]` |
+| `GET /companions/elders/:id/alerts` | `CompanionAlertItem[]` | `type: "success"\|"info"\|"warning"\|"care"`, single `text` field (localised by backend) |
+| `GET /auth/me` | `UserProfile` | add `kycStatus`, `avatarUrl`, `area`, `age`, `phone` when available |
 
 ---
 

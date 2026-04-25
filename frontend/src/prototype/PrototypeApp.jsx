@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { makeT } from './i18n';
 import { GingerLogo, Icon, LANG_CTX, T_CTX, LanguagePicker, SiteFooter } from './components';
+import { api, setDemoMode } from '../services/api';
+
+function computeInitials(name) {
+  return name.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
 import { ElderDashboard, ElderEarnings, ElderLanguage, ElderListings, ElderProfile, ElderVoice } from './elder-screens';
 import { ProviderDetail, RequestorHome, RequestorProfile, RequestorSearch } from './requestor-screens';
 import { CompanionAlerts, CompanionDashboard, CompanionProfile } from './companion-screens';
@@ -69,30 +74,37 @@ function RequestorBookings() {
   );
 }
 
-// ─── Mock demo accounts ────────────────────────────────────────────────────
+// ─── Demo account quick-login cards ───────────────────────────────────────
+// Clicking a card bypasses api.auth.login entirely (see tryLogin below) and
+// activates "demo mode" — every api.* call is forced to mock for the rest
+// of the session, regardless of VITE_USE_MOCK_API. This lets us demo the
+// product without a running backend.
 const DEMO_ACCOUNTS = [
   {
+    userId: 'user-siti',
     email: 'siti@gingergig.my',
     password: 'demo',
-    persona: 'elder',
     name: 'Makcik Siti',
     initials: 'SH',
+    persona: 'elder',
     subtitle: 'Elder · Home cook in Kepong',
   },
   {
+    userId: 'user-amir',
     email: 'amir@gingergig.my',
     password: 'demo',
-    persona: 'requestor',
     name: 'Amir Razak',
     initials: 'AR',
+    persona: 'requestor',
     subtitle: 'Requestor · Damansara Utama',
   },
   {
+    userId: 'user-faiz',
     email: 'faiz@gingergig.my',
     password: 'demo',
-    persona: 'companion',
     name: 'Faiz Hassan',
     initials: 'FH',
+    persona: 'companion',
     subtitle: 'Family · Watching over Makcik Siti',
   },
 ];
@@ -110,21 +122,45 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  const doLogin = async (credentials) => {
+    setLoading(true);
+    setError('');
+    try {
+      const session = await api.auth.login(credentials);
+      const profile = await api.auth.getMe();
+      onLogin({
+        userId: session.userId,
+        persona: profile.role,
+        name: profile.name,
+        initials: computeInitials(profile.name),
+        lang,
+      });
+    } catch {
+      setError(t('loginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Demo accounts skip the network entirely. We flip the runtime mock switch
+  // and hand-craft the user state so the rest of the app behaves as if we
+  // had successfully called api.auth.login + api.auth.getMe.
   const tryLogin = (acc) => {
-    onLogin({ ...acc, lang });
+    setDemoMode(true);
+    onLogin({
+      userId: acc.userId,
+      persona: acc.persona,
+      name: acc.name,
+      initials: acc.initials,
+      lang,
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const acc = DEMO_ACCOUNTS.find(
-      (a) => a.email === email.trim().toLowerCase() && a.password === password,
-    );
-    if (acc) {
-      tryLogin(acc);
-    } else {
-              setError(t('loginError'));
-    }
+    doLogin({ email: email.trim().toLowerCase(), password });
   };
 
   return (
@@ -303,24 +339,26 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
 
             <button
               type="submit"
+              disabled={loading}
               style={{
                 height: 52,
                 borderRadius: 14,
                 border: 0,
-                background: 'var(--primary)',
+                background: loading ? 'var(--border)' : 'var(--primary)',
                 color: '#fff',
                 fontFamily: 'var(--font-body)',
                 fontSize: 16,
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: 4,
                 transition: 'opacity 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
               }}
-              onMouseDown={(e) => (e.currentTarget.style.opacity = '0.88')}
-              onMouseUp={(e) => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              {t('signIn')}
+              {loading ? <><div className="spin-tiny" /> Signing in…</> : t('signIn')}
             </button>
           </form>
 
@@ -464,6 +502,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const signOut = () => {
+    setDemoMode(false);
     setUser(null);
     setShowLanding(false);
     setTab({ elder: 'dashboard', elderBuyer: 'home', requestor: 'home', companion: 'dashboard', companionBuyer: 'home' });
@@ -566,12 +605,12 @@ function App() {
     activeTab = tab.elder;
     onTabChange = setElderTab;
     if (tab.elder === 'dashboard')
-      body = <ElderDashboard onAddListing={() => setElderTab('listings')} />;
+      body = <ElderDashboard user={user} onAddListing={() => setElderTab('listings')} />;
     else if (tab.elder === 'listings')
-      body = <ElderListings onAddListing={() => setElderTab('voice')} />;
+      body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
       body = <ElderVoice onConfirm={() => setElderTab('listings')} />;
-    else if (tab.elder === 'earnings') body = <ElderEarnings />;
+    else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (
         <ElderLanguage
@@ -580,7 +619,7 @@ function App() {
           onContinue={() => setElderTab('profile')}
         />
       );
-    else body = <ElderProfile onChangeLanguage={() => setElderTab('language')} />;
+    else body = <ElderProfile user={user} onChangeLanguage={() => setElderTab('language')} />;
   } else if (persona === 'requestor') {
     tabs = REQUESTOR_TABS;
     activeTab = tab.requestor === 'providerDetail' ? 'home' : tab.requestor;
@@ -595,9 +634,12 @@ function App() {
     tabs = COMPANION_TABS;
     activeTab = tab.companion;
     onTabChange = setCompTab;
-    if (tab.companion === 'alerts') body = <CompanionAlerts />;
+    // elderId is the elder this companion watches over — resolved from the companion's profile
+    // For demo: Faiz (companion) is always linked to Makcik Siti (user-siti)
+    const companionElderId = 'user-siti';
+    if (tab.companion === 'alerts') body = <CompanionAlerts elderId={companionElderId} />;
     else if (tab.companion === 'profile') body = <CompanionProfile />;
-    else body = <CompanionDashboard />;
+    else body = <CompanionDashboard elderId={companionElderId} />;
   }
 
   // Map 'voice' and 'language' sub-screens back to their parent nav tab so the

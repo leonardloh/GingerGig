@@ -2,7 +2,7 @@
 export * from "./types";
 
 // Central api object — use this for all API calls
-export { api } from "./api";
+export { api, setDemoMode } from "./api";
 
 // Low-level HTTP client — only needed if you're writing a new endpoint module
 export { apiRequest, setApiAccessToken } from "./http";

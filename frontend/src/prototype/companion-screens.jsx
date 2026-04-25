@@ -1,11 +1,20 @@
-import { COMPANION_ALERTS, ELDER_BOOKINGS, HERO_ELDER, TIMELINE } from './mock-data';
-import { Avatar, Card, EarningsHeroCard, Icon, useLang, useT } from './components';
 // companion-screens.jsx — Family Companion Dashboard
 import { useEffect, useState } from 'react';
+import { Avatar, Card, EarningsHeroCard, Icon, useLang, useT } from './components';
+import { api } from '../services/api';
 
-function CompanionDashboard() {
+function CompanionDashboard({ elderId }) {
   const t = useT();
   const lang = useLang();
+  const [dashboard, setDashboard] = useState(null);
+  const [elderBookings, setElderBookings] = useState([]);
+
+  useEffect(() => {
+    if (elderId) {
+      api.companion.getCompanionDashboard(elderId).then(setDashboard).catch(() => {});
+      api.elder.getElderBookings(elderId).then(setElderBookings).catch(() => {});
+    }
+  }, [elderId]);
 
   const alertStyles = {
     success: {
@@ -39,8 +48,8 @@ function CompanionDashboard() {
         }}
       >
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={null}
+          initials={dashboard?.elderName?.split(' ').map((w) => w[0]).join('').slice(0, 2) ?? '?'}
           size={64}
           tone="warm"
           border
@@ -67,10 +76,10 @@ function CompanionDashboard() {
               fontWeight: 400,
             }}
           >
-            {HERO_ELDER.name}
+            {dashboard?.elderName ?? ''}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>
-            {HERO_ELDER.area}
+            {dashboard?.elderStatus ?? ''}
           </div>
         </div>
         <button
@@ -90,9 +99,9 @@ function CompanionDashboard() {
       {/* Earnings: full-width on mobile, 2/3 on desktop */}
       <div className="wide-grid" style={{ padding: "24px 16px 0" }}>
         <EarningsHeroCard
-          monthlyAmount={680}
-          deltaLabel={`+RM 180 ${t("moreThanLast")}`}
-          lifetimeAmount={4820}
+          monthlyAmount={dashboard?.weeklyEarnings ?? 0}
+          deltaLabel={t("moreThanLast")}
+          lifetimeAmount={dashboard?.weeklyEarnings ?? 0}
           lifetimeSince="since Aug 2025"
         />
 
@@ -101,7 +110,7 @@ function CompanionDashboard() {
           <h2 className="section-h" style={{ marginBottom: 12 }}>
             {t("upcomingBookings")}
           </h2>
-          {ELDER_BOOKINGS.slice(0, 2).map((b) => (
+          {elderBookings.slice(0, 2).map((b) => (
             <Card key={b.id} style={{ padding: 14, marginBottom: 10 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <Avatar
@@ -158,9 +167,9 @@ function CompanionDashboard() {
       <div style={{ padding: "32px 16px 0" }}>
         <h2 className="section-h">{t("alerts")}</h2>
         <div className="three-col">
-          {COMPANION_ALERTS.map((a) => {
-            const s = alertStyles[a.type];
-            const text = a[`text_${lang}`] || a.text_en;
+          {(dashboard?.timeline?.slice(0, 3) ?? []).map((a) => {
+            const s = alertStyles['info'];
+            const text = a.text;
             return (
               <Card
                 key={a.id}
@@ -227,12 +236,12 @@ function CompanionDashboard() {
                 background: "var(--border)",
               }}
             />
-            {TIMELINE.map((e, i) => (
+            {(dashboard?.timeline ?? []).map((e, i) => (
               <div
                 key={e.id}
                 style={{
                   position: "relative",
-                  paddingBottom: i < TIMELINE.length - 1 ? 18 : 0,
+                  paddingBottom: i < (dashboard?.timeline?.length ?? 0) - 1 ? 18 : 0,
                 }}
               >
                 <div
@@ -280,8 +289,15 @@ function CompanionDashboard() {
 // Designed as a live activity feed, NOT a dashboard. The feeling
 // should be: glancing in on her day from across the country.
 // ---------------------------------------------------------------
-function CompanionAlerts() {
+function CompanionAlerts({ elderId }) {
   const lang = useLang();
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    if (elderId) {
+      api.companion.getCompanionAlerts(elderId).then(setAlerts).catch(() => {});
+    }
+  }, [elderId]);
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
@@ -378,8 +394,8 @@ function CompanionAlerts() {
         }}
       >
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={null}
+          initials="MS"
           size={56}
           tone="warm"
           border
@@ -406,7 +422,7 @@ function CompanionAlerts() {
               fontWeight: 400,
             }}
           >
-            {HERO_ELDER.name}
+            Makcik Siti
           </div>
         </div>
         <div
@@ -919,8 +935,8 @@ function CompanionProfile() {
             }}
           >
             <Avatar
-              src={HERO_ELDER.portrait}
-              initials={HERO_ELDER.initials}
+              src={null}
+              initials="MS"
               size={64}
               tone="warm"
             />
@@ -934,12 +950,12 @@ function CompanionProfile() {
                   lineHeight: 1.1,
                 }}
               >
-                {HERO_ELDER.name}
+                Makcik Siti
               </div>
               <div
                 style={{ fontSize: 14, color: "var(--text-2)", marginTop: 4 }}
               >
-                Mum · age {HERO_ELDER.age} · {HERO_ELDER.area}
+                Mum · Kepong
               </div>
               <div
                 style={{

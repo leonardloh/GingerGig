@@ -23,50 +23,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GingerLogo, Icon, LanguagePicker } from './components';
 
-// ─── API shim (replace with real imports when backend is ready) ─────────────
-// import { register }         from '../services/api/endpoints/auth';
-// import { initiateSession, uploadDocument, startVerification, waitForVerification } from '../services/api/endpoints/kyc';
-
-const MOCK_DELAY = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function apiRegister(payload) {
-  await MOCK_DELAY(1200);
-  return {
-    userId: 'mock-user-' + Date.now(),
-    accessToken: 'mock-token',
-    kycRequired: true,       // eKYC required for all roles
-    kycStatus: 'not_started',
-  };
-}
-
-async function apiInitiateKycSession() {
-  await MOCK_DELAY(600);
-  return { sessionId: 'kyc-session-' + Date.now(), frontUrl: '', backUrl: '', selfieUrl: '' };
-}
-
-async function apiStartVerification(_sessionId) {
-  await MOCK_DELAY(400);
-  return { jobId: 'job-' + Date.now(), estimatedSeconds: 8 };
-}
-
-async function apiWaitForResult(_jobId, onProgress) {
-  const steps = ['pending', 'pending', 'pending'];
-  for (const s of steps) { onProgress(s); await MOCK_DELAY(1800); }
-  return {
-    status: 'approved',
-    extractedData: {
-      fullName: 'SITI BINTI HASSAN',
-      icNumber: '620415-14-5678',
-      dateOfBirth: '1962-04-15',
-      address: 'NO 12 JALAN KEPONG 5, KEPONG, 52100 KUALA LUMPUR',
-      nationality: 'WARGANEGARA',
-      gender: 'F',
-      confidence: 97.4,
-    },
-    faceMatch: { matched: true, similarity: 94.1 },
-  };
-}
-// ─────────────────────────────────────────────────────────────────────────────
+import { api } from '../services/api';
 
 const ROLE_OPTIONS = [
   {
@@ -495,7 +452,7 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
     setError('');
     setLoading(true);
     try {
-      const res = await apiRegister({ ...form, role, locale: lang });
+      const res = await api.auth.register({ ...form, role, locale: lang });
       setUserId(res.userId);
       if (res.kycRequired) {
         setStep(3); // KYC intro
@@ -522,19 +479,23 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
     setKycProcessingStep(0);
 
     try {
-      // Step 0: initiate session & upload
-      const session = await apiInitiateKycSession();
+      // Step 0: get presigned S3 URLs & upload all three files directly to S3
+      const session = await api.kyc.initiateSession();
+      await Promise.all([
+        api.kyc.uploadDocument(session.frontUrl, icFront),
+        api.kyc.uploadDocument(session.backUrl, icBack),
+        api.kyc.uploadDocument(session.selfieUrl, selfie),
+      ]);
       setKycProcessingStep(1);
 
-      // Step 1: Textract (simulated via startVerification)
-      const { jobId } = await apiStartVerification(session.sessionId);
+      // Step 1: trigger Lambda (Textract → Rekognition)
+      const { jobId } = await api.kyc.startVerification({ sessionId: session.sessionId });
       setKycProcessingStep(2);
 
-      // Step 2: Rekognition — poll result
-      const result = await apiWaitForResult(jobId, () => {});
+      // Step 2: poll until terminal status
+      const result = await api.kyc.waitForVerification(jobId, () => {});
       setKycProcessingStep(3);
 
-      await MOCK_DELAY(600);
       setKycResult(result);
       setStep(7); // show result
     } catch {
@@ -543,10 +504,14 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
     }
   };
 
-  const handleKycRetry = () => {
+  const handleKycRetry = async () => {
     setIcFront(null); setIcBack(null); setSelfie(null);
     setKycResult(null); setKycProcessingStep(0);
-    setStep(4); // back to IC upload
+    // Invalidate the previous KYC session on the backend when status was "failed"
+    if (kycResult?.status === 'failed') {
+      try { await api.kyc.retryKyc(); } catch { /* ignore — new session will be created on next attempt */ }
+    }
+    setStep(4);
   };
 
   // ── Render ──
