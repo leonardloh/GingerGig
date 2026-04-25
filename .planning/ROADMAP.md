@@ -28,7 +28,14 @@
   3. `python scripts/seed.py` is idempotent: running it twice in a row leaves the same DB state with no unique-constraint errors and the 3 `DEMO_ACCOUNTS` (siti/amir/faiz) plus the 6 `PROVIDERS` + `HERO_ELDER` + listings/bookings/reviews/alerts/timeline are all present.
   4. A deliberately-thrown error from any route returns the frontend's `ApiError` envelope (`{status, message, detail?}`) — `debug=False`, no Python traceback in the response body.
   5. `pyproject.toml` pins all the non-obvious deps (`amazon-transcribe>=0.6.4`, `bcrypt>=4.2.0,<5.0.0`, `pyjwt[crypto]`, `alibabacloud-oss-v2`) so downstream phases have a locked `uv.lock` to build on.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 01-01-PLAN.md — Project skeleton: pyproject.toml + app.core (config/enums/ids/errors/security) + app.db.session + app.deps.db + Makefile + Dockerfile + .env.example (Wave 1)
+- [ ] 01-02-PLAN.md — FastAPI main.py with lifespan, CORS allowlist, exception handlers, /health, six router stubs under /api/v1 (Wave 2)
+- [ ] 01-03-PLAN.md — SQLAlchemy 2 models for all 11 tables with CHECK constraints, FKs, indexes, TimestampMixin, denormalisation, 4-locale columns (Wave 2)
+- [ ] 01-04-PLAN.md — Alembic init + 0001_initial_schema.py + [BLOCKING] migration apply against gingergig_test (Wave 3)
+- [ ] 01-05-PLAN.md — scripts/seed_data.py (hand-ported mocks) + scripts/seed.py (idempotent + SeedRefusedError + bcrypt rounds=12) + [BLOCKING] two-run idempotency test (Wave 3)
+- [ ] 01-06-PLAN.md — Wave 0 conftest + 4 pinned tests (D-17) + 5 recommended tests (dep_pins, no_forbidden_imports, cors_no_wildcard, no_create_all, seed_refused_without_env) (Wave 4)
+- [ ] 01-07-PLAN.md — ApsaraDB Postgres provisioning runbook + smoke test (autonomous: false, gates Wave 3) (Wave 4)
 
 ### Phase 2: Auth + Bearer Middleware
 **Goal**: Real authentication wired end-to-end so the prototype's 3 quick-login chips authenticate against the deployed backend and return a JWT that the frontend's existing `Authorization: Bearer` injection accepts on every protected call.
