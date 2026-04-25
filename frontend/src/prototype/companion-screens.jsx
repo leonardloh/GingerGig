@@ -1,13 +1,100 @@
-import { COMPANION_ALERTS, ELDER_BOOKINGS, HERO_ELDER, TIMELINE } from './mock-data';
 import { Avatar, Card, Icon, useLang, useT } from './components';
 // companion-screens.jsx — Family Companion Dashboard
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getCompanionAlerts,
+  getCompanionDashboard,
+  getCompanionTimeline,
+  updateCompanionAlertPreferences,
+} from '../services/api/endpoints/companion';
+
+const COMPANION_ELDER_FALLBACK = {
+  name: "Makcik Siti",
+  initials: "SH",
+  area: "Kepong, Kuala Lumpur",
+  portraitUrl: "https://randomuser.me/api/portraits/women/79.jpg",
+  age: 64,
+};
+
+// Demo-only until companion upcoming bookings endpoint exists.
+const COMPANION_DEMO_UPCOMING_BOOKINGS = [
+  {
+    id: "siti-b1",
+    requestor: "Amir",
+    requestorInitials: "AR",
+    portrait: "https://randomuser.me/api/portraits/men/32.jpg",
+    item: "Rendang + Nasi Lemak",
+    date: "Tomorrow, 6:30 PM",
+    price: "RM 36",
+  },
+  {
+    id: "siti-b2",
+    requestor: "Nadia",
+    requestorInitials: "NA",
+    portrait: "https://randomuser.me/api/portraits/women/44.jpg",
+    item: "Ayam Masak Merah",
+    date: "Sat, 12:00 PM",
+    price: "RM 75",
+  },
+];
+
+const companionAlertFallbacks = [
+  {
+    id: "alert-1",
+    type: "celebration",
+    message: "Mum earned her first RM100 this month - RM680 total!",
+  },
+  {
+    id: "alert-2",
+    type: "care",
+    message: "Mum may be eligible for i-Saraan retirement matching. Tap to learn more.",
+  },
+  {
+    id: "alert-3",
+    type: "care",
+    title: "Rest day suggestion",
+    message: "Mum has been active 6 days this week. She might need a rest day.",
+  },
+];
+
+const companionTimelineFallbacks = [
+  { id: "tl-1", time: "Today, 4:20 PM", text: "Confirmed booking with Amir for tomorrow" },
+  { id: "tl-2", time: "Today, 9:15 AM", text: "Posted new listing: Kuih Lapis" },
+  { id: "tl-3", time: "Yesterday, 7:00 PM", text: "Completed delivery to Nadia (5 portions)" },
+  { id: "tl-4", time: "Yesterday, 11:30 AM", text: "Earned RM75 from Sat booking" },
+  { id: "tl-5", time: "Mon, 22 Apr", text: "Received 5-star review from Lim family" },
+];
+
+function alertVisualTone(alert) {
+  if (alert.type === "celebration") return "success";
+  const warningText = `${alert.title || ""} ${alert.message || ""}`.toLowerCase();
+  if (warningText.includes("rest") || warningText.includes("active 6 days")) return "warning";
+  return "info";
+}
+
+function elderSnapshotFallback(user) {
+  return {
+    ...COMPANION_ELDER_FALLBACK,
+    name: user?.watchedElderName || COMPANION_ELDER_FALLBACK.name,
+  };
+}
+
+function mapAlertPrefsToApi(alertPrefs) {
+  return {
+    inactivity24h: alertPrefs.inactivity,
+    overworkSignals: alertPrefs.overwork,
+    earningsMilestones: alertPrefs.earnings,
+    newBookings: alertPrefs.newBookings,
+    reviews: alertPrefs.reviews,
+  };
+}
 
 function CompanionDashboard() {
   const t = useT();
   const lang = useLang();
   const [count, setCount] = useState(0);
   const target = 680;
+  const elder = elderSnapshotFallback();
   useEffect(() => {
     let r = 0;
     const id = setInterval(() => {
@@ -52,8 +139,8 @@ function CompanionDashboard() {
         }}
       >
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={elder.portraitUrl}
+          initials={elder.initials}
           size={64}
           tone="warm"
           border
@@ -80,10 +167,10 @@ function CompanionDashboard() {
               fontWeight: 400,
             }}
           >
-            {HERO_ELDER.name}
+            {elder.name}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>
-            {HERO_ELDER.area}
+            {elder.area}
           </div>
         </div>
         <button
@@ -197,7 +284,7 @@ function CompanionDashboard() {
           <h2 className="section-h" style={{ marginBottom: 12 }}>
             {t("upcomingBookings")}
           </h2>
-          {ELDER_BOOKINGS.slice(0, 2).map((b) => (
+          {COMPANION_DEMO_UPCOMING_BOOKINGS.map((b) => (
             <Card key={b.id} style={{ padding: 14, marginBottom: 10 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <Avatar
@@ -254,9 +341,8 @@ function CompanionDashboard() {
       <div style={{ padding: "32px 16px 0" }}>
         <h2 className="section-h">{t("alerts")}</h2>
         <div className="three-col">
-          {COMPANION_ALERTS.map((a) => {
-            const s = alertStyles[a.type];
-            const text = a[`text_${lang}`] || a.text_en;
+          {companionAlertFallbacks.map((a) => {
+            const s = alertStyles[alertVisualTone(a)];
             return (
               <Card
                 key={a.id}
@@ -299,7 +385,7 @@ function CompanionDashboard() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {text}
+                    {a.message}
                   </div>
                 </div>
               </Card>
@@ -323,12 +409,12 @@ function CompanionDashboard() {
                 background: "var(--border)",
               }}
             />
-            {TIMELINE.map((e, i) => (
+            {companionTimelineFallbacks.map((e, i) => (
               <div
                 key={e.id}
                 style={{
                   position: "relative",
-                  paddingBottom: i < TIMELINE.length - 1 ? 18 : 0,
+                  paddingBottom: i < companionTimelineFallbacks.length - 1 ? 18 : 0,
                 }}
               >
                 <div
@@ -360,7 +446,7 @@ function CompanionDashboard() {
                     lineHeight: 1.4,
                   }}
                 >
-                  {e.text_en}
+                  {e.text}
                 </div>
               </div>
             ))}
@@ -380,6 +466,7 @@ function CompanionAlerts() {
   const t = useT();
   const lang = useLang();
   const [now, setNow] = useState(new Date());
+  const elder = elderSnapshotFallback();
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
@@ -475,8 +562,8 @@ function CompanionAlerts() {
         }}
       >
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={elder.portraitUrl}
+          initials={elder.initials}
           size={56}
           tone="warm"
           border
@@ -503,7 +590,7 @@ function CompanionAlerts() {
               fontWeight: 400,
             }}
           >
-            {HERO_ELDER.name}
+            {elder.name}
           </div>
         </div>
         <div
@@ -916,6 +1003,7 @@ function CompanionAlerts() {
 // Care circle, alert preferences, emergency contacts, permissions.
 // ───────────────────────────────────────────────────────────────
 function CompanionProfile() {
+  const elder = elderSnapshotFallback();
   const [alertPrefs, setAlertPrefs] = useState({
     inactivity: true,
     overwork: true,
@@ -1016,8 +1104,8 @@ function CompanionProfile() {
             }}
           >
             <Avatar
-              src={HERO_ELDER.portrait}
-              initials={HERO_ELDER.initials}
+              src={elder.portraitUrl}
+              initials={elder.initials}
               size={64}
               tone="warm"
             />
@@ -1031,12 +1119,12 @@ function CompanionProfile() {
                   lineHeight: 1.1,
                 }}
               >
-                {HERO_ELDER.name}
+                {elder.name}
               </div>
               <div
                 style={{ fontSize: 14, color: "var(--text-2)", marginTop: 4 }}
               >
-                Mum · age {HERO_ELDER.age} · {HERO_ELDER.area}
+                Mum · age {elder.age} · {elder.area}
               </div>
               <div
                 style={{
