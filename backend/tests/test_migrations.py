@@ -29,6 +29,11 @@ EXPECTED_LISTING_MATCH_COLUMNS = {
     "match_reason_ta",
 }
 
+EXPECTED_VOICE_BATCH_COLUMNS = {
+    "audio_s3_key",
+    "transcribe_job_name",
+}
+
 
 async def test_alembic_upgrade_creates_all_tables(engine: AsyncEngine) -> None:
     """Plan 04 applied the migration; verify the current schema state."""
@@ -43,8 +48,8 @@ async def test_alembic_upgrade_creates_all_tables(engine: AsyncEngine) -> None:
 
     missing = EXPECTED_TABLES - tables
     assert not missing, f"missing tables: {missing}; got: {tables}"
-    assert revision == "0002_listing_demo_match_fields", (
-        f"expected revision 0002_listing_demo_match_fields, got {revision}"
+    assert revision == "0003_voice_batch_correlation", (
+        f"expected revision 0003_voice_batch_correlation, got {revision}"
     )
 
 
@@ -105,3 +110,24 @@ async def test_listing_demo_match_columns_exist(engine: AsyncEngine) -> None:
     missing = EXPECTED_LISTING_MATCH_COLUMNS - columns
     assert not missing, f"missing listing match columns: {missing}; got: {columns}"
     assert constraint == "ck_listings_match_score_range"
+
+
+async def test_voice_batch_correlation_columns_exist(engine: AsyncEngine) -> None:
+    """Phase 4 batch jobs persist uploaded object and Transcribe job correlation."""
+    async with engine.connect() as conn:
+        rows = await conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'voice_sessions'
+                  AND column_name = ANY(:columns)
+                """
+            ),
+            {"columns": sorted(EXPECTED_VOICE_BATCH_COLUMNS)},
+        )
+
+    columns = {row[0] for row in rows.fetchall()}
+    missing = EXPECTED_VOICE_BATCH_COLUMNS - columns
+    assert not missing, f"missing voice batch columns: {missing}; got: {columns}"
