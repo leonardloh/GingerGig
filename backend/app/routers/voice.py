@@ -6,6 +6,7 @@ pinned to `ap-southeast-1`.
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from collections.abc import Coroutine
 from typing import Annotated
@@ -47,6 +48,7 @@ from app.services.qwen_service import (
 from app.services.voice_service import STREAMING_CLOSE_AUTH, run_streaming_session
 
 router = APIRouter(prefix="/voice-to-profile", tags=["voice"])
+logger = logging.getLogger(__name__)
 
 DbDep = Annotated[AsyncSession, Depends(get_db)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
@@ -58,6 +60,8 @@ SUPPORTED_BATCH_CONTENT_TYPES = {
     "audio/mp3": "mp3",
     "audio/flac": "flac",
 }
+SUPPORTED_BATCH_MEDIA_FORMATS = frozenset(SUPPORTED_BATCH_CONTENT_TYPES.values())
+VOICE_BATCH_PROCESSING_FAILED_MSG = "Voice batch processing failed"
 
 
 @router.post(
@@ -201,6 +205,14 @@ async def run_batch_voice_job(
             voice_session.error = LISTING_EXTRACTION_FAILED_MSG
             await session.commit()
         except Exception as exc:
+            logger.exception(
+                "voice_batch_processing_failed",
+                extra={
+                    "voice_session_id": str(voice_session_id),
+                    "transcribe_job_name": job_name,
+                    "s3_key": s3_key,
+                },
+            )
             voice_session.status = "failed"
             voice_session.error = _safe_batch_error(exc)
             await session.commit()
@@ -210,20 +222,26 @@ def _require_elder_audio_key(*, elder_id: uuid.UUID, key: str) -> None:
     expected_prefix = f"elders/{elder_id}/voice/"
     if not key.startswith(expected_prefix):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    try:
+        _media_format_from_key(key)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported audio format",
+        ) from None
 
 
 def _media_format_from_key(key: str) -> str:
     media_format = key.rsplit(".", maxsplit=1)[-1].lower()
-    if media_format not in {"wav", "mp3", "flac", "mp4", "ogg", "amr"}:
-        raise RuntimeError("Unsupported audio format")
+    if media_format not in SUPPORTED_BATCH_MEDIA_FORMATS:
+        raise ValueError("Unsupported audio format")
     return media_format
 
 
 def _safe_batch_error(exc: Exception) -> str:
     if isinstance(exc, TimeoutError):
         return "Voice batch timed out"
-    message = str(exc).strip()
-    return message if message else "Voice batch processing failed"
+    return VOICE_BATCH_PROCESSING_FAILED_MSG
 
 
 def _schedule_batch_job(coro: Coroutine[object, object, None]) -> None:

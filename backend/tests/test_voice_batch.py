@@ -206,6 +206,59 @@ async def test_batch_rejects_cross_elder_s3_key(
     assert response.status_code == 403
 
 
+async def test_batch_rejects_audio_key_extensions_not_allowed_by_upload_policy(
+    client,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mocks = _install_voice_mocks(monkeypatch, db_session)
+    token, elder_id = await _login(client, "siti@gingergig.my")
+
+    response = await client.post(
+        "/api/v1/voice-to-profile/batch",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"s3Key": f"elders/{elder_id}/voice/test.mp4", "language": "ms-MY"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"status": 400, "message": "Unsupported audio format"}
+    assert mocks.scheduled_jobs == []
+
+
+async def test_batch_status_sanitizes_raw_infrastructure_errors(
+    client,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mocks = _install_voice_mocks(monkeypatch, db_session)
+    sensitive_error = RuntimeError(
+        "AccessDenied for s3://secret-audio-bucket/elders/user/voice/test.wav"
+    )
+    mocks.poll_until_done.side_effect = sensitive_error
+    token, elder_id = await _login(client, "siti@gingergig.my")
+
+    submit = await client.post(
+        "/api/v1/voice-to-profile/batch",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"s3Key": f"elders/{elder_id}/voice/test.wav", "language": "ms-MY"},
+    )
+    assert submit.status_code == 201
+    assert len(mocks.scheduled_jobs) == 1
+    await mocks.scheduled_jobs[0]
+
+    response = await client.get(
+        f"/api/v1/voice-to-profile/batch/{submit.json()['jobId']}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "failed"
+    assert body["message"] == voice_router.VOICE_BATCH_PROCESSING_FAILED_MSG
+    assert "secret-audio-bucket" not in json.dumps(body)
+    assert "AccessDenied" not in json.dumps(body)
+
+
 async def test_batch_qwen_failure_maps_to_502(
     client,
     db_session,
