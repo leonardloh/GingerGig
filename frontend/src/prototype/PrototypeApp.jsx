@@ -517,6 +517,7 @@ function App() {
   };
 
   const signOut = () => {
+    logout();
     setUser(null);
     setTab({ elder: 'dashboard', requestor: 'home', companion: 'dashboard' });
     setProviderId(null);
