@@ -52,10 +52,37 @@ function adaptListingToProvider(listing) {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
 // ═══════════════════════════════════════════════════════════════
-function RequestorHome({ onSearch, onProvider }) {
+function RequestorHome({ onSearch, onProvider, user }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    setError(null);
+    searchListings({})
+      .then((listings) => {
+        if (!active) return;
+        setProviders(listings.map(adaptListingToProvider));
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const cats = [
     { key: "cat_cooking", icon: "chef", bg: "#FFF3EC", color: "#C2662D" },
@@ -78,7 +105,7 @@ function RequestorHome({ onSearch, onProvider }) {
             fontWeight: 400,
           }}
         >
-          Amir bin Razak
+          {user?.name || "Amir bin Razak"}
         </h1>
         <p style={{ color: "var(--text-2)", fontSize: 17, margin: "10px 0 0" }}>
           {t("needToday")}
@@ -248,7 +275,7 @@ function RequestorHome({ onSearch, onProvider }) {
             padding: "0 16px",
           }}
         >
-          {PROVIDERS.slice(0, 4).map((p) => (
+          {providers.slice(0, 4).map((p) => (
             <button
               key={p.id}
               onClick={() => onProvider && onProvider(p.id)}
@@ -268,15 +295,7 @@ function RequestorHome({ onSearch, onProvider }) {
                   src={p.portrait}
                   initials={p.initials}
                   size={54}
-                  tone={
-                    p.id === "chen"
-                      ? "teal"
-                      : p.id === "raju"
-                        ? "gold"
-                        : p.id === "hassan"
-                          ? "sand"
-                          : "warm"
-                  }
+                  tone={providerTone(p)}
                 />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
@@ -359,7 +378,7 @@ function RequestorHome({ onSearch, onProvider }) {
             gap: 12,
           }}
         >
-          {[PROVIDERS[0], PROVIDERS[4]].map((p) => (
+          {providers.filter(Boolean).slice(0, 2).map((p) => (
             <button
               key={p.id}
               onClick={() => onProvider && onProvider(p.id)}
@@ -382,7 +401,7 @@ function RequestorHome({ onSearch, onProvider }) {
                 src={p.portrait}
                 initials={p.initials}
                 size={44}
-                tone={p.id === "hassan" ? "sand" : "warm"}
+                tone={providerTone(p)}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
