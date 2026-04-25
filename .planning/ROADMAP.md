@@ -77,7 +77,7 @@
   5. Streaming uses `amazon-transcribe>=0.6.4` (not boto3); batch uses `boto3`; both pin `region="ap-southeast-1"` explicitly so no requests cross to `us-east-1`.
 **Plans**: 5 plans
 - [x] 04-01-PLAN.md — Voice batch DB migration, contract test harness, and guardrails (Wave 0)
-- [ ] 04-02-PLAN.md — Schemas, Qwen extract_listing, and unit tests (Wave 1)
+- [x] 04-02-PLAN.md — Schemas, Qwen extract_listing, and unit tests (Wave 1)
 - [ ] 04-03-PLAN.md — Transcribe streaming integration, WebSocket handler, voice service (Wave 2)
 - [ ] 04-04-PLAN.md — S3 presign, Transcribe batch, async job and status HTTP routes (Wave 2, after 04-03 because both edit `voice.py`)
 - [ ] 04-05-PLAN.md — 502 unification, contract completion, and full phase verification (Wave 3)
@@ -114,7 +114,7 @@
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
-| 4. Voice-to-Profile Pipeline | 1/5 | In Progress | - |
+| 4. Voice-to-Profile Pipeline | 2/5 | In Progress | - |
 | 5. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
 | 6. Multi-Cloud Live Deployment | 0/0 | Not started | - |
 

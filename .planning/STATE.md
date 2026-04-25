@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T17:16:42Z"
+last_updated: "2026-04-25T17:23:22Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 18
-  completed_plans: 14
-  percent: 78
+  completed_plans: 15
+  percent: 83
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 04 plan 01 complete)
+**Last updated:** 2026-04-25 (Phase 04 plan 02 complete)
 
 ## Project Reference
 
@@ -26,14 +26,14 @@ progress:
 ## Current Position
 
 Phase: 04 (voice-to-profile-pipeline) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 **Phase:** 04 of 6 (voice to profile pipeline)
-**Plan:** Ready for 04-02
+**Plan:** Ready for 04-03
 **Status:** Executing Phase 04
-**Progress:** [███████████░░░░░░░░░] 78%
+**Progress:** [█████████████████░░░] 83%
 
 ```
-[███████████████░░░░░] 78% (14 of 18 plans)
+[█████████████████░░░] 83% (15 of 18 plans)
 ```
 
 ## Phase Pipeline
@@ -49,11 +49,11 @@ Plan: 2 of 5
 
 ## Performance Metrics
 
-- **Plans complete:** 14
+- **Plans complete:** 15
 - **Verifications passed:** 2
 - **Phases shipped:** 2
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 04 plan 01 — voice batch correlation migration applied; 2 targeted tests passing, 2 planned skips
+- **Latest phase metric:** Phase 04 plan 02 — Qwen extraction schemas and service validated; 5 targeted tests passing, 2 planned skips
 
 ## Accumulated Context
 
@@ -84,6 +84,7 @@ Plan: 2 of 5
 | 01-06 test harness target | Yes | Test fixtures prefer `TEST_DATABASE_URL` but fall back to normalized `DATABASE_URL` per user approval; guardrail tests enforce forbidden deps/imports, no wildcard CORS, and no `Base.metadata.create_all` |
 | 02-01 demo auth policy | Yes | Phase 2 deliberately ships a demo-only auth shim: seeded demo emails get JWTs without runtime password verification; production bcrypt checks remain deferred |
 | 04-01 voice batch correlation | Yes | `voice_sessions` stores nullable `audio_s3_key` and `transcribe_job_name`; Alembic revision ids must stay ≤32 chars for the current version table |
+| 04-02 Qwen listing extraction | Yes | `ListingDraft` keeps canonical snake_case Qwen fields; `extract_listing` uses DashScope `json_object`, strips fences, Pydantic-validates, and retries exactly once on validation failure |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -103,8 +104,8 @@ Plan: 2 of 5
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `04-01-PLAN.md`
-**Next action:** Execute `04-02-PLAN.md` (schemas, Qwen extract_listing, and unit tests).
+**Last session ended:** 2026-04-25 — completed `04-02-PLAN.md`
+**Next action:** Execute `04-03-PLAN.md` (Transcribe streaming integration, WebSocket handler, voice service).
 
 **Resume context for next session:**
 
@@ -131,3 +132,5 @@ Plan: 2 of 5
 **Completed Plan:** 03-05 (Companion dashboard, alerts, timeline, and preferences router) — 2026-04-25T16:56:35Z
 
 **Completed Plan:** 04-01 (Voice batch DB migration, contract test harness, and guardrails) — 2026-04-25T17:16:42Z
+
+**Completed Plan:** 04-02 (Schemas, Qwen extract_listing, and unit tests) — 2026-04-25T17:23:22Z
