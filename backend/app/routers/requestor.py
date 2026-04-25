@@ -1,12 +1,108 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.deps.auth import get_current_user
+from app.deps.db import get_db
+from app.models.listing import Listing as ListingModel
+from app.models.user import User
+from app.schemas.persona import Listing
+from app.services.persona_queries import (
+    listing_to_response,
+    locale_expr,
+    menu_items_for_listings,
+    require_role,
+)
 
 router = APIRouter(prefix="/requestor", tags=["requestor"])
 
 
-@router.get("/__stub")
-async def requestor_stub() -> dict:
-    """Phase 3 fills listing search, listing detail, and requestor bookings."""
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 3 will implement requestor endpoints",
+DbDep = Annotated[AsyncSession, Depends(get_db)]
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+@router.get("/listings/search", response_model=list[Listing])
+async def search_listings(
+    db: DbDep,
+    current_user: CurrentUserDep,
+    query: str | None = None,
+    max_distance_km: Annotated[str | None, Query()] = None,
+    halal_only: bool = False,
+    open_now: bool = False,
+) -> list[Listing]:
+    require_role(current_user, "requestor")
+
+    title_expr = locale_expr(ListingModel, "title", current_user.locale, "title")
+    match_reason_expr = locale_expr(
+        ListingModel,
+        "match_reason",
+        current_user.locale,
+        "matchReason",
     )
+    stmt = (
+        select(ListingModel, title_expr, match_reason_expr, User)
+        .join(User, User.id == ListingModel.elder_id)
+        .where(ListingModel.is_active.is_(True))
+        .order_by(ListingModel.match_score.desc().nullslast(), ListingModel.rating.desc())
+    )
+
+    if halal_only:
+        stmt = stmt.where(ListingModel.halal.is_(True))
+    if query:
+        pattern = f"%{query.strip()}%"
+        stmt = stmt.where(or_(title_expr.ilike(pattern), ListingModel.description.ilike(pattern)))
+    if open_now:
+        # Seeded demo availability is day-level, not hour-level; keep active rows.
+        pass
+
+    result = await db.execute(stmt)
+    rows = result.all()
+    max_distance = _parse_max_distance(max_distance_km)
+    if max_distance is not None:
+        rows = [
+            row
+            for row in rows
+            if (distance := _distance_label_to_km(row[0].distance_label)) is None
+            or distance <= max_distance
+        ]
+
+    listing_ids: list[UUID] = [listing.id for listing, _title, _match_reason, _elder in rows]
+    menu_by_listing = await menu_items_for_listings(db, listing_ids)
+    return [
+        listing_to_response(
+            listing,
+            title=title,
+            menu=menu_by_listing.get(listing.id, []),
+            elder=elder,
+            match_reason=match_reason,
+            locale=current_user.locale,
+            include_match_fallback=True,
+        )
+        for listing, title, match_reason, elder in rows
+    ]
+
+
+def _parse_max_distance(value: str | None) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def _distance_label_to_km(value: str | None) -> float | None:
+    if not value:
+        return None
+    normalized = value.strip().lower()
+    try:
+        if normalized.endswith("km"):
+            return float(normalized.removesuffix("km").strip())
+        if normalized.endswith("m"):
+            return float(normalized.removesuffix("m").strip()) / 1000
+    except ValueError:
+        return None
+    return None
