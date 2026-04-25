@@ -74,7 +74,7 @@ class Booking(BaseModel):
     requestorInitials: str
     requestorAvatarUrl: str | None = None
     listingTitle: str
-    qty: int
+    qty: str
     itemDescription: str
     status: Literal["pending", "confirmed", "completed", "cancelled"]
     amount: Decimal | float
