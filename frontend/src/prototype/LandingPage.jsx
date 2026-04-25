@@ -609,16 +609,10 @@ export function LandingPage({ onEnter, lang: langProp, setLang: setLangProp }) {
           display: flex; align-items: center; justify-content: space-between; gap: 16px;
           background: linear-gradient(to bottom, rgba(10,5,1,0.85) 0%, transparent 100%);
         }
-        .lp-brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-        .lp-brand-mark {
-          width: 38px; height: 38px; border-radius: 11px;
-          background: linear-gradient(135deg,#fff5ea,#fbe4cc);
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 2px 14px rgba(194,102,45,0.4);
-        }
-        .lp-brand-name {
-          font-family: "DM Serif Display","Georgia",serif;
-          font-size: 21px; color: #fff; font-weight: 400;
+        .lp-brand { display: flex; align-items: center; flex-shrink: 0; }
+        .lp-brand-logo {
+          height: 36px; width: auto; display: block;
+          filter: brightness(0) invert(1);
         }
         .lp-lang-wrap { display: flex; align-items: center; gap: 3px; }
         .lp-lang-btn {
@@ -673,7 +667,7 @@ export function LandingPage({ onEnter, lang: langProp, setLang: setLangProp }) {
           .lp-illust { height: 220px; order: -1; }
           .lp-dots { right: 12px; }
           .lp-bar { padding: 14px 18px; }
-          .lp-brand-name { display: none; }
+          .lp-brand-logo { height: 30px; }
           .lp-lang-btn { padding: 5px 8px; font-size: 12px; }
         }
       `}</style>
@@ -681,10 +675,7 @@ export function LandingPage({ onEnter, lang: langProp, setLang: setLangProp }) {
       {/* Top bar */}
       <div className="lp-bar">
         <div className="lp-brand">
-          <div className="lp-brand-mark">
-            <img src={cdnUrl('/logo.png')} width={28} height={28} alt="Ginger Gig" style={{display:'block'}} />
-          </div>
-          <span className="lp-brand-name">Ginger Gig</span>
+          <img src={cdnUrl('/gingergig-wordmark.png')} alt="Ginger Gig" className="lp-brand-logo" />
         </div>
 
         <div className="lp-lang-wrap">

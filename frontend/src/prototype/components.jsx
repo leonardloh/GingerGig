@@ -595,13 +595,12 @@ const LANG_CTX = createContext("en");
 // Knobby blobby ginger root — bulbous form, with cream leaves sprouting
 // from the top and small dot accents floating around. Inspired by reference:
 // warm terracotta body, soft cream-tan leaves, white ring slices on body.
-const GingerLogo = ({ size = 28 }) => (
+const GingerLogo = ({ size = 32 }) => (
   <img
-    src={cdnUrl('/logo.png')}
-    width={size}
+    src={cdnUrl('/gingergig-wordmark.png')}
     height={size}
     alt="Ginger Gig"
-    style={{ display: 'block', objectFit: 'contain' }}
+    style={{ display: 'block', height: size, width: 'auto' }}
   />
 );
 
@@ -657,9 +656,16 @@ const LanguagePicker = ({ lang, setLang, variant = 'light' }) => {
 // ─── Site Footer ───────────────────────────────────────────────────────────
 const SiteFooter = ({ variant = 'light' }) => (
   <footer className={`site-footer${variant === 'dark' ? ' lp-footer' : ''}`}>
-    <span className="site-footer-copy">
-      © {new Date().getFullYear()} BLUE PATHERS · Financial Inclusion
-    </span>
+    <div className="site-footer-brand">
+      <img
+        src={cdnUrl('/gingergig-wordmark.png')}
+        alt="Ginger Gig"
+        className="site-footer-logo"
+      />
+      <span className="site-footer-copy">
+        © {new Date().getFullYear()} BLUE PATHERS · Financial Inclusion
+      </span>
+    </div>
     <div className="site-footer-links">
       <a href="#privacy-policy" className="site-footer-link" onClick={(e) => e.preventDefault()}>
         Privacy Policy

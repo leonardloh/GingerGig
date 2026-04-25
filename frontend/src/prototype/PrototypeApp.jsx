@@ -171,30 +171,7 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
               <Icon name="chevron-left" size={18} />
             </button>
           )}
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg,#fff5ea 0%,#fbe4cc 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(194,102,45,0.25), inset 0 0 0 1px rgba(194,102,45,0.18)',
-            }}
-          >
-            <GingerLogo size={28} />
-          </div>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 20,
-              color: 'var(--text-1)',
-              fontWeight: 400,
-            }}
-          >
-            Ginger Gig
-          </span>
+          <GingerLogo size={32} />
         </div>
 
         <LanguagePicker lang={lang} setLang={setLang} />
@@ -647,10 +624,7 @@ function App() {
           <header className="top-nav">
             <div className="top-nav-inner">
               <a className="brand">
-                <span className="brand-mark">
-                  <GingerLogo size={32} />
-                </span>
-                <span className="brand-text">Ginger Gig</span>
+                <GingerLogo size={36} />
               </a>
 
               {/* Mode toggle — shown for elder and companion personas */}

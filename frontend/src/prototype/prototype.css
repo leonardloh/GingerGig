@@ -87,34 +87,8 @@ textarea {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  color: var(--text-1);
-  font-weight: 400;
   text-decoration: none;
-  white-space: nowrap;
   flex-shrink: 0;
-}
-
-.brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #fff5ea 0%, #fbe4cc 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 2px 8px rgba(194, 102, 45, 0.25),
-    inset 0 0 0 1px rgba(194, 102, 45, 0.18);
-  flex-shrink: 0;
-}
-
-.brand-mark svg {
-  width: 26px;
-  height: 26px;
-  display: block;
 }
 
 .nav-tabs {
@@ -314,10 +288,6 @@ textarea {
 
 /* ── Tablet: 769px–1100px — icon-only top nav, no bottom bar ── */
 @media (max-width: 1100px) {
-  .brand-text {
-    display: none;
-  }
-
   /* Hide the text label inside each tab button, keep the icon */
   .nav-tab span {
     display: none;
@@ -331,6 +301,11 @@ textarea {
   /* Hide the user's full name, just show avatar circle */
   .user-name {
     display: none;
+  }
+
+  /* Wordmark gets slightly smaller so the busy nav has room */
+  .brand img {
+    height: 28px !important;
   }
 }
 
@@ -347,6 +322,11 @@ textarea {
   .top-nav-inner {
     padding: 10px 16px;
     gap: 8px;
+  }
+
+  /* Wordmark scales down further on mobile to leave room for lang + avatar */
+  .brand img {
+    height: 24px !important;
   }
 
   /* Hide top-bar tabs entirely on true mobile — bottom bar takes over */
@@ -594,8 +574,8 @@ textarea {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 14px 28px;
+  gap: 12px;
+  padding: 16px 28px;
   background: var(--bg-2);
   border-top: 1px solid var(--border);
   font-family: var(--font-body);
@@ -603,6 +583,22 @@ textarea {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-3);
+}
+
+.site-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.site-footer-logo {
+  height: 26px;
+  width: auto;
+  display: block;
+  opacity: 0.75;
+  flex-shrink: 0;
 }
 
 .site-footer-links {
@@ -633,6 +629,11 @@ textarea {
   color: rgba(255,255,255,0.3);
 }
 
+.lp-footer .site-footer-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.55;
+}
+
 .lp-footer .site-footer-link {
   color: rgba(255,255,255,0.35);
 }
@@ -649,6 +650,20 @@ textarea {
 @media (max-width: 768px) {
   .app-shell .site-footer {
     display: none;
+  }
+}
+
+/* Tighten footer on small screens (still visible on landing page mobile) */
+@media (max-width: 600px) {
+  .site-footer {
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .site-footer-logo {
+    height: 22px;
+  }
+  .site-footer-copy {
+    font-size: 10px;
   }
 }
 

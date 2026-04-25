@@ -588,19 +588,7 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
             <Icon name="chevron-left" size={18} /> Back
           </button>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'linear-gradient(135deg,#fff5ea,#fbe4cc)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(194,102,45,0.2)',
-          }}>
-            <GingerLogo size={26} />
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-1)', fontWeight: 400 }}>
-            Ginger Gig
-          </span>
-        </div>
+        <GingerLogo size={32} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -982,14 +970,8 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
         {/* ── Step 8: Done ── */}
         {step === 8 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <div style={{
-              width: 88, height: 88, borderRadius: '50%',
-              background: 'linear-gradient(135deg,#fff5ea,#fbe4cc)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 24px',
-              boxShadow: '0 4px 20px rgba(194,102,45,0.2)',
-            }}>
-              <GingerLogo size={56} />
+            <div style={{ margin: '0 auto 24px', display: 'flex', justifyContent: 'center' }}>
+              <GingerLogo size={64} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, color: 'var(--text-1)', margin: '0 0 12px' }}>
               You're all set!
