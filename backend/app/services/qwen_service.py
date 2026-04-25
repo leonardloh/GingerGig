@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Any, cast
 
@@ -8,6 +9,7 @@ from app.core.config import settings
 from app.schemas.voice import ListingDraft
 
 LISTING_EXTRACTION_FAILED_MSG = "Listing extraction failed"
+logger = logging.getLogger(__name__)
 
 
 class ListingExtractionError(Exception):
@@ -80,14 +82,18 @@ async def _request_listing_json(
 
 
 async def extract_listing(transcript: str, language: str) -> ListingDraft:
-    client = AsyncOpenAI(
-        api_key=settings.dashscope_api_key,
-        base_url=settings.dashscope_base_url,
-    )
+    try:
+        client = AsyncOpenAI(
+            api_key=settings.dashscope_api_key,
+            base_url=settings.dashscope_base_url,
+        )
+    except Exception as exc:
+        logger.exception("qwen_listing_extraction_client_init_failed")
+        raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
 
     try:
         raw_json = await _request_listing_json(client, transcript, language)
-        return ListingDraft.model_validate_json(raw_json)
+        return _validate_listing_json(raw_json, language)
     except ValidationError as first_error:
         try:
             raw_json = await _request_listing_json(
@@ -96,6 +102,22 @@ async def extract_listing(transcript: str, language: str) -> ListingDraft:
                 language,
                 str(first_error),
             )
-            return ListingDraft.model_validate_json(raw_json)
+            return _validate_listing_json(raw_json, language)
         except ValidationError as second_error:
             raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from second_error
+    except ListingExtractionError:
+        raise
+    except Exception as exc:
+        logger.exception("qwen_listing_extraction_transport_failed")
+        raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
+
+
+def _validate_listing_json(raw_json: str, language: str) -> ListingDraft:
+    listing = ListingDraft.model_validate_json(raw_json)
+    if listing.language != language:
+        logger.warning(
+            "qwen_listing_language_mismatch",
+            extra={"requested_language": language, "returned_language": listing.language},
+        )
+        listing = listing.model_copy(update={"language": language})
+    return listing

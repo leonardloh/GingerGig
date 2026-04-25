@@ -155,6 +155,21 @@ async def run_streaming_session(
                     "failed",
                     error=LISTING_EXTRACTION_FAILED_MSG,
                 )
+                await _close_websocket(websocket, code=STREAMING_CLOSE_ERROR)
+                return
+            except Exception:
+                logger.exception(
+                    "voice_streaming_listing_extraction_failed",
+                    extra={"voice_session_id": str(voice_session.id), "user_id": str(user.id)},
+                )
+                await _send_error(websocket, LISTING_EXTRACTION_FAILED_MSG)
+                await _mark_voice_session(
+                    db_session,
+                    voice_session,
+                    "failed",
+                    error=LISTING_EXTRACTION_FAILED_MSG,
+                )
+                await _close_websocket(websocket, code=STREAMING_CLOSE_ERROR)
                 return
 
             await _mark_voice_session(

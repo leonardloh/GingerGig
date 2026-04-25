@@ -13,6 +13,7 @@ from app.services.qwen_service import LISTING_EXTRACTION_FAILED_MSG, ListingExtr
 from app.services.voice_service import (
     STREAMING_CLOSE_AUTH,
     STREAMING_CLOSE_BATCH_ONLY,
+    STREAMING_CLOSE_ERROR,
     TranscriptResult,
     _cleanup_streaming,
     _forward_transcribe_results,
@@ -201,6 +202,56 @@ async def test_streaming_extraction_failure_sends_safe_error_message() -> None:
         {"type": "error", "message": LISTING_EXTRACTION_FAILED_MSG}
     )
     assert raw_validation_text not in str(websocket.send_json.await_args_list)
+
+
+@pytest.mark.asyncio
+async def test_streaming_transport_failure_marks_failed_and_sends_safe_error() -> None:
+    websocket = SimpleNamespace(
+        receive_json=AsyncMock(return_value={"language": "en-US"}),
+        receive=AsyncMock(
+            side_effect=[
+                {"type": "websocket.receive", "bytes": b"\x00\x00"},
+                {"type": "websocket.receive", "text": '{"type":"end"}'},
+            ]
+        ),
+        send_json=AsyncMock(),
+        close=AsyncMock(),
+    )
+    input_stream = SimpleNamespace(send_audio_event=AsyncMock(), end_stream=AsyncMock())
+    db_session = FakeDbSession()
+    raw_transport_text = "dashscope timeout request id should not leak"
+
+    async def fake_session_factory(language_code: str) -> TranscribeStreamingSession:
+        assert language_code == "en-US"
+        return TranscribeStreamingSession(
+            input_stream=input_stream,
+            transcript_events=_one_final_event(),
+        )
+
+    async def failing_extractor(transcript: str, language: str) -> object:
+        assert transcript == "I cook nasi lemak for neighbours."
+        assert language == "en-US"
+        raise RuntimeError(raw_transport_text)
+
+    await run_streaming_session(
+        websocket,
+        SimpleNamespace(id=uuid.uuid4()),
+        db_session,
+        streaming_session_factory=fake_session_factory,
+        listing_extractor=failing_extractor,
+    )
+
+    voice_session = db_session.objects[0]
+    assert voice_session.status == "failed"
+    assert voice_session.error == LISTING_EXTRACTION_FAILED_MSG
+    websocket.send_json.assert_any_await(
+        {"type": "error", "message": LISTING_EXTRACTION_FAILED_MSG}
+    )
+    assert raw_transport_text not in str(websocket.send_json.await_args_list)
+    assert any(
+        call.kwargs == {"code": STREAMING_CLOSE_ERROR}
+        for call in websocket.close.await_args_list
+    )
 
 
 @pytest.mark.asyncio
