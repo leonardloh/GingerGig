@@ -1,56 +1,55 @@
 ---
-phase: 03
-status: issues_found
+phase: 03-persona-routers-elder-requestor-companion
+status: clean
+review_depth: standard
 files_reviewed: 15
+files:
+  - backend/alembic/versions/0002_listing_demo_match_fields.py
+  - backend/app/models/listing.py
+  - backend/app/routers/companion.py
+  - backend/app/routers/elder.py
+  - backend/app/routers/requestor.py
+  - backend/app/schemas/persona.py
+  - backend/app/services/persona_queries.py
+  - backend/scripts/seed.py
+  - backend/scripts/seed_data.py
+  - backend/tests/test_migrations.py
+  - backend/tests/test_persona_companion.py
+  - backend/tests/test_persona_elder.py
+  - backend/tests/test_persona_locale_and_authz.py
+  - backend/tests/test_persona_requestor.py
+  - backend/tests/test_seed.py
 findings:
   critical: 0
-  warning: 3
+  warning: 0
   info: 0
-  total: 3
+  total: 0
 ---
 
 # Phase 03 Code Review
 
-## Summary
+## Scope
 
-Reviewed the Phase 03 persona router source, schemas, migration, seed updates, and contract tests at standard depth. Authorization and locale projection are generally implemented with the expected role/link checks and SQL-level `coalesce` fallback, and no forbidden live AI/cache runtime integrations were found in the Phase 3 router/helper surface.
-
-Three warning-level issues remain: companion dashboard response contract drift, requestor booking snapshot mutation in responses, and an uncaught invalid UUID path during booking creation.
+Re-reviewed the Phase 03 persona router source, schemas, migration, seed updates, and listed tests at standard depth after fixes. The pass focused on authorization boundaries, locale projection, denormalized booking snapshot semantics, response-model/OpenAPI alignment, migration reversibility, seed idempotency, and test coverage for the Phase 03 behavior.
 
 ## Findings
 
-### WR-01 - Companion dashboard schema/OpenAPI contract does not match runtime JSON
+No current findings.
 
-Severity: warning
+## Previously Reported Warnings
 
-Files:
-- `backend/app/schemas/persona.py`
-- `backend/app/routers/companion.py`
+All previously reported warning-level issues are resolved in the reviewed backend files:
 
-`CompanionDashboard.weeklyEarnings` is typed as an `EarningsSummary`, and the route decorator advertises `response_model=CompanionDashboard`, but `get_companion_dashboard()` returns a raw `JSONResponse` where `weeklyEarnings` is a float. Returning `JSONResponse` bypasses FastAPI response-model validation, so tests pass while the OpenAPI schema and typed API contract describe a different shape than clients receive.
+- `CompanionDashboard` no longer bypasses FastAPI response-model validation, and the backend schema now matches the returned JSON shape for `status`, numeric `weeklyEarnings`, `activeDays`, `completedBookings`, and the nested `elder` snapshot.
+- Requestor booking history now returns `booking_to_response(booking)` directly, preserving the denormalized `bookings` row snapshots instead of overwriting requestor display fields from the current `User` record.
+- `CreateBookingPayload.listingId` is now a `UUID`, so malformed UUID input is handled by FastAPI/Pydantic validation instead of reaching an uncaught `ValueError`; valid-but-missing listing IDs return the expected 404.
 
-This is contract drift on a camelCase DTO and can break generated clients or frontend code that trusts the `CompanionDashboard` type. Fix by making the backend schema match the intended numeric contract, or return the nested `EarningsSummary` shape consistently.
+## Verification
 
-### WR-02 - Requestor booking history overwrites denormalized booking snapshots
+Ran:
 
-Severity: warning
+```bash
+uv run pytest tests/test_migrations.py tests/test_persona_companion.py tests/test_persona_elder.py tests/test_persona_locale_and_authz.py tests/test_persona_requestor.py tests/test_seed.py
+```
 
-Files:
-- `backend/app/routers/requestor.py`
-- `backend/app/services/persona_queries.py`
-
-`get_requestor_bookings()` filters by `Booking.requestor_user_id`, then mutates the mapped response to replace `requestorName`, `requestorInitials`, and `requestorAvatarUrl` with the current `User` record. That defeats the project invariant that booking rows snapshot requestor display fields so they survive later user edits.
-
-The seeded data inconsistency should be handled in seed/test data, not by changing historical booking response semantics for every requestor booking. Return `booking_to_response(booking)` directly so requestor history uses the denormalized row fields just like elder booking views.
-
-### WR-03 - Invalid booking listingId can raise an uncaught ValueError and return 500
-
-Severity: warning
-
-Files:
-- `backend/app/routers/requestor.py`
-- `backend/app/schemas/persona.py`
-
-`CreateBookingPayload.listingId` is declared as `str`, and `create_booking()` calls `UUID(payload.listingId)` inside the SQLAlchemy filter. A syntactically invalid UUID is not converted into the standard FastAPI validation envelope; it raises `ValueError`, reaches the global unhandled exception path, logs a server error, and returns a 500.
-
-Use a `UUID` field in `CreateBookingPayload` or catch `ValueError` and return a 422/404 API error. This keeps malformed client input from looking like a server fault.
+Result: 31 passed. Pytest emitted two marker warnings because two synchronous tests in `test_persona_locale_and_authz.py` inherit the module-level asyncio mark; these do not change the Phase 03 review result.
