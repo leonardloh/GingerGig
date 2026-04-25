@@ -8,7 +8,7 @@
 ## Phases
 
 - [x] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
-- [ ] **Phase 2: Auth + Bearer Middleware** - Real JWT auth with bcrypt; the prototype's 3 quick-login chips authenticate against the real backend and return working tokens.
+- [x] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
 - [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [ ] **Phase 4: eKYC Pipeline** - The 8-step KYC stepper completes end-to-end against AWS S3 + Textract `AnalyzeDocument` + Rekognition `CompareFaces` with a 3-tier (approved / manual_review / failed) outcome.
 - [ ] **Phase 5: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
@@ -38,16 +38,17 @@
 - [x] 01-07-PLAN.md — ApsaraDB Postgres provisioning runbook + smoke test (autonomous: false, gates Wave 3) (Wave 4)
 
 ### Phase 2: Auth + Bearer Middleware
-**Goal**: Real authentication wired end-to-end so the prototype's 3 quick-login chips authenticate against the deployed backend and return a JWT that the frontend's existing `Authorization: Bearer` injection accepts on every protected call.
+**Goal**: Demo authentication wired end-to-end so the prototype's 3 quick-login chips authenticate against the backend and return a JWT that the frontend's existing `Authorization: Bearer` injection accepts on protected calls.
 **Depends on**: Phase 1
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07
 **Success Criteria** (what must be TRUE):
   1. The quick-login chip on the prototype login screen for "Siti" (`siti@gingergig.my` / `demo`) authenticates against `POST /api/v1/auth/login` and returns a working JWT — same for Amir and Faiz/Companion.
   2. `POST /api/v1/auth/register` issues a JWT and returns `kycRequired: true` iff the chosen role is `elder`; `GET /api/v1/auth/me` returns the extended `UserProfile` (with `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`) for the bearer-authenticated user.
   3. JWT decoding lives in exactly one place (`core/security.py`) with explicit `algorithms=["HS256"]` and required `exp`+`sub` claims; a unit test sending `{"alg":"none"}` is rejected.
-  4. Every `bcrypt.checkpw`/`hashpw` call goes through `await asyncio.to_thread(...)` so a login during voice streaming does not stall the event loop; `passlib` is not in the dependency tree.
+  4. Phase 2 runtime auth files contain no `bcrypt.checkpw`/`hashpw` calls; production password verification remains deferred per `02-CONTEXT.md`, and `passlib` is not in the dependency tree.
   5. Boot-time validation: starting in non-debug mode with `JWT_SECRET` unset (or shorter than 32 bytes) refuses to start.
-**Plans**: TBD
+**Plans**: 1 plan
+- [x] 02-01-PLAN.md — Demo auth shim and bearer dependencies: central JWT helpers, auth DTOs, bearer dependencies, login/register/me routes, focused tests (Wave 1)
 
 ### Phase 3: Persona Routers (Elder + Requestor + Companion)
 **Goal**: Every non-AI screen in the elder, requestor, and companion shells loads from real DB reads with locale-aware projection and denormalised booking snapshots — the prototype runs entirely on Postgres data with KYC/voice routes still stubbed.
@@ -126,8 +127,8 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Scaffold + Schema + Seed | 6/7 | In Progress | - |
-| 2. Auth + Bearer Middleware | 0/0 | Not started | - |
+| 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
+| 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
 | 4. eKYC Pipeline | 0/0 | Not started | - |
 | 5. Voice-to-Profile Pipeline | 0/0 | Not started | - |

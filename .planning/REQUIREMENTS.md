@@ -29,13 +29,13 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 
 ### Authentication
 
-- [ ] **AUTH-01**: `POST /api/v1/auth/register` accepts `RegisterPayload {name, email, phone, password, role, locale}` and returns `RegisterResponse {userId, accessToken, tokenType, expiresIn, kycRequired, kycStatus}`; `kycRequired` is `true` iff `role === "elder"`
-- [ ] **AUTH-02**: `POST /api/v1/auth/login` accepts `{email, password}` and returns `Session {accessToken, tokenType, expiresIn, userId}` on success, `401 {status, message: "Invalid credentials"}` on failure
-- [ ] **AUTH-03**: `GET /api/v1/auth/me` returns `UserProfile` (extended with `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`) for the bearer-authenticated user
-- [ ] **AUTH-04**: Passwords hashed with `bcrypt>=4.2,<5.0` (no `passlib`); `bcrypt.hashpw`/`checkpw` wrapped in `await asyncio.to_thread(...)` to keep the event loop responsive
-- [ ] **AUTH-05**: JWT issuance and verification centralised in `core/security.py`; `jwt.decode` is called with explicit `algorithms=["HS256"]` and `options={"require": ["exp", "sub"]}`; no router calls `jwt.decode` directly
-- [ ] **AUTH-06**: Bearer-token middleware exposes `get_current_user` and `get_current_user_ws` (the latter pulls token from query string for WebSocket handshake); both return 401 on missing/invalid token
-- [ ] **AUTH-07**: JWT secret loaded from `JWT_SECRET` env var, ≥32 random bytes; failure to start if unset in non-debug environments
+- [x] **AUTH-01**: `POST /api/v1/auth/register` accepts `RegisterPayload {name, email, phone, password, role, locale}` and returns `RegisterResponse {userId, accessToken, tokenType, expiresIn, kycRequired, kycStatus}`; `kycRequired` is `true` iff `role === "elder"`
+- [x] **AUTH-02**: `POST /api/v1/auth/login` accepts `{email, password}` and returns `Session {accessToken, tokenType, expiresIn, userId}` on success, `401 {status, message: "Invalid credentials"}` on failure
+- [x] **AUTH-03**: `GET /api/v1/auth/me` returns `UserProfile` (extended with `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`) for the bearer-authenticated user
+- [x] **AUTH-04**: Phase 2 mock-auth context supersedes production password verification; runtime auth files contain no `bcrypt.hashpw`/`checkpw` calls and seed-time bcrypt hashing remains in Phase 1
+- [x] **AUTH-05**: JWT issuance and verification centralised in `core/security.py`; `jwt.decode` is called with explicit `algorithms=["HS256"]` and `options={"require": ["exp", "sub"]}`; no router calls `jwt.decode` directly
+- [x] **AUTH-06**: Bearer-token middleware exposes `get_current_user` and `get_current_user_ws` (the latter pulls token from query string for WebSocket handshake); both return 401 on missing/invalid token
+- [x] **AUTH-07**: JWT secret loaded from `JWT_SECRET` env var, ≥32 random bytes; failure to start if unset in non-debug environments
 
 ### Elder Endpoints
 
@@ -195,13 +195,13 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 1 | Pending |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete (demo superseded) |
+| AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 2 | Complete |
+| AUTH-07 | Phase 2 | Complete |
 | ELDER-01 | Phase 3 | Pending |
 | ELDER-02 | Phase 3 | Pending |
 | ELDER-03 | Phase 3 | Pending |

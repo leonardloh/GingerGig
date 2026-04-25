@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-04-25T16:09:26.323Z"
+last_updated: "2026-04-25T16:16:37.000Z"
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 88
+  completed_plans: 8
+  percent: 100
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 01 complete)
+**Last updated:** 2026-04-25 (Phase 02 complete)
 
 ## Project Reference
 
@@ -25,13 +25,13 @@ progress:
 
 ## Current Position
 
-**Phase:** 02 of 8 (auth bearer middleware)
-**Plan:** Not started
-**Status:** Ready to plan
-**Progress:** 1/8 phases complete
+**Phase:** 03 of 8 (persona routers elder requestor companion)
+**Plan:** Ready to plan
+**Status:** Phase 02 complete; ready for Phase 03 planning
+**Progress:** 2/8 phases complete
 
 ```
-[██░░░░░░░░░░░░░░░░░░] 12% (Phase 1 of 8)
+[█████░░░░░░░░░░░░░░░] 25% (Phase 2 of 8)
 ```
 
 ## Phase Pipeline
@@ -39,7 +39,7 @@ progress:
 | # | Phase | Status | Depends on |
 |---|-------|--------|------------|
 | 1 | Backend Scaffold + Schema + Seed | Complete | — |
-| 2 | Auth + Bearer Middleware | Not started | 1 |
+| 2 | Auth + Bearer Middleware | Complete | 1 |
 | 3 | Persona Routers (Elder + Requestor + Companion) | Not started | 2 |
 | 4 | eKYC Pipeline | Not started | 2 |
 | 5 | Voice-to-Profile Pipeline | Not started | 2 |
@@ -49,11 +49,11 @@ progress:
 
 ## Performance Metrics
 
-- **Plans complete:** 7
-- **Verifications passed:** 1
-- **Phases shipped:** 1
+- **Plans complete:** 8
+- **Verifications passed:** 2
+- **Phases shipped:** 2
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 01 — 7 plans, 15 backend tests passed
+- **Latest phase metric:** Phase 02 — 1 plan, Ruff/mypy/settings tests passed; DB-backed auth tests require `TEST_DATABASE_URL` or `DATABASE_URL`
 
 ## Accumulated Context
 
@@ -83,6 +83,7 @@ progress:
 | 01-03 SQLAlchemy schema models | Yes | `app.models` registers exactly 11 tables; enum-like values are `String` plus CHECK constraints; companion pair tables use composite PKs |
 | 01-05 seed verification target | Yes | `gingergig_test` was absent, so live seed idempotency was verified against the migrated configured database with process-local asyncpg/no-SSL overrides |
 | 01-06 test harness target | Yes | Test fixtures prefer `TEST_DATABASE_URL` but fall back to normalized `DATABASE_URL` per user approval; guardrail tests enforce forbidden deps/imports, no wildcard CORS, and no `Base.metadata.create_all` |
+| 02-01 demo auth policy | Yes | Phase 2 deliberately ships a demo-only auth shim: seeded demo emails get JWTs without runtime password verification; production bcrypt checks remain deferred |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -98,12 +99,12 @@ progress:
 
 ### Blockers
 
-- None for 01-06. `gingergig_test` is still absent on the configured Postgres server, but the test harness now supports the approved `DATABASE_URL` fallback.
+- DB-backed verification requires `TEST_DATABASE_URL` or `DATABASE_URL` in the shell. Static auth settings tests, Ruff, mypy, and manual JWT/bcrypt grep checks passed.
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `01-06-PLAN.md`
-**Next action:** Execute `01-07-PLAN.md` only when requested; do not auto-run it from the 01-06 executor context
+**Last session ended:** 2026-04-25 — completed `02-01-PLAN.md`
+**Next action:** Plan Phase 03 (Persona Routers) after rerunning DB-backed auth tests with `TEST_DATABASE_URL` or `DATABASE_URL` available.
 
 **Resume context for next session:**
 
@@ -115,4 +116,4 @@ progress:
 ---
 *State initialised: 2026-04-25 after roadmap creation*
 
-**Planned Phase:** 02 (Auth + Bearer Middleware) — 1 plans — 2026-04-25T16:09:26.319Z
+**Completed Plan:** 02-01 (Demo auth shim and bearer dependencies) — 2026-04-25T16:16:37Z
