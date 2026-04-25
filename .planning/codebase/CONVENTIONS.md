@@ -2,7 +2,7 @@
 
 **Analysis Date:** 2026-04-25
 
-> Scope: frontend only. The backend was scaffolded then removed; only the React/TypeScript/Vite frontend at `frontend/` exists. Authoritative rules are encoded in `frontend/eslint.config.js` and the TypeScript strict settings in `frontend/tsconfig.app.json`.
+> Scope: frontend plus the newly scaffolded FastAPI backend. Frontend rules are encoded in `frontend/eslint.config.js` and TypeScript strict settings; backend rules are encoded in `backend/pyproject.toml` (`ruff`, `mypy`, `pytest`).
 
 ## Naming Patterns
 
@@ -12,6 +12,7 @@
 - Legacy prototype components (JSX, kebab-case): `frontend/src/prototype/elder-screens.jsx`, `frontend/src/prototype/companion-screens.jsx`, `frontend/src/prototype/requestor-screens.jsx` (excluded from TS / lint via `tsconfig.app.json` include and `eslint.config.js` ignores)
 - Type declaration files: `*.d.ts` — `frontend/src/jsx-modules.d.ts`
 - Config files: lowercase with dotted scope — `vite.config.ts`, `eslint.config.js`, `tsconfig.app.json`
+- Backend Python files: snake_case modules under feature folders — `models/user.py`, `models/companion_link.py`, `routers/requestor.py`, `core/config.py`
 
 **Functions:**
 - camelCase, verb-first — `apiRequest`, `setApiAccessToken`, `parseError`, `parseTimeout`, `register`, `login`, `logout`, `getMe`, `searchListings`, `createBooking`, `getElderListings`, `respondToBooking`, `initiateSession`, `uploadDocument`, `startVerification`, `pollStatus`, `waitForVerification`, `retryKyc`
@@ -26,6 +27,13 @@
 - PascalCase for interfaces and type aliases — `ApiError`, `RequestOptions`, `Session`, `UserProfile`, `Listing`, `Booking`, `EarningsSummary`, `CompanionDashboard`, `CompanionAlert`, `RegisterPayload`, `RegisterResponse`, `LoginPayload`, `KycStatus`, `KycDocumentSide`, `KycUploadUrls`, `ExtractedIdData`, `FaceMatchResult`, `KycVerificationResult`, `SearchListingsParams`, `AlertPreferences`, `StartVerificationPayload`, `StartVerificationResponse`, `UserRole`, `Locale`
 - Prefer `interface` for object shapes that may be extended (e.g. `RequestOptions extends RequestInit`); use `type` for unions, primitives, and literal sets (`KycStatus`, `UserRole`, `Locale`, `KycDocumentSide`)
 - String literal unions over enums — see `KycStatus = "not_started" | "pending" | "approved" | "failed" | "manual_review"` in `frontend/src/services/api/types.ts`
+- Backend constrained values use Python `StrEnum` mirrors in `backend/app/core/enums.py` plus database `String` columns with explicit `CheckConstraint`s; do not use native Postgres ENUM types.
+
+**Backend SQLAlchemy models:**
+- Use SQLAlchemy 2 declarative style: `class Model(Base, TimestampMixin)`, `Mapped[T]`, and `mapped_column`.
+- Every table inherits `TimestampMixin` so `created_at` and `updated_at` are present.
+- Surrogate primary keys are `id UUID` except planned composite-PK pair tables such as `companion_links` and `companion_alert_preferences`.
+- Re-export models from `backend/app/models/__init__.py` so importing `app.models` registers tables on `Base.metadata` for Alembic.
 
 ## Code Style
 

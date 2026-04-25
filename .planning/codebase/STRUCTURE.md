@@ -11,7 +11,7 @@ gingergig/
 │   └── codebase/                       # GSD codebase mapper output (this folder)
 ├── MULTI-CLOUD-ARCHITECTURE.md         # Untracked root copy of the architecture doc
 ├── README.md                           # Project intent, tech stack, API reference, run instructions
-├── backend/                            # EMPTY — scaffold was removed; see git status
+├── backend/                            # FastAPI backend scaffold with SQLAlchemy model layer
 └── frontend/                           # Implemented React 19 + TS 5.8 + Vite 8 app
     ├── .env.example                    # VITE_API_BASE_URL, VITE_API_TIMEOUT_MS template
     ├── docs/
@@ -66,9 +66,14 @@ gingergig/
 - Key files: `README.md` (single source of truth for what the project is), `MULTI-CLOUD-ARCHITECTURE.md` (intended infra)
 
 **`backend/`:**
-- Purpose: Python FastAPI service (planned, currently empty)
-- Contains: nothing committed on this branch
-- Notes: `git status` shows `backend/main.py`, `backend/db.py`, `backend/models.py`, `backend/pyproject.toml`, `backend/uv.lock`, `backend/.env.example`, `backend/routes/.placeholder`, `backend/services/.placeholder` were all deleted. Re-implementing this folder is the next major phase.
+- Purpose: Python FastAPI service for the GingerGig API.
+- Contains: `app/` package, `pyproject.toml`, `uv.lock`, `Makefile`, Dockerfile, `.env.example`, and backend docs/tooling.
+- Key files:
+  - `backend/app/main.py` — FastAPI app shell, lifespan, CORS, exception registration, health and stub router mounting.
+  - `backend/app/core/` — settings, enums, deterministic IDs, security stubs, and error-envelope helpers.
+  - `backend/app/db/` — SQLAlchemy `Base` and async engine/session helpers.
+  - `backend/app/models/` — SQLAlchemy 2 declarative models for the 11-table Phase 1 schema.
+  - `backend/app/routers/` — `/health` plus six `/api/v1` router stubs for later phases.
 
 **`frontend/`:**
 - Purpose: React 19 + TypeScript 5.8 + Vite 8 SPA
