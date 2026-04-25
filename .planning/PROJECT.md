@@ -36,9 +36,9 @@ The frontend continues to work exactly as today — every screen, every persona,
 - [ ] Elder endpoints implemented (listings CRUD, bookings list, respond, earnings summary)
 - [ ] Requestor endpoints implemented (search, create booking, list bookings)
 - [ ] Companion endpoints implemented (dashboard, alerts, alert preferences)
-- [ ] Voice-to-profile streaming WebSocket (`en-US`/`zh-CN`) wired to AWS Transcribe Streaming via boto3, then to Qwen for JSON extraction
+- [ ] Voice-to-profile streaming WebSocket (`en-US`/`zh-CN`) wired to AWS Transcribe Streaming via the `amazon-transcribe` Python SDK (boto3 does not support streaming), then to Qwen for JSON extraction
 - [ ] Voice-to-profile batch path (`ms-MY`/`ta-IN`) wired to S3 presigned PUT + AWS Transcribe Batch + Qwen
-- [ ] eKYC pipeline: presigned S3 PUT for IC/selfie → AWS Textract `AnalyzeID` → AWS Rekognition `CompareFaces` (+ optional Liveness) → poll-able status endpoint
+- [ ] eKYC pipeline: presigned S3 PUT for IC/selfie → AWS Textract `AnalyzeDocument` (FORMS+TABLES) + IC-number regex parser (Textract `AnalyzeID` is US-document-only, despite what `MULTI-CLOUD-ARCHITECTURE.md` and `kyc.ts` JSDoc say) → AWS Rekognition `CompareFaces` (+ optional Liveness) → poll-able status endpoint
 - [ ] Redis (Tair) read-through cache for listing search results and session lookups
 - [ ] Alibaba OSS for provider photo uploads
 - [ ] Frontend wired: every prototype mock helper replaced with the corresponding `src/services/api/endpoints/*` import; no behavior change
@@ -108,6 +108,11 @@ These need to be added to `types.ts` before swapping mock helpers — this is al
 | Real AI features (Transcribe + Qwen + Textract + Rekognition) | User picked "Both, real" — keep frontend `SpeechRecognition` only as graceful fallback | — Pending |
 | Real auth, seed DEMO_ACCOUNTS | User picked "Real auth, seeded users"; preserves prototype quick-login UX | — Pending |
 | Postgres as system-of-record (not DynamoDB) | `MULTI-CLOUD-ARCHITECTURE.md` says Postgres; the lone DynamoDB JSDoc reference in `kyc.ts` is stale | — Pending |
+| Use `amazon-transcribe` Python SDK for streaming ASR (not boto3) | boto3 has zero Transcribe Streaming support — `amazon-transcribe>=0.6.4` is the only Python option | — Pending |
+| Use Textract `AnalyzeDocument` + regex IC parser for MyKad OCR | `AnalyzeID` is hard-restricted to US driver's licenses + US passports; the architecture doc and `kyc.ts` JSDoc are factually wrong | — Pending |
+| Use bcrypt directly (no `passlib`); pin `bcrypt>=4.2.0,<5.0.0` | bcrypt 5.0 (Sep 2025) silently breaks passlib's backend introspection with a misleading 72-byte error | — Pending |
+| Centralise JWT decode in `core/security.py` with explicit `algorithms=["HS256"]` | CVE-2022-29217 / CVE-2024-33663 — algorithm-confusion bypass if any decode call omits the allowlist | — Pending |
+| WebSocket handlers must `try/finally` end Transcribe session and a 90s max-session timer | Browser disconnect does not auto-close upstream stream — quota exhaustion risk during demo | — Pending |
 | Companion alerts: store all 4 locales in DB, server picks by user locale | Matches existing `text_en/ms/zh/ta` shape; no realtime translation cost | — Pending |
 | Additive type extensions in `types.ts` | Prototype already renders fields not in DTOs; backend will provide them | — Pending |
 | Tair as read-through cache (not job queue) | `MULTI-CLOUD-ARCHITECTURE.md` decision | — Pending |
