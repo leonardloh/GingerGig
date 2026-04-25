@@ -39,16 +39,16 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 
 ### Elder Endpoints
 
-- [ ] **ELDER-01**: `GET /api/v1/elders/{elderId}/listings` returns this elder's listings (active + inactive); response is `Listing[]` with the type-extended fields (category, priceUnit, rating, halal, days, menu, multi-locale titles)
-- [ ] **ELDER-02**: `PATCH /api/v1/listings/{listingId}` accepts `Partial<Listing>`, returns updated `Listing`; 403 if requester isn't the listing owner
-- [ ] **ELDER-03**: `GET /api/v1/elders/{elderId}/bookings` returns this elder's bookings (pending + confirmed + completed unified); response includes denormalised `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription`
-- [ ] **ELDER-04**: `POST /api/v1/bookings/{bookingId}/respond` accepts `{action: "accept" | "decline"}`; transitions booking from `pending` → `confirmed` or `cancelled`; 403 if not owner, 409 if not in `pending`
-- [ ] **ELDER-05**: `GET /api/v1/elders/{elderId}/earnings/summary` returns `{monthTotal, lifetimeTotal, completedCount}` aggregated over the elder's `completed` bookings; calendar-month boundary in `Asia/Kuala_Lumpur`
+- [x] **ELDER-01**: `GET /api/v1/elders/{elderId}/listings` returns this elder's listings (active + inactive); response is `Listing[]` with the type-extended fields (category, priceUnit, rating, halal, days, menu, multi-locale titles)
+- [x] **ELDER-02**: `PATCH /api/v1/listings/{listingId}` accepts `Partial<Listing>`, returns updated `Listing`; 403 if requester isn't the listing owner
+- [x] **ELDER-03**: `GET /api/v1/elders/{elderId}/bookings` returns this elder's bookings (pending + confirmed + completed unified); response includes denormalised `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription`
+- [x] **ELDER-04**: `POST /api/v1/bookings/{bookingId}/respond` accepts `{action: "accept" | "decline"}`; transitions booking from `pending` → `confirmed` or `cancelled`; 403 if not owner, 409 if not in `pending`
+- [x] **ELDER-05**: `GET /api/v1/elders/{elderId}/earnings/summary` returns `{monthTotal, lifetimeTotal, completedCount}` aggregated over the elder's `completed` bookings; calendar-month boundary in `Asia/Kuala_Lumpur`
 
 ### Requestor Endpoints
 
 - [ ] **REQ-01**: `GET /api/v1/requestor/listings/search` accepts query params `query`, `max_distance_km`, `halal_only`, `open_now`; returns `Listing[]` with all extended fields plus elder-snapshot fields (`elderName`, `elderInitials`, `elderArea`, `elderPortraitUrl`, `distance`)
-- [ ] **REQ-02**: `GET /api/v1/listings/{listingId}` returns a single listing with embedded `reviews: Review[]` and full menu (added to typed client during frontend wiring phase)
+- [x] **REQ-02**: `GET /api/v1/listings/{listingId}` returns a single listing with embedded `reviews: Review[]` and full menu (added to typed client during frontend wiring phase)
 - [ ] **REQ-03**: Search results include Qwen-generated `matchScore` (0–100) and `matchReason` (locale-aware free-text); ranking falls back to a deterministic heuristic (distance + rating) if Qwen is unavailable
 - [ ] **REQ-04**: `POST /api/v1/requestor/bookings` accepts `{listingId, scheduledAt, notes?}`; returns the new `Booking` in `pending` state; 404 if listing inactive
 - [ ] **REQ-05**: `GET /api/v1/requestor/bookings` returns this requestor's bookings (any status), denormalised the same way as elder bookings
@@ -193,13 +193,13 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | AUTH-05 | Phase 2 | Complete |
 | AUTH-06 | Phase 2 | Complete |
 | AUTH-07 | Phase 2 | Complete |
-| ELDER-01 | Phase 3 | Pending |
-| ELDER-02 | Phase 3 | Pending |
-| ELDER-03 | Phase 3 | Pending |
-| ELDER-04 | Phase 3 | Pending |
-| ELDER-05 | Phase 3 | Pending |
+| ELDER-01 | Phase 3 | Complete |
+| ELDER-02 | Phase 3 | Complete |
+| ELDER-03 | Phase 3 | Complete |
+| ELDER-04 | Phase 3 | Complete |
+| ELDER-05 | Phase 3 | Complete |
 | REQ-01 | Phase 3 | Pending |
-| REQ-02 | Phase 3 | Pending |
+| REQ-02 | Phase 3 | Complete |
 | REQ-03 | Phase 3 | Pending |
 | REQ-04 | Phase 3 | Pending |
 | REQ-05 | Phase 3 | Pending |
