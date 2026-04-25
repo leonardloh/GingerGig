@@ -2119,8 +2119,34 @@ function CompletedRow({ booking }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderListings — dedicated listings tab
 // ═══════════════════════════════════════════════════════════════
-function ElderListings({ onAddListing }) {
+function ElderListings({ onAddListing, user }) {
   const t = useT();
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    getElderListings(user.id)
+      .then((rows) => {
+        if (!cancelled) setListings(rows.map(adaptListing));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setListings([]);
+        setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div
@@ -2170,7 +2196,7 @@ function ElderListings({ onAddListing }) {
           alignItems: "stretch",
         }}
       >
-        {ELDER_LISTINGS.map((l) => (
+        {listings.map((l) => (
           <Card
             key={l.id}
             style={{
@@ -2238,7 +2264,7 @@ function ElderListings({ onAddListing }) {
                   </span>
                 </div>
               </div>
-              <Toggle on={l.active} />
+              <Toggle on={l.active} onChange={(next) => updateListing(l.id, { isActive: next })} />
             </div>
             <div
               style={{
@@ -2824,11 +2850,26 @@ function BookingRow({ booking, t }) {
   );
 }
 
-const Toggle = ({ on: initial }) => {
+const Toggle = ({ on: initial, onChange }) => {
   const [on, setOn] = useState(initial);
+  useEffect(() => {
+    setOn(initial);
+  }, [initial]);
+
+  const toggle = async () => {
+    const previous = on;
+    const next = !on;
+    setOn(next);
+    try {
+      await onChange?.(next);
+    } catch (_) {
+      setOn(previous);
+    }
+  };
+
   return (
     <button
-      onClick={() => setOn(!on)}
+      onClick={toggle}
       style={{
         width: 44,
         height: 26,
