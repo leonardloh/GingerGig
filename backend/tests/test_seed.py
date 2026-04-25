@@ -77,6 +77,30 @@ async def test_seed_idempotent(engine: AsyncEngine) -> None:
     assert hash1 == hash2, "siti's password_hash changed across re-run"
 
 
+async def test_seed_persists_listing_match_metadata(engine: AsyncEngine) -> None:
+    async with engine.connect() as conn:
+        row = (
+            await conn.execute(
+                text(
+                    """
+                    SELECT distance_label, match_score, match_reason_en
+                    FROM listings
+                    WHERE match_score IS NOT NULL
+                      AND match_reason_en IS NOT NULL
+                      AND distance_label IS NOT NULL
+                    ORDER BY match_score DESC
+                    LIMIT 1
+                    """
+                )
+            )
+        ).one_or_none()
+
+    assert row is not None, "expected at least one seeded listing with match metadata"
+    assert 0 <= row.match_score <= 100
+    assert row.match_reason_en
+    assert row.distance_label
+
+
 async def test_demo_accounts_password_demo(engine: AsyncEngine) -> None:
     async with engine.connect() as conn:
         for email in ("siti@gingergig.my", "amir@gingergig.my", "faiz@gingergig.my"):

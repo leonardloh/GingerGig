@@ -160,6 +160,12 @@ async def _seed_listings(session: AsyncSession) -> None:
             "review_count": li.get("review_count", 0),
             "is_active": li.get("is_active", True),
             "days": li.get("days", []),
+            "distance_label": li.get("distance_label"),
+            "match_score": li.get("match_score"),
+            "match_reason_ms": li.get("match_reason_ms"),
+            "match_reason_en": li.get("match_reason_en"),
+            "match_reason_zh": li.get("match_reason_zh"),
+            "match_reason_ta": li.get("match_reason_ta"),
         }
         for li in seed_data.LISTINGS
     ]
@@ -184,6 +190,12 @@ async def _seed_listings(session: AsyncSession) -> None:
         "review_count",
         "is_active",
         "days",
+        "distance_label",
+        "match_score",
+        "match_reason_ms",
+        "match_reason_en",
+        "match_reason_zh",
+        "match_reason_ta",
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[Listing.id],

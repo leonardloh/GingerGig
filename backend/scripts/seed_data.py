@@ -237,6 +237,15 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 23,
         "is_active": True,
         "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        "distance_label": "500m",
+        "match_score": 95,
+        "match_reason_ms": None,
+        "match_reason_en": (
+            "Specialises in Malay cuisine, halal certified, 500m from your area, "
+            "available weekdays."
+        ),
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
     {
         "slug": "siti-listing-2",
@@ -273,6 +282,12 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 41,
         "is_active": True,
         "days": ["Tue", "Wed", "Thu", "Sat", "Sun"],
+        "distance_label": PROVIDERS[0]["distance"],
+        "match_score": PROVIDERS[0]["match_score"],
+        "match_reason_ms": None,
+        "match_reason_en": PROVIDERS[0]["match_reason"],
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
     {
         "slug": "raju-listing-1",
@@ -291,6 +306,12 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 18,
         "is_active": True,
         "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "distance_label": PROVIDERS[1]["distance"],
+        "match_score": PROVIDERS[1]["match_score"],
+        "match_reason_ms": None,
+        "match_reason_en": PROVIDERS[1]["match_reason"],
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
     {
         "slug": "fatimah-listing-1",
@@ -309,6 +330,12 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 12,
         "is_active": True,
         "days": ["Mon", "Wed", "Fri"],
+        "distance_label": PROVIDERS[2]["distance"],
+        "match_score": 84,
+        "match_reason_ms": None,
+        "match_reason_en": "Craft specialist nearby with a perfect 5-star rating.",
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
     {
         "slug": "hassan-listing-1",
@@ -327,6 +354,12 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 27,
         "is_active": True,
         "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "distance_label": PROVIDERS[3]["distance"],
+        "match_score": 82,
+        "match_reason_ms": None,
+        "match_reason_en": "Experienced pet caregiver with daily availability.",
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
     {
         "slug": "mei-listing-1",
@@ -345,6 +378,12 @@ LISTINGS: list[dict[str, Any]] = [
         "review_count": 33,
         "is_active": True,
         "days": ["Mon", "Tue", "Thu", "Fri"],
+        "distance_label": PROVIDERS[4]["distance"],
+        "match_score": 78,
+        "match_reason_ms": None,
+        "match_reason_en": "Reliable housekeeping support with strong neighbourhood reviews.",
+        "match_reason_zh": None,
+        "match_reason_ta": None,
     },
 ]
 
