@@ -1,8 +1,10 @@
+from datetime import UTC
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps.auth import get_current_user
@@ -13,6 +15,7 @@ from app.models.user import User
 from app.schemas.persona import (
     Booking,
     BookingResponsePayload,
+    EarningsSummary,
     Listing,
     ListingDetail,
     ListingPatch,
@@ -23,6 +26,7 @@ from app.services.persona_queries import (
     listing_locale_select,
     listing_to_response,
     menu_items_for_listings,
+    month_window_kl,
     require_companion_link,
     require_role,
     require_self,
@@ -100,6 +104,48 @@ async def respond_to_booking(
     booking.status = "confirmed" if payload.action == "accept" else "cancelled"
     await db.flush()
     return booking_to_response(booking)
+
+
+@router.get("/elders/{elderId}/earnings/summary", response_model=EarningsSummary)
+async def get_elder_earnings_summary(
+    elderId: UUID,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> EarningsSummary:
+    require_role(current_user, "elder")
+    require_self(current_user, elderId)
+
+    lifetime_total_expr = func.coalesce(func.sum(BookingModel.amount), Decimal("0"))
+    count_expr = func.count(BookingModel.id)
+    totals = await db.execute(
+        select(lifetime_total_expr, count_expr)
+        .join(ListingModel, ListingModel.id == BookingModel.listing_id)
+        .where(
+            ListingModel.elder_id == elderId,
+            BookingModel.status == "completed",
+        )
+    )
+    lifetime_total, completed_count = totals.one()
+
+    start_utc, end_utc = month_window_kl()
+    month_total_result = await db.execute(
+        select(func.coalesce(func.sum(BookingModel.amount), Decimal("0")))
+        .join(ListingModel, ListingModel.id == BookingModel.listing_id)
+        .where(
+            ListingModel.elder_id == elderId,
+            BookingModel.status == "completed",
+            BookingModel.completed_at.is_not(None),
+            BookingModel.completed_at >= start_utc.astimezone(UTC),
+            BookingModel.completed_at < end_utc.astimezone(UTC),
+        )
+    )
+    month_total = month_total_result.scalar_one()
+
+    return EarningsSummary(
+        monthTotal=float(month_total),
+        lifetimeTotal=float(lifetime_total),
+        completedCount=completed_count,
+    )
     rows = result.all()
     menu_by_listing = await menu_items_for_listings(
         db,
