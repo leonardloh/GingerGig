@@ -60,26 +60,15 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 - [ ] **COMP-03**: `GET /api/v1/companions/elders/{elderId}/timeline` returns recent activity events (booking confirmed, listing posted, review received) with display-ready `time` strings and `text` projected to the companion's locale
 - [ ] **COMP-04**: `PUT /api/v1/companions/elders/{elderId}/alert-preferences` accepts `AlertPreferences {inactivity24h, overworkSignals, earningsMilestones, newBookings, reviews}` and returns `204 No Content`; persisted in `companion_alert_preferences`
 
-### eKYC Pipeline
-
-- [ ] **KYC-01**: `POST /api/v1/kyc/session` returns `{sessionId, frontUrl, backUrl, selfieUrl}` — three S3 presigned PUT URLs valid for 15 minutes; bucket policy forces `Content-Type: image/jpeg|image/png` and `Content-Length ≤ 5MB`
-- [ ] **KYC-02**: KYC S3 bucket has a 24-hour lifecycle auto-delete on uploaded objects; backend never reads raw IC/selfie image bytes
-- [ ] **KYC-03**: `POST /api/v1/kyc/verify` accepts `{sessionId}` and returns `{jobId, status: "pending", estimatedSeconds}`; spawns an async background task (FastAPI `asyncio.create_task`) running the verification pipeline
-- [ ] **KYC-04**: Verification pipeline uses Textract `AnalyzeDocument` (FORMS+TABLES) + a regex parser for the Malaysian IC number pattern (`YYMMDD-PB-####`) — NOT `AnalyzeID` (which only supports US driver's licenses + US passports)
-- [ ] **KYC-05**: Verification pipeline uses Rekognition `CompareFaces` between IC front and selfie; optional `Face Liveness` check on selfie; results written to `kyc_sessions`
-- [ ] **KYC-06**: `GET /api/v1/kyc/status/{jobId}` returns `KycVerificationResult {jobId, status, extractedData?, faceMatch?, failureReason?}`; supports the frontend's 2.5s polling interval up to 60s timeout
-- [ ] **KYC-07**: KYC decision logic: similarity ≥80 AND Textract confidence ≥85 → `approved`; similarity ≥70 OR Textract confidence ≥70 → `manual_review`; otherwise → `failed` with structured `failureReason`
-- [ ] **KYC-08**: `POST /api/v1/kyc/retry` invalidates the previous session and returns a fresh `{sessionId, frontUrl, backUrl, selfieUrl}` (same shape as `/kyc/session`); allowed only when current status is `failed`
-
 ### Voice-to-Profile Pipeline
 
-- [ ] **VOICE-01**: WebSocket `wss://<backend>/api/v1/voice-to-profile/stream` accepts a handshake frame `{language: "en-US" | "zh-CN"}`, then 16kHz PCM audio binary frames; emits `{type: "partial", text}` during speech and `{type: "final", listing: ListingDraft}` on user pause; target end-to-end latency 2-3s
-- [ ] **VOICE-02**: Streaming pipeline uses the `amazon-transcribe>=0.6.4` Python SDK (NOT `boto3`, which has no streaming support); two `asyncio.create_task`s with an `asyncio.Queue` bridge browser ⇄ Transcribe ⇄ FastAPI
-- [ ] **VOICE-03**: WebSocket handler MUST close the upstream Transcribe stream in a `try/finally` block (calling `input_stream.end_stream()` and cancelling the partial-transcript reader) on browser disconnect; a 90-second max-session timer kills hung handlers
-- [ ] **VOICE-04**: `POST /api/v1/voice-to-profile/batch` accepts `{s3Key, language: "ms-MY" | "ta-IN"}` and returns `{jobId, status: "pending", estimatedSeconds}` (async-job pattern — does NOT inline-poll, since 8-12s exceeds typical LB idle timeouts); frontend polls a status endpoint
-- [ ] **VOICE-05**: Batch pipeline uses `boto3` Transcribe Batch reading from the audio S3 bucket; on completion, transcript is sent to Qwen for JSON extraction
-- [ ] **VOICE-06**: Both streaming and batch paths share `services/qwen_service.py::extract_listing(transcript, language)` which calls DashScope (Qwen) via the OpenAI-compatible endpoint with `response_format={"type": "json_object"}` against the schema in `MULTI-CLOUD-ARCHITECTURE.md` (`{name, service_offer, category, price_amount, price_unit, capacity, dietary_tags, location_hint, language}`)
-- [ ] **VOICE-07**: Qwen output is Pydantic-validated; on `ValidationError` the prompt is retried once with the validation error appended; markdown fences are stripped before parse; persistent failure returns `502 {message: "Listing extraction failed"}`
+- [x] **VOICE-01**: WebSocket `wss://<backend>/api/v1/voice-to-profile/stream` accepts a handshake frame `{language: "en-US" | "zh-CN"}`, then 16kHz PCM audio binary frames; emits `{type: "partial", text}` during speech and `{type: "final", listing: ListingDraft}` on user pause; target end-to-end latency 2-3s
+- [x] **VOICE-02**: Streaming pipeline uses the `amazon-transcribe>=0.6.4` Python SDK (NOT `boto3`, which has no streaming support); two `asyncio.create_task`s with an `asyncio.Queue` bridge browser ⇄ Transcribe ⇄ FastAPI
+- [x] **VOICE-03**: WebSocket handler MUST close the upstream Transcribe stream in a `try/finally` block (calling `input_stream.end_stream()` and cancelling the partial-transcript reader) on browser disconnect; a 90-second max-session timer kills hung handlers
+- [x] **VOICE-04**: `POST /api/v1/voice-to-profile/batch` accepts `{s3Key, language: "ms-MY" | "ta-IN"}` and returns `{jobId, status: "pending", estimatedSeconds}` (async-job pattern — does NOT inline-poll, since 8-12s exceeds typical LB idle timeouts); frontend polls a status endpoint
+- [x] **VOICE-05**: Batch pipeline uses `boto3` Transcribe Batch reading from the audio S3 bucket; on completion, transcript is sent to Qwen for JSON extraction
+- [x] **VOICE-06**: Both streaming and batch paths share `services/qwen_service.py::extract_listing(transcript, language)` which calls DashScope (Qwen) via the OpenAI-compatible endpoint with `response_format={"type": "json_object"}` against the schema in `MULTI-CLOUD-ARCHITECTURE.md` (`{name, service_offer, category, price_amount, price_unit, capacity, dietary_tags, location_hint, language}`)
+- [x] **VOICE-07**: Qwen output is Pydantic-validated; on `ValidationError` the prompt is retried once with the validation error appended; markdown fences are stripped before parse; persistent failure returns `502 {message: "Listing extraction failed"}`
 
 ### Frontend Wiring
 
@@ -88,7 +77,7 @@ The frontend is preserved as-is except for the additive changes below. No UI fea
 - [ ] **FE-01**: `frontend/src/services/api/types.ts` extended additively: `Listing` gains `category`, `priceUnit`, `priceMax`, `rating`, `reviewCount`, `halal`, `titleMs/En/Zh/Ta`, `days`, `menu`, `matchScore`, `matchReason`, `distance`, plus elder-snapshot fields (`elderName`, `elderInitials`, `elderArea`, `elderPortraitUrl`); `Booking` gains `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription`; `UserProfile` gains `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`; `CompanionAlert` gains `title`; new types `ListingDraft`, `Review`, `TimelineEvent`
 - [ ] **FE-02**: New endpoint module `frontend/src/services/api/endpoints/voice.ts` with `submitBatchJob(s3Key, language)` and `getBatchStatus(jobId)` plus the WebSocket connection helper used by `ElderVoice`
 - [ ] **FE-03**: New endpoints `getListingById(id)` and `getCompanionTimeline(elderId)` added to existing modules
-- [ ] **FE-04**: Inline mock helpers in `OnboardingFlow.jsx` (`apiRegister`, `apiInitiateKycSession`, `apiStartVerification`, `apiWaitForResult`) replaced 1:1 with imports from `src/services/api/endpoints/{auth,kyc}`; the 8-step KYC stepper UI is unchanged
+- [ ] **FE-04**: Inline auth/register helper in `OnboardingFlow.jsx` replaced with imports from `src/services/api/endpoints/auth`; the 8-step KYC stepper UI remains unchanged and outside the active backend scope
 - [ ] **FE-05**: Every screen file (`elder-screens.jsx`, `requestor-screens.jsx`, `companion-screens.jsx`) replaces direct imports of `mock-data.js` constants with `useEffect`-driven calls to the typed API client; loading/error states match the prototype's existing inline patterns (no new libraries)
 - [ ] **FE-06**: `DEMO_ACCOUNTS` in `PrototypeApp.jsx` keeps its visual chips for quick-login UX, but the click handler calls `auth.ts → login` against the real backend instead of running an in-memory match
 - [ ] **FE-07**: `ElderVoice` component wires the WebSocket via `voice.ts` for `en-US`/`zh-CN`; `ms-MY`/`ta-IN` use the batch path with browser-direct S3 PUT; the existing `window.SpeechRecognition` code is retained as a graceful fallback for browsers without `AudioWorklet`
@@ -103,11 +92,11 @@ Live deploy is a hackathon judging requirement (per Key Decision in PROJECT.md).
 - [ ] **DEPLOY-02**: Backend Docker image deployed to Alibaba Cloud ECS in `ap-southeast-3` (Kuala Lumpur); container runs `uvicorn` with WebSocket support; load balancer idle timeout ≥300s on the WS path
 - [ ] **DEPLOY-03**: ApsaraDB PostgreSQL instance provisioned in `ap-southeast-3`; connection URL injected via env var
 - [ ] **DEPLOY-05**: Alibaba OSS bucket provisioned for provider photos (non-PII); served public-read with CDN-friendly URLs
-- [ ] **DEPLOY-06**: AWS S3 buckets provisioned in `ap-southeast-1`: one for KYC images (24h lifecycle auto-delete), one for batch ASR audio; both with CORS allowing the CloudFront origin for `PUT` and the deployed backend origin for `GET`
-- [ ] **DEPLOY-07**: AWS IAM role(s) for Textract `AnalyzeDocument`, Rekognition `CompareFaces`, Transcribe Streaming + Batch, S3 read/write/presign — least-privilege scoped to the specific buckets and operations
+- [ ] **DEPLOY-06**: AWS S3 audio bucket provisioned in `ap-southeast-1` for batch ASR audio with CORS allowing the CloudFront origin for `PUT` and the deployed backend origin for `GET`
+- [ ] **DEPLOY-07**: AWS IAM role(s) for Transcribe Streaming + Batch and S3 read/write/presign — least-privilege scoped to the specific bucket and operations
 - [ ] **DEPLOY-08**: DashScope/Qwen account active; `DASHSCOPE_API_KEY` provisioned; rate limits monitored
-- [ ] **DEPLOY-09**: AWS budget alert configured at $50/$100 thresholds (Transcribe Streaming + Rekognition can rack up costs fast on a brittle WebSocket loop)
-- [ ] **DEPLOY-10**: Smoke test from the deployed CloudFront URL: login as siti/amir/faiz → browse → book → voice-to-profile (en-US) → KYC happy path
+- [ ] **DEPLOY-09**: AWS budget alert configured at $50/$100 thresholds (Transcribe Streaming can rack up costs fast on a brittle WebSocket loop)
+- [ ] **DEPLOY-10**: Smoke test from the deployed CloudFront URL: login as siti/amir/faiz → browse → book → voice-to-profile (en-US)
 
 ## v2 Requirements
 
@@ -198,54 +187,46 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | ELDER-03 | Phase 3 | Complete |
 | ELDER-04 | Phase 3 | Complete |
 | ELDER-05 | Phase 3 | Complete |
-| REQ-01 | Phase 3 | Pending |
+| REQ-01 | Phase 3 | Complete |
 | REQ-02 | Phase 3 | Complete |
-| REQ-03 | Phase 3 | Pending |
-| REQ-04 | Phase 3 | Pending |
-| REQ-05 | Phase 3 | Pending |
-| COMP-01 | Phase 3 | Pending |
-| COMP-02 | Phase 3 | Pending |
-| COMP-03 | Phase 3 | Pending |
-| COMP-04 | Phase 3 | Pending |
-| KYC-01 | Phase 4 | Pending |
-| KYC-02 | Phase 4 | Pending |
-| KYC-03 | Phase 4 | Pending |
-| KYC-04 | Phase 4 | Pending |
-| KYC-05 | Phase 4 | Pending |
-| KYC-06 | Phase 4 | Pending |
-| KYC-07 | Phase 4 | Pending |
-| KYC-08 | Phase 4 | Pending |
-| VOICE-01 | Phase 5 | Pending |
-| VOICE-02 | Phase 5 | Pending |
-| VOICE-03 | Phase 5 | Pending |
-| VOICE-04 | Phase 5 | Pending |
-| VOICE-05 | Phase 5 | Pending |
-| VOICE-06 | Phase 5 | Pending |
-| VOICE-07 | Phase 5 | Pending |
-| FE-01 | Phase 6 | Pending |
-| FE-02 | Phase 6 | Pending |
-| FE-03 | Phase 6 | Pending |
-| FE-04 | Phase 6 | Pending |
-| FE-05 | Phase 6 | Pending |
-| FE-06 | Phase 6 | Pending |
-| FE-07 | Phase 6 | Pending |
-| FE-08 | Phase 6 | Pending |
-| FE-09 | Phase 6 | Pending |
-| DEPLOY-01 | Phase 7 | Pending |
-| DEPLOY-02 | Phase 7 | Pending |
-| DEPLOY-03 | Phase 7 | Pending |
-| DEPLOY-05 | Phase 7 | Pending |
-| DEPLOY-06 | Phase 7 | Pending |
-| DEPLOY-07 | Phase 7 | Pending |
-| DEPLOY-08 | Phase 7 | Pending |
-| DEPLOY-09 | Phase 7 | Pending |
-| DEPLOY-10 | Phase 7 | Pending |
+| REQ-03 | Phase 3 | Complete |
+| REQ-04 | Phase 3 | Complete |
+| REQ-05 | Phase 3 | Complete |
+| COMP-01 | Phase 3 | Complete |
+| COMP-02 | Phase 3 | Complete |
+| COMP-03 | Phase 3 | Complete |
+| COMP-04 | Phase 3 | Complete |
+| VOICE-01 | Phase 4 | Complete |
+| VOICE-02 | Phase 4 | Complete |
+| VOICE-03 | Phase 4 | Complete |
+| VOICE-04 | Phase 4 | Complete |
+| VOICE-05 | Phase 4 | Complete |
+| VOICE-06 | Phase 4 | Complete |
+| VOICE-07 | Phase 4 | Complete |
+| FE-01 | Phase 5 | Pending |
+| FE-02 | Phase 5 | Pending |
+| FE-03 | Phase 5 | Pending |
+| FE-04 | Phase 5 | Pending |
+| FE-05 | Phase 5 | Pending |
+| FE-06 | Phase 5 | Pending |
+| FE-07 | Phase 5 | Pending |
+| FE-08 | Phase 5 | Pending |
+| FE-09 | Phase 5 | Pending |
+| DEPLOY-01 | Phase 6 | Pending |
+| DEPLOY-02 | Phase 6 | Pending |
+| DEPLOY-03 | Phase 6 | Pending |
+| DEPLOY-05 | Phase 6 | Pending |
+| DEPLOY-06 | Phase 6 | Pending |
+| DEPLOY-07 | Phase 6 | Pending |
+| DEPLOY-08 | Phase 6 | Pending |
+| DEPLOY-09 | Phase 6 | Pending |
+| DEPLOY-10 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 67 total
-- Mapped to phases: 67
+- active v1 requirements: 59 total
+- Mapped to phases: 59
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-25*
-*Last updated: 2026-04-25 after roadmap creation (traceability filled)*
+*Last updated: 2026-04-25 after Phase 4 eKYC removal*

@@ -9,7 +9,7 @@
 
 - [x] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
 - [x] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
-- [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
+- [x] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [ ] **Phase 4: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
 - [ ] **Phase 5: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
 - [ ] **Phase 6: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
@@ -62,8 +62,8 @@
 - [x] 03-01-PLAN.md — Persona router contract test harness (Wave 0)
 - [x] 03-02-PLAN.md — Shared persona schemas, query helpers, and seeded match persistence (Wave 1)
 - [x] 03-03-PLAN.md — Elder listings, bookings, responses, and earnings router (Wave 2)
-- [ ] 03-04-PLAN.md — Requestor search and bookings router (Wave 2)
-- [ ] 03-05-PLAN.md — Companion dashboard, alerts, timeline, and preferences router (Wave 2)
+- [x] 03-04-PLAN.md — Requestor search and bookings router (Wave 2)
+- [x] 03-05-PLAN.md — Companion dashboard, alerts, timeline, and preferences router (Wave 2)
 
 ### Phase 4: Voice-to-Profile Pipeline
 **Goal**: The elder's "speak to create a listing" flow produces a Pydantic-validated `ListingDraft` from real audio in all 4 locales — streaming for `en-US`/`zh-CN` (2-3s target), batch async-job for `ms-MY`/`ta-IN` (8-12s) — with WebSocket cleanup discipline that survives 30+ demo attempts.
@@ -75,7 +75,12 @@
   3. `POST /api/v1/voice-to-profile/batch` returns `{jobId,status:"pending",estimatedSeconds}` immediately (no inline polling, no 504); the frontend polls a status endpoint and a background task drives Transcribe Batch + Qwen + DB persist.
   4. Both streaming and batch flows route the final transcript through `services/qwen_service.py::extract_listing` (DashScope OpenAI-compatible endpoint, `response_format={"type":"json_object"}`); markdown fences are stripped before parse; on `ValidationError` the prompt is retried once with the error appended; persistent failure returns `502 {message:"Listing extraction failed"}`.
   5. Streaming uses `amazon-transcribe>=0.6.4` (not boto3); batch uses `boto3`; both pin `region="ap-southeast-1"` explicitly so no requests cross to `us-east-1`.
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 04-01-PLAN.md — Voice batch DB migration, contract test harness, and guardrails (Wave 0)
+- [ ] 04-02-PLAN.md — Schemas, Qwen extract_listing, and unit tests (Wave 1)
+- [ ] 04-03-PLAN.md — Transcribe streaming integration, WebSocket handler, voice service (Wave 2)
+- [ ] 04-04-PLAN.md — S3 presign, Transcribe batch, async job and status HTTP routes (Wave 2, after 04-03 because both edit `voice.py`)
+- [ ] 04-05-PLAN.md — 502 unification, contract completion, and full phase verification (Wave 3)
 
 ### Phase 5: Frontend Wiring + Type Extensions
 **Goal**: Every prototype mock helper and inline mock data import is replaced with a typed-API import — types are extended additively in `types.ts` first, then mock helpers swap 1:1, then the WebSocket wires to `ElderVoice`. Zero UI/feature/copy/styling change.
@@ -108,8 +113,8 @@
 |-------|----------------|--------|-----------|
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
-| 3. Persona Routers (Elder + Requestor + Companion) | 3/5 | In Progress | - |
-| 4. Voice-to-Profile Pipeline | 0/0 | Not started | - |
+| 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
+| 4. Voice-to-Profile Pipeline | 1/5 | In Progress | - |
 | 5. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
 | 6. Multi-Cloud Live Deployment | 0/0 | Not started | - |
 

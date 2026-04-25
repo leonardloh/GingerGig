@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-last_updated: "2026-04-25T16:56:35Z"
+status: executing
+last_updated: "2026-04-25T17:16:42Z"
 progress:
-  total_phases: 7
+  total_phases: 6
   completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
-  percent: 43
+  total_plans: 18
+  completed_plans: 14
+  percent: 78
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 03 plan 05 complete)
+**Last updated:** 2026-04-25 (Phase 04 plan 01 complete)
 
 ## Project Reference
 
@@ -25,15 +25,15 @@ progress:
 
 ## Current Position
 
-Phase: 03 (persona-routers-elder-requestor-companion) — COMPLETE
-Plan: 5 of 5
-**Phase:** 04 of 7 (voice to profile pipeline)
-**Plan:** Not started
-**Status:** Ready to plan
-**Progress:** [██████████] 100%
+Phase: 04 (voice-to-profile-pipeline) — EXECUTING
+Plan: 2 of 5
+**Phase:** 04 of 6 (voice to profile pipeline)
+**Plan:** Ready for 04-02
+**Status:** Executing Phase 04
+**Progress:** [███████████░░░░░░░░░] 78%
 
 ```
-[████████████████████] 100% (13 of 13 plans)
+[███████████████░░░░░] 78% (14 of 18 plans)
 ```
 
 ## Phase Pipeline
@@ -42,19 +42,18 @@ Plan: 5 of 5
 |---|-------|--------|------------|
 | 1 | Backend Scaffold + Schema + Seed | Complete | — |
 | 2 | Auth + Bearer Middleware | Complete | 1 |
-| 3 | Persona Routers (Elder + Requestor + Companion) | In progress | 2 |
-| 4 | eKYC Pipeline | Not started | 2 |
-| 5 | Voice-to-Profile Pipeline | Not started | 2 |
-| 6 | Frontend Wiring + Type Extensions | Not started | 3, 4, 5 |
-| 7 | Multi-Cloud Live Deployment | Not started | 6 |
+| 3 | Persona Routers (Elder + Requestor + Companion) | Complete | 2 |
+| 4 | Voice-to-Profile Pipeline | In progress | 2 |
+| 5 | Frontend Wiring + Type Extensions | Not started | 3, 4 |
+| 6 | Multi-Cloud Live Deployment | Not started | 5 |
 
 ## Performance Metrics
 
-- **Plans complete:** 13
+- **Plans complete:** 14
 - **Verifications passed:** 2
 - **Phases shipped:** 2
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 03 plan 05 — companion dashboard/alerts/timeline/preferences router, 10 companion locale/authz tests passing
+- **Latest phase metric:** Phase 04 plan 01 — voice batch correlation migration applied; 2 targeted tests passing, 2 planned skips
 
 ## Accumulated Context
 
@@ -84,6 +83,7 @@ Plan: 5 of 5
 | 01-05 seed verification target | Yes | `gingergig_test` was absent, so live seed idempotency was verified against the migrated configured database with process-local asyncpg/no-SSL overrides |
 | 01-06 test harness target | Yes | Test fixtures prefer `TEST_DATABASE_URL` but fall back to normalized `DATABASE_URL` per user approval; guardrail tests enforce forbidden deps/imports, no wildcard CORS, and no `Base.metadata.create_all` |
 | 02-01 demo auth policy | Yes | Phase 2 deliberately ships a demo-only auth shim: seeded demo emails get JWTs without runtime password verification; production bcrypt checks remain deferred |
+| 04-01 voice batch correlation | Yes | `voice_sessions` stores nullable `audio_s3_key` and `transcribe_job_name`; Alembic revision ids must stay ≤32 chars for the current version table |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -103,8 +103,8 @@ Plan: 5 of 5
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `03-05-PLAN.md`
-**Next action:** Verify Phase 03 or continue to the next planned phase.
+**Last session ended:** 2026-04-25 — completed `04-01-PLAN.md`
+**Next action:** Execute `04-02-PLAN.md` (schemas, Qwen extract_listing, and unit tests).
 
 **Resume context for next session:**
 
@@ -129,3 +129,5 @@ Plan: 5 of 5
 **Completed Plan:** 03-04 (Requestor search and bookings router) — 2026-04-25T16:52:10Z
 
 **Completed Plan:** 03-05 (Companion dashboard, alerts, timeline, and preferences router) — 2026-04-25T16:56:35Z
+
+**Completed Plan:** 04-01 (Voice batch DB migration, contract test harness, and guardrails) — 2026-04-25T17:16:42Z
