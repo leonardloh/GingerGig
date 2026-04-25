@@ -5,3 +5,4 @@ export * from "./endpoints/elder";
 export * from "./endpoints/requestor";
 export * from "./endpoints/companion";
 export * from "./endpoints/kyc";
+export * from "./endpoints/voice";
