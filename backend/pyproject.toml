@@ -1,0 +1,13 @@
+[project]
+name = "gingergig-backend"
+version = "0.1.0"
+description = "GingerGig API - Silver Economy Marketplace"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncpg>=0.31.0",
+    "fastapi>=0.136.1",
+    "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0.49",
+    "uvicorn>=0.46.0",
+]
