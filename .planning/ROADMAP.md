@@ -60,7 +60,7 @@
   5. Listings + alerts + timeline queries select a single locale column at the SQL level (no client-side `getattr(row, f"text_{locale}")`) and fall back to English via `coalesce` when the requested locale column is NULL.
 **Plans**: 5 plans
 - [x] 03-01-PLAN.md — Persona router contract test harness (Wave 0)
-- [ ] 03-02-PLAN.md — Shared persona schemas, query helpers, and seeded match persistence (Wave 1)
+- [x] 03-02-PLAN.md — Shared persona schemas, query helpers, and seeded match persistence (Wave 1)
 - [ ] 03-03-PLAN.md — Elder listings, bookings, responses, and earnings router (Wave 2)
 - [ ] 03-04-PLAN.md — Requestor search and bookings router (Wave 2)
 - [ ] 03-05-PLAN.md — Companion dashboard, alerts, timeline, and preferences router (Wave 2)
@@ -108,7 +108,7 @@
 |-------|----------------|--------|-----------|
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
-| 3. Persona Routers (Elder + Requestor + Companion) | 1/5 | In Progress | - |
+| 3. Persona Routers (Elder + Requestor + Companion) | 2/5 | In Progress | - |
 | 4. Voice-to-Profile Pipeline | 0/0 | Not started | - |
 | 5. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
 | 6. Multi-Cloud Live Deployment | 0/0 | Not started | - |
