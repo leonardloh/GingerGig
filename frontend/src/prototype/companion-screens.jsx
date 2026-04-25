@@ -479,11 +479,34 @@ function CompanionDashboard({ elderId, user }) {
 // Designed as a live activity feed, NOT a dashboard. The feeling
 // should be: glancing in on her day from across the country.
 // ---------------------------------------------------------------
-function CompanionAlerts() {
+function CompanionAlerts({ elderId, user }) {
   const t = useT();
   const lang = useLang();
   const [now, setNow] = useState(new Date());
-  const elder = elderSnapshotFallback();
+  const [elder, setElder] = useState(() => elderSnapshotFallback(user));
+
+  useEffect(() => {
+    let active = true;
+    if (!elderId) {
+      setElder(elderSnapshotFallback(user));
+      return () => {
+        active = false;
+      };
+    }
+
+    getCompanionDashboard(elderId)
+      .then((dashboardData) => {
+        if (active) setElder(dashboardData.elder);
+      })
+      .catch(() => {
+        if (active) setElder(elderSnapshotFallback(user));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [elderId, user]);
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
