@@ -77,9 +77,9 @@ The frontend is preserved as-is except for the additive changes below. No UI fea
 - [x] **FE-01**: `frontend/src/services/api/types.ts` extended additively: `Listing` gains `category`, `priceUnit`, `priceMax`, `rating`, `reviewCount`, `halal`, `titleMs/En/Zh/Ta`, `days`, `menu`, `matchScore`, `matchReason`, `distance`, plus elder-snapshot fields (`elderName`, `elderInitials`, `elderArea`, `elderPortraitUrl`); `Booking` gains `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription`; `UserProfile` gains `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`; `CompanionAlert` gains `title`; new types `ListingDraft`, `Review`, `TimelineEvent`
 - [x] **FE-02**: New endpoint module `frontend/src/services/api/endpoints/voice.ts` with `submitBatchJob(s3Key, language)` and `getBatchStatus(jobId)` plus the WebSocket connection helper used by `ElderVoice`
 - [x] **FE-03**: New endpoints `getListingById(id)` and `getCompanionTimeline(elderId)` added to existing modules
-- [ ] **FE-04**: Inline auth/register helper in `OnboardingFlow.jsx` replaced with imports from `src/services/api/endpoints/auth`; the 8-step KYC stepper UI remains unchanged and outside the active backend scope
+- [x] **FE-04**: Inline auth/register helper in `OnboardingFlow.jsx` replaced with imports from `src/services/api/endpoints/auth`; the 8-step KYC stepper UI remains unchanged and outside the active backend scope
 - [ ] **FE-05**: Every screen file (`elder-screens.jsx`, `requestor-screens.jsx`, `companion-screens.jsx`) replaces direct imports of `mock-data.js` constants with `useEffect`-driven calls to the typed API client; loading/error states match the prototype's existing inline patterns (no new libraries)
-- [ ] **FE-06**: `DEMO_ACCOUNTS` in `PrototypeApp.jsx` keeps its visual chips for quick-login UX, but the click handler calls `auth.ts → login` against the real backend instead of running an in-memory match
+- [x] **FE-06**: `DEMO_ACCOUNTS` in `PrototypeApp.jsx` keeps its visual chips for quick-login UX, but the click handler calls `auth.ts → login` against the real backend instead of running an in-memory match
 - [ ] **FE-07**: `ElderVoice` component wires the WebSocket via `voice.ts` for `en-US`/`zh-CN`; `ms-MY`/`ta-IN` use the batch path with browser-direct S3 PUT; the existing `window.SpeechRecognition` code is retained as a graceful fallback for browsers without `AudioWorklet`
 - [ ] **FE-08**: `frontend/.env.local` updated to point `VITE_API_BASE_URL` at the local FastAPI backend during dev, the deployed Alibaba ECS endpoint in production
 - [x] **FE-09**: Type extensions are strictly additive — no field is renamed or removed in `types.ts`; existing `apiRequest`, `setApiAccessToken`, `ApiError` shape, and `/api/v1` prefix are unchanged
@@ -206,12 +206,12 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | FE-01 | Phase 5 | Pending |
 | FE-02 | Phase 5 | Pending |
 | FE-03 | Phase 5 | Pending |
-| FE-04 | Phase 5 | Pending |
+| FE-04 | Phase 5 | Complete |
 | FE-05 | Phase 5 | Pending |
-| FE-06 | Phase 5 | Pending |
+| FE-06 | Phase 5 | Complete |
 | FE-07 | Phase 5 | Pending |
 | FE-08 | Phase 5 | Pending |
-| FE-09 | Phase 5 | Pending |
+| FE-09 | Phase 5 | Complete |
 | DEPLOY-01 | Phase 6 | Pending |
 | DEPLOY-02 | Phase 6 | Pending |
 | DEPLOY-03 | Phase 6 | Pending |

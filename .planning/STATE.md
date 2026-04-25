@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T18:17:27.345Z"
+last_updated: "2026-04-25T18:23:15.412Z"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 31
-  completed_plans: 19
-  percent: 61
+  completed_plans: 20
+  percent: 65
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 05 plan 01 complete)
+**Last updated:** 2026-04-25 (Phase 05 plan 02 complete)
 
 ## Project Reference
 
@@ -26,14 +26,14 @@ progress:
 ## Current Position
 
 Phase: 05 (frontend-wiring-type-extensions) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 **Phase:** 05 of 6 (frontend wiring + type extensions)
-**Plan:** Ready for 05-02
+**Plan:** Ready for 05-03
 **Status:** Executing Phase 05
-**Progress:** [██████░░░░] 61%
+**Progress:** [███████░░░] 65%
 
 ```
-[██████░░░░] 61% (19 of 31 plans)
+[███████░░░] 65% (20 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -49,11 +49,11 @@ Plan: 2 of 7
 
 ## Performance Metrics
 
-- **Plans complete:** 19
+- **Plans complete:** 20
 - **Verifications passed:** 3
 - **Phases shipped:** 3
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 05 plan 01 — frontend API DTOs extended, requestor/companion endpoint gaps closed, voice helpers exported, and frontend typecheck passed
+- **Latest phase metric:** Phase 05 plan 02 — auth quick-login, signout, and onboarding register now use typed auth endpoints; frontend typecheck and build passed
 
 ## Accumulated Context
 
@@ -88,6 +88,7 @@ Plan: 2 of 7
 | 04-02 Qwen listing extraction | Yes | `ListingDraft` keeps canonical snake_case Qwen fields; `extract_listing` uses DashScope `json_object`, strips fences, Pydantic-validates, and retries exactly once on validation failure |
 | 04-04 batch worker boundary | Yes | `POST /voice-to-profile/batch` returns `pending` immediately; background work is scheduled with `asyncio.create_task` and opens a fresh session via `get_sessionmaker(app.state.engine)` |
 | 06 deployment split | Yes | AWS/Alibaba provisioning plans can run before Phase 5; backend rollout, frontend publication, hardening, and smoke test stay gated on Phase 4/5 completion |
+| 05-02 frontend auth boundary | Yes | Login/register/logout are wired through typed auth helpers; `getMe().role` drives persona routing; token ownership remains in auth/http helpers |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -107,8 +108,8 @@ Plan: 2 of 7
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `05-01-PLAN.md`
-**Next action:** Execute `05-02-PLAN.md` (auth quick-login, signout, and onboarding register wiring).
+**Last session ended:** 2026-04-25 — completed `05-02-PLAN.md`
+**Next action:** Execute `05-03-PLAN.md` (elder screens mock import removal and API adapters).
 
 **Resume context for next session:**
 
@@ -121,29 +122,17 @@ Plan: 2 of 7
 *State initialised: 2026-04-25 after roadmap creation*
 
 **Completed Plan:** 02-01 (Demo auth shim and bearer dependencies) — 2026-04-25T16:16:37Z
-
 **Planned Phase:** 5 (Frontend Wiring + Type Extensions) — 7 plans — 2026-04-25T17:28:20.599Z
-
 **Planned Phase:** 6 (Multi-Cloud Live Deployment) — 6 plans — 2026-04-25T17:35:00Z
-
 **Completed Plan:** 03-01 (Persona router contract test harness) — 2026-04-25T16:30:12Z
-
 **Completed Plan:** 03-02 (Shared persona schemas, query helpers, and seeded match persistence) — 2026-04-25T16:41:11Z
-
 **Completed Plan:** 03-03 (Elder listings, bookings, responses, and earnings router) — 2026-04-25T16:46:08Z
-
 **Completed Plan:** 03-04 (Requestor search and bookings router) — 2026-04-25T16:52:10Z
-
 **Completed Plan:** 03-05 (Companion dashboard, alerts, timeline, and preferences router) — 2026-04-25T16:56:35Z
-
 **Completed Plan:** 04-01 (Voice batch DB migration, contract test harness, and guardrails) — 2026-04-25T17:16:42Z
-
 **Completed Plan:** 04-02 (Schemas, Qwen extract_listing, and unit tests) — 2026-04-25T17:23:22Z
-
 **Completed Plan:** 04-03 (Transcribe streaming integration, WebSocket handler, voice service) — 2026-04-25T17:30:45Z
-
 **Completed Plan:** 04-04 (S3 presign, Transcribe batch, async job and status HTTP routes) — 2026-04-25T17:43:32Z
-
 **Completed Plan:** 04-05 (502 unification, contract completion, and full phase verification) — 2026-04-25T17:49:56Z
-
 **Completed Plan:** 05-01 (Frontend API contracts, endpoint gaps, voice helper, and barrel export) — 2026-04-25T18:16:55Z
+**Completed Plan:** 05-02 (Auth quick-login, signout, and onboarding register wiring) — 2026-04-25T18:22:21Z
