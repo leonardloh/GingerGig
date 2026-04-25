@@ -1,16 +1,19 @@
 from typing import Annotated
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps.auth import get_current_user
 from app.deps.db import get_db
+from app.models.booking import Booking as BookingModel
 from app.models.listing import Listing as ListingModel
 from app.models.user import User
-from app.schemas.persona import Listing
+from app.schemas.persona import Booking, CreateBookingPayload, Listing
 from app.services.persona_queries import (
+    booking_snapshot_fields,
+    booking_to_response,
     listing_to_response,
     locale_expr,
     menu_items_for_listings,
@@ -83,6 +86,52 @@ async def search_listings(
         )
         for listing, title, match_reason, elder in rows
     ]
+
+
+@router.post("/bookings", response_model=Booking)
+async def create_booking(
+    payload: CreateBookingPayload,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> Booking:
+    require_role(current_user, "requestor")
+
+    title_expr = locale_expr(ListingModel, "title", current_user.locale, "title")
+    result = await db.execute(
+        select(ListingModel, title_expr, User)
+        .join(User, User.id == ListingModel.elder_id)
+        .where(
+            ListingModel.id == UUID(payload.listingId),
+            ListingModel.is_active.is_(True),
+        )
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Listing not found",
+        )
+
+    listing, title, _elder = row
+    menu_by_listing = await menu_items_for_listings(db, [listing.id])
+    snapshot = booking_snapshot_fields(
+        requestor=current_user,
+        listing=listing,
+        menu_items=menu_by_listing.get(listing.id, []),
+        listing_title=title,
+    )
+    booking = BookingModel(
+        id=uuid4(),
+        requestor_user_id=current_user.id,
+        listing_id=listing.id,
+        status="pending",
+        scheduled_at=payload.scheduledAt,
+        notes=payload.notes,
+        **snapshot,
+    )
+    db.add(booking)
+    await db.flush()
+    return booking_to_response(booking)
 
 
 def _parse_max_distance(value: str | None) -> float | None:
