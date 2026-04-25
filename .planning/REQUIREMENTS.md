@@ -24,8 +24,8 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 - [x] **DATA-03**: `listings` schema preserves every field the prototype renders: `category`, `price`, `price_max`, `price_unit`, `rating`, `review_count`, `halal`, `is_active`, `title_ms/en/zh/ta`, `description`, `days[]`, plus 1:N `listing_menu_items` with `name`/`price`
 - [x] **DATA-04**: `bookings` schema denormalises requestor + listing snapshot fields (`requestor_name`, `requestor_initials`, `requestor_avatar_url`, `listing_title`, `quantity_label`, `item_description`, `amount`, `scheduled_at`, `status`); booking row survives requestor/listing edits unchanged
 - [x] **DATA-05**: `companion_alerts` and `timeline_events` store all four locales as `text_ms/en/zh/ta` columns; backend projects only the requested locale at read time
-- [ ] **DATA-06**: Seed script (`scripts/seed.py`) idempotently loads every existing prototype constant — `HERO_ELDER`, `PROVIDERS` (6), `ELDER_LISTINGS`, `ELDER_BOOKINGS`, `ELDER_COMPLETED`, `REVIEWS`, `COMPANION_ALERTS`, `TIMELINE`, `PORTRAITS` — using `ON CONFLICT (id) DO UPDATE` so re-runs don't duplicate
-- [ ] **DATA-07**: The 3 `DEMO_ACCOUNTS` from `PrototypeApp.jsx` (siti / amir / faiz, all password `demo`) are seeded with bcrypt password hashes so the prototype's quick-login chips work end-to-end against the real backend
+- [x] **DATA-06**: Seed script (`scripts/seed.py`) idempotently loads every existing prototype constant — `HERO_ELDER`, `PROVIDERS` (6), `ELDER_LISTINGS`, `ELDER_BOOKINGS`, `ELDER_COMPLETED`, `REVIEWS`, `COMPANION_ALERTS`, `TIMELINE`, `PORTRAITS` — using `ON CONFLICT (id) DO UPDATE` so re-runs don't duplicate
+- [x] **DATA-07**: The 3 `DEMO_ACCOUNTS` from `PrototypeApp.jsx` (siti / amir / faiz, all password `demo`) are seeded with bcrypt password hashes so the prototype's quick-login chips work end-to-end against the real backend
 
 ### Authentication
 
