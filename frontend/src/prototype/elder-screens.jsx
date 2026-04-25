@@ -2568,15 +2568,15 @@ function ElderEarnings() {
 // ═══════════════════════════════════════════════════════════════
 // ElderProfile — settings / language / logout
 // ═══════════════════════════════════════════════════════════════
-function ElderProfile({ onChangeLanguage }) {
+function ElderProfile({ onChangeLanguage, user }) {
   const t = useT();
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div style={{ padding: "0 16px", textAlign: "center", marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Avatar
-            src={HERO_ELDER.portrait}
-            initials={HERO_ELDER.initials}
+            src={user.avatarUrl}
+            initials={user.initials}
             size={104}
             tone="warm"
             border
@@ -2590,16 +2590,18 @@ function ElderProfile({ onChangeLanguage }) {
             fontWeight: 400,
           }}
         >
-          {HERO_ELDER.name}
+          {user.name}
         </h1>
         <div style={{ fontSize: 14, color: "var(--text-2)" }}>
-          {HERO_ELDER.area}
+          {user.area}
         </div>
-        <div style={{ marginTop: 12 }}>
-          <Badge tone="success">
-            <Icon name="shield" size={12} /> {t("verified")}
-          </Badge>
-        </div>
+        {(!user.kycStatus || user.kycStatus === "approved") && (
+          <div style={{ marginTop: 12 }}>
+            <Badge tone="success">
+              <Icon name="shield" size={12} /> {t("verified")}
+            </Badge>
+          </div>
+        )}
       </div>
 
       <div
