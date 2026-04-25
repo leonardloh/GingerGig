@@ -1,7 +1,8 @@
-import { ELDER_BOOKINGS, PORTRAITS, PROVIDERS, REVIEWS } from './mock-data';
-import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 // requestor-screens.jsx — Home, Search results, Provider detail
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { REVIEWS } from './mock-data';
+import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
+import { api } from '../services/api';
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
@@ -10,6 +11,11 @@ function RequestorHome({ onSearch, onProvider }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [providers, setProviders] = useState([]);
+
+  useEffect(() => {
+    api.requestor.searchListings({}).then(setProviders).catch(() => {});
+  }, []);
 
   const cats = [
     { key: "cat_cooking", icon: "chef", bg: "#FFF3EC", color: "#C2662D" },
@@ -202,7 +208,7 @@ function RequestorHome({ onSearch, onProvider }) {
             padding: "0 16px",
           }}
         >
-          {PROVIDERS.slice(0, 4).map((p) => (
+          {providers.slice(0, 4).map((p) => (
             <button
               key={p.id}
               onClick={() => onProvider && onProvider(p.id)}
@@ -313,7 +319,7 @@ function RequestorHome({ onSearch, onProvider }) {
             gap: 12,
           }}
         >
-          {[PROVIDERS[0], PROVIDERS[4]].map((p) => (
+          {providers.filter((p) => p.halal).slice(0, 2).map((p) => (
             <button
               key={p.id}
               onClick={() => onProvider && onProvider(p.id)}
@@ -385,8 +391,17 @@ function RequestorHome({ onSearch, onProvider }) {
 // ═══════════════════════════════════════════════════════════════
 function RequestorSearch({ onProvider, onBack, query }) {
   const t = useT();
-  const q = query || "halal dinner for 2, weekdays, near Damansara";
-  const matches = PROVIDERS.filter((p) => p.matchScore).slice(0, 3);
+  const q = query || "";
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api.requestor.searchListings({ query: q || undefined })
+      .then(setMatches)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [q]);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -648,9 +663,17 @@ function RequestorSearch({ onProvider, onBack, query }) {
 // ═══════════════════════════════════════════════════════════════
 function ProviderDetail({ providerId, onBack }) {
   const t = useT();
-  const p = PROVIDERS.find((x) => x.id === providerId) || PROVIDERS[0];
+  const [p, setP] = useState(null);
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [faved, setFaved] = useState(false);
+
+  useEffect(() => {
+    if (providerId) {
+      api.requestor.getProvider(providerId).then(setP).catch(() => {});
+    }
+  }, [providerId]);
+
+  if (!p) return null;
   const [favToast, setFavToast] = useState(false);
   const toggleFav = () => {
     const next = !faved;
@@ -725,7 +748,12 @@ function ProviderDetail({ providerId, onBack }) {
               display: "inline-flex",
             }}
           >
-            <GingerLogo size={18} fill={faved ? "#C2662D" : "#C2662D"} />
+            <Icon
+              name="heart"
+              size={22}
+              color={faved ? "var(--primary)" : "var(--text-3)"}
+              fill={faved ? "var(--primary)" : "none"}
+            />
           </span>
           <span>{faved ? "Favourited" : "Favourite"}</span>
         </button>
@@ -754,7 +782,7 @@ function ProviderDetail({ providerId, onBack }) {
           transition: "opacity 0.22s ease, transform 0.22s ease",
         }}
       >
-        <GingerLogo size={16} fill="#F4A155" />
+        <Icon name="heart" size={20} color="#F4A155" fill="#F4A155" />
         <span>Saved to favourites</span>
       </div>
 
@@ -1473,7 +1501,10 @@ function RequestorProfile() {
 
   const cuisineLikes = ["Malay", "Chinese", "Indian", "Western"];
 
-  const saved = PROVIDERS.slice(0, 3);
+  const [saved, setSaved] = useState([]);
+  useEffect(() => {
+    api.requestor.searchListings({}).then((results) => setSaved(results.slice(0, 3))).catch(() => {});
+  }, []);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1487,7 +1518,7 @@ function RequestorProfile() {
         }}
       >
         <Avatar
-          src={PORTRAITS.amir}
+          src={null}
           initials="AR"
           size={68}
           tone="warm"

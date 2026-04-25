@@ -1,5 +1,5 @@
 import { apiRequest } from "../http";
-import type { Booking, Listing } from "../types";
+import type { Booking, Provider } from "../types";
 
 /** Filters for searching available elder service listings. */
 export interface SearchListingsParams {
@@ -32,9 +32,22 @@ export function searchListings(params: SearchListingsParams) {
   if (params.halalOnly) search.set("halal_only", "true");
   if (params.openNow) search.set("open_now", "true");
 
-  return apiRequest<Listing[]>(
+  return apiRequest<Provider[]>(
     `/requestor/listings/search?${search.toString()}`,
   );
+}
+
+/**
+ * GET /api/v1/requestor/providers/:providerId
+ *
+ * Returns the full provider card for a single elder — used on the detail screen.
+ *
+ * @param providerId - The provider's user ID (same as elder ID)
+ * @returns Full Provider object including menu, days, match scores
+ * @throws {ApiError} 404 if the provider does not exist or is not active
+ */
+export function getProvider(providerId: string) {
+  return apiRequest<Provider>(`/requestor/providers/${providerId}`);
 }
 
 /**

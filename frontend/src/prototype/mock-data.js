@@ -79,7 +79,7 @@ const PROVIDERS = [
     price: "RM12-25",
     priceUnit: "per meal",
     halal: false,
-    tone: "professional",
+    tone: "teal",
     description:
       "Authentic Hokkien-style home cooking: bak kut teh, char kway teow, and herbal soups. 40 years in the kitchen.",
     matchScore: 88,
@@ -147,7 +147,7 @@ const PROVIDERS = [
     price: "RM25",
     priceUnit: "per visit",
     halal: false,
-    tone: "professional",
+    tone: "gold",
     description:
       "Retired veterinary assistant. I look after cats, dogs, and rabbits while you are away. Daily photo updates.",
     days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -168,7 +168,7 @@ const PROVIDERS = [
     price: "RM18",
     priceUnit: "per hour",
     halal: false,
-    tone: "professional",
+    tone: "sand",
     description:
       "Tidying, light cleaning, ironing. I bring my own supplies. Two hours minimum.",
     days: ["Mon", "Tue", "Thu", "Fri"],

@@ -1,13 +1,16 @@
 import { apiRequest } from "../http";
-import type { CompanionAlert, CompanionDashboard } from "../types";
+import type { CompanionAlertItem, CompanionDashboardData } from "../types";
 
 /**
  * Each companion is paired with one elder they watch over.
  * The `elderId` here identifies that elder — the backend resolves
  * the companion identity from the JWT `sub` claim.
+ *
+ * Returns the richer CompanionDashboardData shape (elder name, status,
+ * last-active text, timeline) that the companion dashboard UI needs.
  */
-export function getCompanionDashboard(elderId: string): Promise<CompanionDashboard> {
-  return apiRequest<CompanionDashboard>(`/companions/elders/${elderId}/dashboard`);
+export function getCompanionDashboard(elderId: string): Promise<CompanionDashboardData> {
+  return apiRequest<CompanionDashboardData>(`/companions/elders/${elderId}/dashboard`);
 }
 
 /**
@@ -20,8 +23,8 @@ export function getCompanionDashboard(elderId: string): Promise<CompanionDashboa
  * @param elderId - The ID of the elder being watched
  * @returns Array of active alerts, newest first
  */
-export function getCompanionAlerts(elderId: string): Promise<CompanionAlert[]> {
-  return apiRequest<CompanionAlert[]>(`/companions/elders/${elderId}/alerts`);
+export function getCompanionAlerts(elderId: string): Promise<CompanionAlertItem[]> {
+  return apiRequest<CompanionAlertItem[]>(`/companions/elders/${elderId}/alerts`);
 }
 
 /** Notification preferences for a companion's alert subscriptions. */

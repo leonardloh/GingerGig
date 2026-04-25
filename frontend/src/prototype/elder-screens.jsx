@@ -1,8 +1,8 @@
-import { LANGUAGES } from './i18n';
-import { ELDER_BOOKINGS, ELDER_COMPLETED, ELDER_LISTINGS, HERO_ELDER } from './mock-data';
-import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 // elder-screens.jsx — Language pick, Voice flow, Elder dashboard
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { LANGUAGES } from './i18n';
+import { AILabel, Avatar, Badge, Button, Card, EarningsHeroCard, Icon, Stars, useLang, useT } from './components';
+import { api } from '../services/api';
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
@@ -1058,85 +1058,6 @@ function EditableField({
   );
 }
 
-function EditableDetailCell({
-  editing,
-  icon,
-  label,
-  value,
-  sub,
-  onChange,
-  onSubChange,
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          color: "var(--text-3)",
-          fontSize: 12,
-          fontWeight: 600,
-          letterSpacing: "0.04em",
-          textTransform: "uppercase",
-          marginBottom: 4,
-        }}
-      >
-        <Icon name={icon} size={13} />
-        <span>{label}</span>
-      </div>
-      {editing ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-            marginTop: 4,
-          }}
-        >
-          <input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            style={{
-              ...editInputBase,
-              fontSize: 16,
-              fontWeight: 600,
-              padding: "6px 10px",
-            }}
-          />
-          <input
-            value={sub}
-            onChange={(e) => onSubChange(e.target.value)}
-            style={{
-              ...editInputBase,
-              fontSize: 13,
-              color: "var(--text-3)",
-              padding: "5px 10px",
-            }}
-          />
-        </div>
-      ) : (
-        <>
-          <div
-            style={{
-              fontSize: 17,
-              fontWeight: 600,
-              color: "var(--text-1)",
-              lineHeight: 1.2,
-            }}
-          >
-            {value}
-          </div>
-          {sub && (
-            <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>
-              {sub}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
 
 // ─── Detail cell with two stacked dropdowns (price / capacity / availability)
 function EditableSelectCell({
@@ -1586,49 +1507,14 @@ function MockMapPreview({ area }) {
   );
 }
 
-const DetailCell = ({ icon, label, value, sub }) => (
-  <div>
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        color: "var(--text-3)",
-        fontSize: 12,
-        fontWeight: 600,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        marginBottom: 4,
-      }}
-    >
-      <Icon name={icon} size={13} />
-      <span>{label}</span>
-    </div>
-    <div
-      style={{
-        fontSize: 17,
-        fontWeight: 600,
-        color: "var(--text-1)",
-        lineHeight: 1.2,
-      }}
-    >
-      {value}
-    </div>
-    {sub && (
-      <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>
-        {sub}
-      </div>
-    )}
-  </div>
-);
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 3 — Elder Dashboard (responsive multi-col on desktop)
 // ═══════════════════════════════════════════════════════════════
-function ElderDashboard() {
+function ElderDashboard({ user, onAddListing }) {
   const t = useT();
   const [count, setCount] = useState(0);
-  const target = 99; // RM 99 earned today
+  const target = 99;
   useEffect(() => {
     let r = 0;
     const id = setInterval(() => {
@@ -1641,10 +1527,14 @@ function ElderDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const pending = ELDER_BOOKINGS.filter((b) => b.status === "pending");
-  const confirmed = ELDER_BOOKINGS.filter((b) => b.status === "confirmed");
-  const completed =
-    typeof ELDER_COMPLETED !== "undefined" ? ELDER_COMPLETED : [];
+  const [bookings, setBookings] = useState([]);
+  useEffect(() => {
+    if (user?.userId) api.elder.getElderBookings(user.userId).then(setBookings).catch(() => {});
+  }, [user?.userId]);
+
+  const pending = bookings.filter((b) => b.status === "pending");
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+  const completed = bookings.filter((b) => b.status === "completed");
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1677,12 +1567,12 @@ function ElderDashboard() {
               textOverflow: "ellipsis",
             }}
           >
-            {HERO_ELDER.name}
+            {user?.name ?? ''}
           </h1>
         </div>
         <Avatar
-          src={HERO_ELDER.portrait}
-          initials={HERO_ELDER.initials}
+          src={null}
+          initials={user?.initials ?? '?'}
           size={56}
           tone="warm"
           border
@@ -1843,8 +1733,9 @@ function ElderDashboard() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 460px))",
               gap: 12,
+              justifyContent: "start",
             }}
           >
             {pending.map((b) => (
@@ -1865,8 +1756,9 @@ function ElderDashboard() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 460px))",
               gap: 12,
+              justifyContent: "start",
             }}
           >
             {confirmed.map((b) => (
@@ -2038,8 +1930,19 @@ function CompletedRow({ booking }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderListings — dedicated listings tab
 // ═══════════════════════════════════════════════════════════════
-function ElderListings({ onAddListing }) {
+function ElderListings({ user, onAddListing }) {
   const t = useT();
+  const [listings, setListings] = useState([]);
+  const [activeListings, setActiveListings] = useState({});
+
+  useEffect(() => {
+    if (user?.userId) {
+      api.elder.getElderListings(user.userId).then((data) => {
+        setListings(data);
+        setActiveListings(Object.fromEntries(data.map((l) => [l.id, l.isActive])));
+      }).catch(() => {});
+    }
+  }, [user?.userId]);
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div
@@ -2089,7 +1992,7 @@ function ElderListings({ onAddListing }) {
           alignItems: "stretch",
         }}
       >
-        {ELDER_LISTINGS.map((l) => (
+        {listings.map((l) => (
           <Card
             key={l.id}
             style={{
@@ -2157,7 +2060,12 @@ function ElderListings({ onAddListing }) {
                   </span>
                 </div>
               </div>
-              <Toggle on={l.active} />
+              <Toggle
+                on={activeListings[l.id]}
+                onChange={(val) =>
+                  setActiveListings((prev) => ({ ...prev, [l.id]: val }))
+                }
+              />
             </div>
             <div
               style={{
@@ -2237,31 +2145,28 @@ function ElderListings({ onAddListing }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderEarnings — full earnings view
 // ═══════════════════════════════════════════════════════════════
-function ElderEarnings() {
+function ElderEarnings({ user }) {
   const t = useT();
-  const [count, setCount] = useState(0);
-  const target = 680;
-  useEffect(() => {
-    let r = 0;
-    const id = setInterval(() => {
-      r += target / 32;
-      if (r >= target) {
-        setCount(target);
-        clearInterval(id);
-      } else setCount(Math.floor(r));
-    }, 22);
-    return () => clearInterval(id);
-  }, []);
+  const [earnings, setEarnings] = useState(null);
 
-  const months = [
-    { label: "Nov", v: 320 },
-    { label: "Dec", v: 410 },
-    { label: "Jan", v: 480 },
-    { label: "Feb", v: 510 },
-    { label: "Mar", v: 500 },
-    { label: "Apr", v: 680 },
-  ];
-  const max = 700;
+  useEffect(() => {
+    if (user?.userId) {
+      api.elder.getElderEarnings(user.userId).then(setEarnings).catch(() => {});
+    }
+  }, [user?.userId]);
+
+  // Bar chart data — use weeklyBar from API or fall back to placeholder
+  const months = earnings?.weeklyBar
+    ? earnings.weeklyBar.map((v, i) => ({ label: `W${i + 1}`, v }))
+    : [
+        { label: "Nov", v: 320 },
+        { label: "Dec", v: 410 },
+        { label: "Jan", v: 480 },
+        { label: "Feb", v: 510 },
+        { label: "Mar", v: 500 },
+        { label: "Apr", v: 680 },
+      ];
+  const max = Math.max(...months.map((m) => m.v), 100);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -2290,53 +2195,11 @@ function ElderEarnings() {
       </div>
 
       <div className="wide-grid" style={{ padding: "0 16px" }}>
-        <Card
-          style={{
-            padding: 28,
-            background:
-              "linear-gradient(135deg, var(--accent-subtle) 0%, #FFF3D6 100%)",
-            border: "1px solid #F0E0B8",
-          }}
+        <EarningsHeroCard
+          monthlyAmount={earnings?.monthTotal ?? 680}
+          deltaLabel={`${t("moreThanLast")}`}
+          style={{ padding: 28 }}
         >
-          <div
-            style={{
-              color: "#8a6614",
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            {t("thisMonth")}
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(56px, 8vw, 80px)",
-              lineHeight: 0.95,
-              marginTop: 10,
-              color: "var(--text-1)",
-              fontVariantNumeric: "tabular-nums",
-              fontWeight: 400,
-            }}
-          >
-            RM <span>{count}</span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 16,
-              color: "var(--success)",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            <Icon name="trending-up" size={16} strokeWidth={2.2} />
-            <span>+RM 180 {t("moreThanLast")}</span>
-          </div>
-
           {/* Bar chart */}
           <div
             style={{
@@ -2383,7 +2246,7 @@ function ElderEarnings() {
                       style={{
                         width: "100%",
                         maxWidth: 36,
-                        height: `${h}%`,
+                        height: `${h}px`,
                         borderRadius: "6px 6px 0 0",
                         background: isLast
                           ? "var(--accent)"
@@ -2405,10 +2268,10 @@ function ElderEarnings() {
               })}
             </div>
           </div>
-        </Card>
+        </EarningsHeroCard>
 
-        <div>
-          <Card aiBorder style={{ padding: 22, marginBottom: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <Card aiBorder style={{ padding: 22, flex: 1 }}>
             <AILabel />
             <p
               style={{
@@ -2425,7 +2288,7 @@ function ElderEarnings() {
             </Button>
           </Card>
 
-          <Card style={{ padding: 18 }}>
+          <Card style={{ padding: 18, flex: 1 }}>
             <div
               style={{
                 fontSize: 12,
@@ -2461,15 +2324,15 @@ function ElderEarnings() {
 // ═══════════════════════════════════════════════════════════════
 // ElderProfile — settings / language / logout
 // ═══════════════════════════════════════════════════════════════
-function ElderProfile({ onChangeLanguage }) {
+function ElderProfile({ user, onChangeLanguage }) {
   const t = useT();
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div style={{ padding: "0 16px", textAlign: "center", marginBottom: 24 }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Avatar
-            src={HERO_ELDER.portrait}
-            initials={HERO_ELDER.initials}
+            src={null}
+            initials={user?.initials ?? '?'}
             size={104}
             tone="warm"
             border
@@ -2483,10 +2346,10 @@ function ElderProfile({ onChangeLanguage }) {
             fontWeight: 400,
           }}
         >
-          {HERO_ELDER.name}
+          {user?.name ?? ''}
         </h1>
         <div style={{ fontSize: 14, color: "var(--text-2)" }}>
-          {HERO_ELDER.area}
+          {/* area comes from the full user profile — TODO: add to UserProfile type */}
         </div>
         <div style={{ marginTop: 12 }}>
           <Badge tone="success">
@@ -2741,37 +2604,34 @@ function BookingRow({ booking, t }) {
   );
 }
 
-const Toggle = ({ on: initial }) => {
-  const [on, setOn] = useState(initial);
-  return (
-    <button
-      onClick={() => setOn(!on)}
+const Toggle = ({ on, onChange }) => (
+  <button
+    onClick={() => onChange?.(!on)}
+    style={{
+      width: 44,
+      height: 26,
+      borderRadius: 999,
+      border: 0,
+      cursor: "pointer",
+      padding: 2,
+      background: on ? "var(--success)" : "var(--border)",
+      transition: "background 0.2s ease",
+      flexShrink: 0,
+    }}
+  >
+    <div
       style={{
-        width: 44,
-        height: 26,
-        borderRadius: 999,
-        border: 0,
-        cursor: "pointer",
-        padding: 2,
-        background: on ? "var(--success)" : "var(--border)",
-        transition: "background 0.2s ease",
-        flexShrink: 0,
+        width: 22,
+        height: 22,
+        borderRadius: "50%",
+        background: "#fff",
+        transform: `translateX(${on ? 18 : 0}px)`,
+        transition: "transform 0.2s ease",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
       }}
-    >
-      <div
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: "#fff",
-          transform: `translateX(${on ? 18 : 0}px)`,
-          transition: "transform 0.2s ease",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-        }}
-      />
-    </button>
-  );
-};
+    />
+  </button>
+);
 
 
 export { ElderLanguage, ElderVoice, ElderDashboard, ElderListings, ElderEarnings, ElderProfile };
