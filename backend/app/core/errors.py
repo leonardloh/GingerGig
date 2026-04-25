@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -18,7 +19,7 @@ def _envelope(status: int, message: str, detail: Any | None = None) -> JSONRespo
 def register_exception_handlers(app: FastAPI) -> None:
     @app.middleware("http")
     async def unhandled_exception_middleware(
-        request: Request, call_next: Any
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         try:
             return await call_next(request)
