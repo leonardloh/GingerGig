@@ -1,8 +1,54 @@
 import { LANGUAGES } from './i18n';
-import { ELDER_BOOKINGS, ELDER_COMPLETED, ELDER_LISTINGS, HERO_ELDER } from './mock-data';
 import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
+import { getElderBookings, getElderEarnings, getElderListings, respondToBooking, updateListing } from '../services/api/endpoints/elder';
 // elder-screens.jsx — Language pick, Voice flow, Elder dashboard
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+const formatCurrencyValue = (value) => {
+  const numeric = Number(value ?? 0);
+  return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(2);
+};
+
+const formatMoney = (amount, currency = "MYR") => {
+  const value = formatCurrencyValue(amount);
+  return currency === "MYR" ? `RM${value}` : `${currency} ${value}`;
+};
+
+const formatPriceRange = (listing) => {
+  const min = formatMoney(listing.price, listing.currency);
+  if (!listing.priceMax) return min;
+  return `${min}-${formatCurrencyValue(listing.priceMax)}`;
+};
+
+const formatBookingDate = (iso) =>
+  new Date(iso).toLocaleString([], {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+const adaptBooking = (booking) => ({
+  id: booking.id,
+  requestor: booking.requestorName,
+  requestorInitials: booking.requestorInitials,
+  portrait: booking.requestorAvatarUrl,
+  item: booking.listingTitle || booking.itemDescription,
+  qty: booking.qty,
+  price: formatMoney(booking.amount, booking.currency),
+  date: formatBookingDate(booking.scheduledAt),
+  status: booking.status,
+  rating: booking.rating,
+});
+
+const adaptListing = (listing) => ({
+  id: listing.id,
+  title: listing.title,
+  price: formatPriceRange(listing),
+  priceUnit: listing.priceUnit,
+  rating: listing.rating,
+  bookings: listing.reviewCount,
+  active: listing.isActive,
+});
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
