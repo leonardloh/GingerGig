@@ -84,7 +84,6 @@ async def run_streaming_session(
     reader_task: asyncio.Task[None] | None = None
     client_reader_task: asyncio.Task[None] | None = None
     voice_session: VoiceSession | None = None
-    input_stream_ended = False
 
     try:
         async with asyncio.timeout(max_duration_seconds):
@@ -121,7 +120,6 @@ async def run_streaming_session(
             await _send_audio_to_transcribe(audio_queue, input_stream, client_reader_task)
             await _mark_voice_session(db_session, voice_session, "transcribing")
             await _end_input_stream(input_stream)
-            input_stream_ended = True
 
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(reader_task, timeout=3)
@@ -188,7 +186,6 @@ async def run_streaming_session(
             input_stream=input_stream,
             reader_task=reader_task,
             client_reader_task=client_reader_task,
-            input_stream_ended=input_stream_ended,
             websocket=websocket,
         )
         logger.info(
@@ -315,15 +312,14 @@ async def _cleanup_streaming(
     input_stream: Any | None,
     reader_task: asyncio.Task[None] | None,
     client_reader_task: asyncio.Task[None] | None,
-    input_stream_ended: bool,
     websocket: WebSocket,
 ) -> None:
-    if input_stream is not None and not input_stream_ended:
+    if input_stream is not None:
         await _end_input_stream(input_stream)
     for task in (reader_task, client_reader_task):
         if task is not None:
             task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
+            with contextlib.suppress(asyncio.CancelledError, WebSocketDisconnect):
                 await task
     await _close_websocket(websocket)
 
