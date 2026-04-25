@@ -170,6 +170,7 @@ def listing_to_response(
         titleZh=listing.title_zh,
         titleTa=listing.title_ta,
         elderName=elder.name if elder else None,
+        elderAge=elder.age if elder else None,
         elderInitials=initials(elder.name) if elder else None,
         elderArea=elder.area if elder else None,
         elderPortraitUrl=elder.avatar_url if elder else None,

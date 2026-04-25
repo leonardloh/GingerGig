@@ -1,8 +1,8 @@
+// Types — import these anywhere you need to type API data
 export * from "./types";
-export * from "./http";
-export * from "./endpoints/auth";
-export * from "./endpoints/elder";
-export * from "./endpoints/requestor";
-export * from "./endpoints/companion";
-export * from "./endpoints/kyc";
-export * from "./endpoints/voice";
+
+// Central api object — use this for all API calls
+export { api, setDemoMode } from "./api";
+
+// Low-level HTTP client — only needed if you're writing a new endpoint module
+export { apiRequest, setApiAccessToken } from "./http";

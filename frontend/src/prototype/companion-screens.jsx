@@ -1,128 +1,20 @@
-import { Avatar, Card, Icon, useLang, useT } from './components';
 // companion-screens.jsx — Family Companion Dashboard
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  getCompanionAlerts,
-  getCompanionDashboard,
-  getCompanionTimeline,
-  updateCompanionAlertPreferences,
-} from '../services/api/endpoints/companion';
+import { useEffect, useState } from 'react';
+import { Avatar, Card, EarningsHeroCard, Icon, useLang, useT } from './components';
+import { api } from '../services/api';
 
-const COMPANION_ELDER_FALLBACK = {
-  name: "Makcik Siti",
-  initials: "SH",
-  area: "Kepong, Kuala Lumpur",
-  portraitUrl: "https://randomuser.me/api/portraits/women/79.jpg",
-  age: 64,
-};
-
-// Demo-only until companion upcoming bookings endpoint exists.
-const COMPANION_DEMO_UPCOMING_BOOKINGS = [
-  {
-    id: "siti-b1",
-    requestor: "Amir",
-    requestorInitials: "AR",
-    portrait: "https://randomuser.me/api/portraits/men/32.jpg",
-    item: "Rendang + Nasi Lemak",
-    date: "Tomorrow, 6:30 PM",
-    price: "RM 36",
-  },
-  {
-    id: "siti-b2",
-    requestor: "Nadia",
-    requestorInitials: "NA",
-    portrait: "https://randomuser.me/api/portraits/women/44.jpg",
-    item: "Ayam Masak Merah",
-    date: "Sat, 12:00 PM",
-    price: "RM 75",
-  },
-];
-
-function alertVisualTone(alert) {
-  if (alert.type === "celebration") return "success";
-  const warningText = `${alert.title || ""} ${alert.message || ""}`.toLowerCase();
-  if (warningText.includes("rest") || warningText.includes("active 6 days")) return "warning";
-  return "info";
-}
-
-function elderSnapshotFallback(user) {
-  return {
-    ...COMPANION_ELDER_FALLBACK,
-    name: user?.watchedElderName || COMPANION_ELDER_FALLBACK.name,
-  };
-}
-
-function mapAlertPrefsToApi(alertPrefs) {
-  return {
-    inactivity24h: alertPrefs.inactivity,
-    overworkSignals: alertPrefs.overwork,
-    earningsMilestones: alertPrefs.earnings,
-    newBookings: alertPrefs.newBookings,
-    reviews: alertPrefs.reviews,
-  };
-}
-
-function CompanionDashboard({ elderId, user }) {
+function CompanionDashboard({ elderId }) {
   const t = useT();
+  const lang = useLang();
   const [dashboard, setDashboard] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [timeline, setTimeline] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [count, setCount] = useState(0);
-  const elder = dashboard ? dashboard.elder : elderSnapshotFallback(user);
-  const target = Number(dashboard?.weeklyEarnings ?? 0);
+  const [elderBookings, setElderBookings] = useState([]);
 
   useEffect(() => {
-    let active = true;
-    if (!elderId) {
-      setDashboard(null);
-      setAlerts([]);
-      setTimeline([]);
-      return () => {
-        active = false;
-      };
+    if (elderId) {
+      api.companion.getCompanionDashboard(elderId).then(setDashboard).catch(() => {});
+      api.elder.getElderBookings(elderId).then(setElderBookings).catch(() => {});
     }
-
-    setLoading(true);
-    setError("");
-    Promise.all([
-      getCompanionDashboard(elderId),
-      getCompanionAlerts(elderId),
-      getCompanionTimeline(elderId),
-    ])
-      .then(([dashboardData, alertData, timelineData]) => {
-        if (!active) return;
-        setDashboard(dashboardData);
-        setAlerts(alertData);
-        setTimeline(timelineData);
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err.message || "Unable to load companion dashboard");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
   }, [elderId]);
-
-  useEffect(() => {
-    setCount(0);
-    if (!target) return undefined;
-    let r = 0;
-    const id = setInterval(() => {
-      r += target / 32;
-      if (r >= target) {
-        setCount(target);
-        clearInterval(id);
-      } else setCount(Math.floor(r));
-    }, 22);
-    return () => clearInterval(id);
-  }, [target]);
 
   const alertStyles = {
     success: {
@@ -156,8 +48,8 @@ function CompanionDashboard({ elderId, user }) {
         }}
       >
         <Avatar
-          src={elder.portraitUrl}
-          initials={elder.initials}
+          src={null}
+          initials={dashboard?.elderName?.split(' ').map((w) => w[0]).join('').slice(0, 2) ?? '?'}
           size={64}
           tone="warm"
           border
@@ -184,10 +76,10 @@ function CompanionDashboard({ elderId, user }) {
               fontWeight: 400,
             }}
           >
-            {elder.name}
+            {dashboard?.elderName ?? ''}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-3)", marginTop: 2 }}>
-            {elder.area}
+            {dashboard?.elderStatus ?? ''}
           </div>
         </div>
         <button
@@ -206,102 +98,19 @@ function CompanionDashboard({ elderId, user }) {
 
       {/* Earnings: full-width on mobile, 2/3 on desktop */}
       <div className="wide-grid" style={{ padding: "24px 16px 0" }}>
-        <Card
-          style={{
-            padding: 26,
-            background:
-              "linear-gradient(135deg, var(--accent-subtle) 0%, #FFF3D6 100%)",
-            border: "1px solid #F0E0B8",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 20,
-              rowGap: 16,
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  color: "#8a6614",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {t("thisMonth")}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "clamp(44px, 5vw, 60px)",
-                  lineHeight: 1,
-                  marginTop: 8,
-                  color: "var(--text-1)",
-                  fontVariantNumeric: "tabular-nums",
-                  fontWeight: 400,
-                }}
-              >
-                RM {count}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginTop: 14,
-                  color: "var(--success)",
-                  fontSize: 14,
-                  fontWeight: 600,
-                }}
-              >
-                <Icon name="trending-up" size={16} strokeWidth={2.2} />
-                <span>+RM 180 {t("moreThanLast")}</span>
-              </div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-3)",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  fontWeight: 600,
-                }}
-              >
-                Lifetime
-              </div>
-              <div
-                style={{
-                  fontSize: 24,
-                  fontFamily: "var(--font-display)",
-                  color: "var(--text-1)",
-                  marginTop: 4,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                RM 4,820
-              </div>
-              <div
-                style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}
-              >
-                since Aug 2025
-              </div>
-            </div>
-          </div>
-        </Card>
+        <EarningsHeroCard
+          monthlyAmount={dashboard?.weeklyEarnings ?? 0}
+          deltaLabel={t("moreThanLast")}
+          lifetimeAmount={dashboard?.weeklyEarnings ?? 0}
+          lifetimeSince="since Aug 2025"
+        />
 
         {/* Bookings inline on right column */}
         <div>
           <h2 className="section-h" style={{ marginBottom: 12 }}>
             {t("upcomingBookings")}
           </h2>
-          {COMPANION_DEMO_UPCOMING_BOOKINGS.map((b) => (
+          {elderBookings.slice(0, 2).map((b) => (
             <Card key={b.id} style={{ padding: 14, marginBottom: 10 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <Avatar
@@ -358,11 +167,12 @@ function CompanionDashboard({ elderId, user }) {
       <div style={{ padding: "32px 16px 0" }}>
         <h2 className="section-h">{t("alerts")}</h2>
         <div className="three-col">
-          {alerts.map((alert) => {
-            const s = alertStyles[alertVisualTone(alert)];
+          {(dashboard?.timeline?.slice(0, 3) ?? []).map((a) => {
+            const s = alertStyles['info'];
+            const text = a.text;
             return (
               <Card
-                key={alert.id}
+                key={a.id}
                 style={{
                   padding: 18,
                   background: s.bg,
@@ -402,7 +212,7 @@ function CompanionDashboard({ elderId, user }) {
                       lineHeight: 1.5,
                     }}
                   >
-                    {alert.message}
+                    {text}
                   </div>
                 </div>
               </Card>
@@ -426,12 +236,12 @@ function CompanionDashboard({ elderId, user }) {
                 background: "var(--border)",
               }}
             />
-            {timeline.map((event, i) => (
+            {(dashboard?.timeline ?? []).map((e, i) => (
               <div
-                key={event.id}
+                key={e.id}
                 style={{
                   position: "relative",
-                  paddingBottom: i < timeline.length - 1 ? 18 : 0,
+                  paddingBottom: i < (dashboard?.timeline?.length ?? 0) - 1 ? 18 : 0,
                 }}
               >
                 <div
@@ -453,7 +263,7 @@ function CompanionDashboard({ elderId, user }) {
                     fontWeight: 600,
                   }}
                 >
-                  {event.time}
+                  {e.time}
                 </div>
                 <div
                   style={{
@@ -463,7 +273,7 @@ function CompanionDashboard({ elderId, user }) {
                     lineHeight: 1.4,
                   }}
                 >
-                  {event.text}
+                  {e[`text_${lang}`] ?? e.text_en}
                 </div>
               </div>
             ))}
@@ -479,34 +289,16 @@ function CompanionDashboard({ elderId, user }) {
 // Designed as a live activity feed, NOT a dashboard. The feeling
 // should be: glancing in on her day from across the country.
 // ---------------------------------------------------------------
-function CompanionAlerts({ elderId, user }) {
-  const t = useT();
+function CompanionAlerts({ elderId }) {
   const lang = useLang();
-  const [now, setNow] = useState(new Date());
-  const [elder, setElder] = useState(() => elderSnapshotFallback(user));
+  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    let active = true;
-    if (!elderId) {
-      setElder(elderSnapshotFallback(user));
-      return () => {
-        active = false;
-      };
+    if (elderId) {
+      api.companion.getCompanionAlerts(elderId).then(setAlerts).catch(() => {});
     }
-
-    getCompanionDashboard(elderId)
-      .then((dashboardData) => {
-        if (active) setElder(dashboardData.elder);
-      })
-      .catch(() => {
-        if (active) setElder(elderSnapshotFallback(user));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [elderId, user]);
-
+  }, [elderId]);
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
@@ -602,8 +394,8 @@ function CompanionAlerts({ elderId, user }) {
         }}
       >
         <Avatar
-          src={elder.portraitUrl}
-          initials={elder.initials}
+          src={null}
+          initials="MS"
           size={56}
           tone="warm"
           border
@@ -630,7 +422,7 @@ function CompanionAlerts({ elderId, user }) {
               fontWeight: 400,
             }}
           >
-            {elder.name}
+            Makcik Siti
           </div>
         </div>
         <div
@@ -1042,8 +834,7 @@ function CompanionAlerts({ elderId, user }) {
 // CompanionProfile — about ME as a carer / safety net for mum.
 // Care circle, alert preferences, emergency contacts, permissions.
 // ───────────────────────────────────────────────────────────────
-function CompanionProfile({ elderId, user }) {
-  const [elder, setElder] = useState(() => elderSnapshotFallback(user));
+function CompanionProfile() {
   const [alertPrefs, setAlertPrefs] = useState({
     inactivity: true,
     overwork: true,
@@ -1053,30 +844,6 @@ function CompanionProfile({ elderId, user }) {
     appUpdates: false,
   });
   const [digest, setDigest] = useState("weekly"); // "off" | "daily" | "weekly"
-  const companionName = user?.name || "Faiz Rahman";
-  const companionInitials = user?.initials || "FR";
-
-  useEffect(() => {
-    let active = true;
-    if (!elderId) {
-      setElder(elderSnapshotFallback(user));
-      return () => {
-        active = false;
-      };
-    }
-
-    getCompanionDashboard(elderId)
-      .then((dashboardData) => {
-        if (active) setElder({ ...elderSnapshotFallback(user), ...dashboardData.elder });
-      })
-      .catch(() => {
-        if (active) setElder(elderSnapshotFallback(user));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [elderId, user]);
 
   const careCircle = [
     {
@@ -1095,15 +862,7 @@ function CompanionProfile({ elderId, user }) {
     },
   ];
 
-  const toggle = (k) => {
-    const previousPrefs = alertPrefs;
-    const nextPrefs = { ...alertPrefs, [k]: !alertPrefs[k] };
-    setAlertPrefs(nextPrefs);
-    if (k === "appUpdates" || !elderId) return;
-    updateCompanionAlertPreferences(elderId, mapAlertPrefsToApi(nextPrefs)).catch(() => {
-      setAlertPrefs(previousPrefs);
-    });
-  };
+  const toggle = (k) => setAlertPrefs((p) => ({ ...p, [k]: !p[k] }));
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1116,7 +875,7 @@ function CompanionProfile({ elderId, user }) {
           gap: 16,
         }}
       >
-        <Avatar src={user?.avatarUrl} initials={companionInitials} size={68} tone="warm" border />
+        <Avatar initials="FR" size={68} tone="warm" border />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -1139,7 +898,7 @@ function CompanionProfile({ elderId, user }) {
               fontWeight: 400,
             }}
           >
-            {companionName}
+            Faiz Rahman
           </div>
           <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>
             Watching over Makcik Siti · Connected since Aug 2025
@@ -1176,8 +935,8 @@ function CompanionProfile({ elderId, user }) {
             }}
           >
             <Avatar
-              src={elder.portraitUrl}
-              initials={elder.initials}
+              src={null}
+              initials="MS"
               size={64}
               tone="warm"
             />
@@ -1191,12 +950,12 @@ function CompanionProfile({ elderId, user }) {
                   lineHeight: 1.1,
                 }}
               >
-                {elder.name}
+                Makcik Siti
               </div>
               <div
                 style={{ fontSize: 14, color: "var(--text-2)", marginTop: 4 }}
               >
-                Mum · age {elder.age} · {elder.area}
+                Mum · Kepong
               </div>
               <div
                 style={{

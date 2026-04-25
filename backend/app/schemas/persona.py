@@ -41,6 +41,7 @@ class Listing(BaseModel):
     titleZh: str | None = None
     titleTa: str | None = None
     elderName: str | None = None
+    elderAge: int | None = None
     elderInitials: str | None = None
     elderArea: str | None = None
     elderPortraitUrl: str | None = None

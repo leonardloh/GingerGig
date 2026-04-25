@@ -1,102 +1,20 @@
-import { AILabel, Avatar, Badge, Button, Card, GingerLogo, Icon, Stars, useLang, useT } from './components';
 // requestor-screens.jsx — Home, Search results, Provider detail
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { getListingById, searchListings } from '../services/api/endpoints/requestor';
-
-function formatListingPrice(listing) {
-  const price = `RM${listing.price}`;
-  return listing.priceMax ? `${price}-${listing.priceMax}` : price;
-}
-
-function formatMenuPrice(price) {
-  return typeof price === "number" ? `RM${price}` : price;
-}
-
-function providerTone(provider) {
-  return provider.id === "chen"
-    ? "teal"
-    : provider.id === "raju"
-      ? "gold"
-      : provider.id === "hassan"
-        ? "sand"
-        : "warm";
-}
-
-function adaptListingToProvider(listing) {
-  return {
-    id: listing.id,
-    name: listing.elderName || "Provider",
-    initials: listing.elderInitials || "GG",
-    area: listing.elderArea || "",
-    portrait: listing.elderPortraitUrl,
-    service: listing.title,
-    description: listing.description,
-    rating: listing.rating,
-    reviews: listing.reviewCount,
-    price: formatListingPrice(listing),
-    priceUnit: listing.priceUnit,
-    distance: listing.distance,
-    matchScore:
-      listing.matchScore ??
-      Math.round(Math.min(Number(listing.rating) || 0, 5) * 20),
-    matchReason: listing.matchReason,
-    days: listing.days,
-    menu: listing.menu.map((item) => ({
-      ...item,
-      price: formatMenuPrice(item.price),
-    })),
-    halal: listing.halal,
-    age: listing.age,
-    tone: providerTone(listing),
-  };
-}
-
-function adaptReview(review) {
-  return {
-    id: review.id,
-    author: review.reviewerName,
-    date: new Date(review.createdAt).toLocaleDateString([], {
-      month: "short",
-      day: "numeric",
-    }),
-    text: review.comment,
-    rating: review.rating,
-  };
-}
+import { useEffect, useRef, useState } from 'react';
+import { REVIEWS } from './mock-data';
+import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
+import { api } from '../services/api';
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
 // ═══════════════════════════════════════════════════════════════
-function RequestorHome({ onSearch, onProvider, user }) {
+function RequestorHome({ onSearch, onProvider }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [providers, setProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let active = true;
-
-    setLoading(true);
-    setError(null);
-    searchListings({})
-      .then((listings) => {
-        if (!active) return;
-        setProviders(listings.map(adaptListingToProvider));
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err);
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    api.requestor.searchListings({}).then(setProviders).catch(() => {});
   }, []);
 
   const cats = [
@@ -120,7 +38,7 @@ function RequestorHome({ onSearch, onProvider, user }) {
             fontWeight: 400,
           }}
         >
-          {user?.name || "Amir bin Razak"}
+          Amir bin Razak
         </h1>
         <p style={{ color: "var(--text-2)", fontSize: 17, margin: "10px 0 0" }}>
           {t("needToday")}
@@ -310,7 +228,15 @@ function RequestorHome({ onSearch, onProvider, user }) {
                   src={p.portrait}
                   initials={p.initials}
                   size={54}
-                  tone={providerTone(p)}
+                  tone={
+                    p.id === "chen"
+                      ? "teal"
+                      : p.id === "raju"
+                        ? "gold"
+                        : p.id === "hassan"
+                          ? "sand"
+                          : "warm"
+                  }
                 />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
@@ -393,7 +319,7 @@ function RequestorHome({ onSearch, onProvider, user }) {
             gap: 12,
           }}
         >
-          {providers.filter(Boolean).slice(0, 2).map((p) => (
+          {providers.filter((p) => p.halal).slice(0, 2).map((p) => (
             <button
               key={p.id}
               onClick={() => onProvider && onProvider(p.id)}
@@ -416,7 +342,7 @@ function RequestorHome({ onSearch, onProvider, user }) {
                 src={p.portrait}
                 initials={p.initials}
                 size={44}
-                tone={providerTone(p)}
+                tone={p.id === "hassan" ? "sand" : "warm"}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -465,33 +391,16 @@ function RequestorHome({ onSearch, onProvider, user }) {
 // ═══════════════════════════════════════════════════════════════
 function RequestorSearch({ onProvider, onBack, query }) {
   const t = useT();
-  const q = query || "halal dinner for 2, weekdays, near Damansara";
+  const q = query || "";
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let active = true;
-
     setLoading(true);
-    setError(null);
-    searchListings({ query: q })
-      .then((listings) => {
-        if (!active) return;
-        setMatches(listings.map(adaptListingToProvider));
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err);
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    api.requestor.searchListings({ query: q || undefined })
+      .then(setMatches)
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [q]);
 
   return (
@@ -621,7 +530,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
                 initials={p.initials}
                 size={60}
                 tone={
-                  providerTone(p)
+                  p.id === "chen" ? "teal" : p.id === "raju" ? "gold" : "warm"
                 }
               />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -754,55 +663,18 @@ function RequestorSearch({ onProvider, onBack, query }) {
 // ═══════════════════════════════════════════════════════════════
 function ProviderDetail({ providerId, onBack }) {
   const t = useT();
-  const [provider, setProvider] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const p =
-    provider || {
-      id: providerId || "",
-      name: "Provider",
-      initials: "GG",
-      area: "",
-      service: "",
-      description: "",
-      rating: 0,
-      reviews: 0,
-      price: "RM0",
-      priceUnit: "",
-      days: [],
-      menu: null,
-    };
+  const [p, setP] = useState(null);
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [faved, setFaved] = useState(false);
-  const [favToast, setFavToast] = useState(false);
 
   useEffect(() => {
-    if (!providerId) return;
-    let active = true;
-
-    setLoading(true);
-    setError(null);
-    getListingById(providerId)
-      .then((detail) => {
-        if (!active) return;
-        setProvider(adaptListingToProvider(detail));
-        setReviews(detail.reviews.map(adaptReview));
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err);
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    if (providerId) {
+      api.requestor.getProvider(providerId).then(setP).catch(() => {});
+    }
   }, [providerId]);
 
+  if (!p) return null;
+  const [favToast, setFavToast] = useState(false);
   const toggleFav = () => {
     const next = !faved;
     setFaved(next);
@@ -876,7 +748,12 @@ function ProviderDetail({ providerId, onBack }) {
               display: "inline-flex",
             }}
           >
-            <GingerLogo size={18} fill={faved ? "#C2662D" : "#C2662D"} />
+            <Icon
+              name="heart"
+              size={22}
+              color={faved ? "var(--primary)" : "var(--text-3)"}
+              fill={faved ? "var(--primary)" : "none"}
+            />
           </span>
           <span>{faved ? "Favourited" : "Favourite"}</span>
         </button>
@@ -905,7 +782,7 @@ function ProviderDetail({ providerId, onBack }) {
           transition: "opacity 0.22s ease, transform 0.22s ease",
         }}
       >
-        <GingerLogo size={16} fill="#F4A155" />
+        <Icon name="heart" size={20} color="#F4A155" fill="#F4A155" />
         <span>Saved to favourites</span>
       </div>
 
@@ -917,7 +794,9 @@ function ProviderDetail({ providerId, onBack }) {
               src={p.portrait}
               initials={p.initials}
               size={120}
-              tone={providerTone(p)}
+              tone={
+                p.id === "chen" ? "teal" : p.id === "raju" ? "gold" : "warm"
+              }
               border
             />
             <h1
@@ -1075,7 +954,7 @@ function ProviderDetail({ providerId, onBack }) {
 
           <div style={{ marginTop: 24 }}>
             <h3 className="section-h">{t("reviews")}</h3>
-            {reviews.map((r) => (
+            {REVIEWS.map((r) => (
               <Card key={r.id} style={{ padding: 16, marginBottom: 10 }}>
                 <div
                   style={{
@@ -1602,7 +1481,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
 // RequestorProfile — about MY needs as a service-buyer.
 // Saved providers, preferences, area, payment, notifications.
 // ═══════════════════════════════════════════════════════════════
-function RequestorProfile({ user }) {
+function RequestorProfile() {
   const t = useT();
   const [diet, setDiet] = useState(["halal"]);
   const [notifs, setNotifs] = useState({
@@ -1610,9 +1489,6 @@ function RequestorProfile({ user }) {
     deals: false,
     reminders: true,
   });
-  const [saved, setSaved] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const toggleDiet = (k) =>
     setDiet((d) => (d.includes(k) ? d.filter((x) => x !== k) : [...d, k]));
 
@@ -1625,28 +1501,9 @@ function RequestorProfile({ user }) {
 
   const cuisineLikes = ["Malay", "Chinese", "Indian", "Western"];
 
+  const [saved, setSaved] = useState([]);
   useEffect(() => {
-    let active = true;
-
-    setLoading(true);
-    setError(null);
-    searchListings({})
-      .then((listings) => {
-        if (!active) return;
-        setSaved(listings.map(adaptListingToProvider).slice(0, 3));
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err);
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    api.requestor.searchListings({}).then((results) => setSaved(results.slice(0, 3))).catch(() => {});
   }, []);
 
   return (
@@ -1661,8 +1518,8 @@ function RequestorProfile({ user }) {
         }}
       >
         <Avatar
-          src={user?.avatarUrl}
-          initials={user?.initials || "AR"}
+          src={null}
+          initials="AR"
           size={68}
           tone="warm"
           border
@@ -1689,7 +1546,7 @@ function RequestorProfile({ user }) {
               fontWeight: 400,
             }}
           >
-            {user?.name || "Amir bin Razak"}
+            Amir bin Razak
           </div>
           <div
             style={{
@@ -1701,8 +1558,7 @@ function RequestorProfile({ user }) {
               gap: 6,
             }}
           >
-            <Icon name="map-pin" size={13} />{" "}
-            {user?.area || "Damansara Utama, KL"}
+            <Icon name="map-pin" size={13} /> Damansara Utama, KL
           </div>
         </div>
         <button

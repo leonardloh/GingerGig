@@ -1,17 +1,42 @@
 import { apiRequest } from "../http";
-import type { CompanionAlert, CompanionDashboard, TimelineEvent } from "../types";
+import type {
+  CompanionAlert,
+  CompanionAlertItem,
+  CompanionDashboard,
+  CompanionDashboardData,
+  TimelineEvent,
+} from "../types";
 
 /**
  * Each companion is paired with one elder they watch over.
  * The `elderId` here identifies that elder — the backend resolves
  * the companion identity from the JWT `sub` claim.
+ *
+ * Returns the richer CompanionDashboardData shape (elder name, status,
+ * last-active text, timeline) that the companion dashboard UI needs.
  */
-export function getCompanionDashboard(elderId: string): Promise<CompanionDashboard> {
-  return apiRequest<CompanionDashboard>(`/companions/elders/${elderId}/dashboard`);
+export async function getCompanionDashboard(elderId: string): Promise<CompanionDashboardData> {
+  const [dashboard, timeline] = await Promise.all([
+    apiRequest<CompanionDashboard>(`/companions/elders/${elderId}/dashboard`),
+    getCompanionTimeline(elderId),
+  ]);
+  return {
+    elderName: dashboard.elder.name,
+    elderStatus: dashboard.status,
+    lastActiveText: timeline[0]?.time ?? "",
+    weeklyEarnings: Number(dashboard.weeklyEarnings ?? 0),
+    bookingsCompleted: dashboard.completedBookings,
+    activeDays: dashboard.activeDays,
+    timeline: timeline.map((event) => ({
+      id: event.id,
+      time: event.time,
+      text: event.text,
+    })),
+  };
 }
 
 /**
- * GET /companions/elders/:elderId/alerts
+ * GET /api/v1/companions/elders/:elderId/alerts
  *
  * Returns active care alerts for the elder this companion is watching over.
  * Alert types include inactivity warnings, overwork signals, earning milestones,
@@ -20,8 +45,13 @@ export function getCompanionDashboard(elderId: string): Promise<CompanionDashboa
  * @param elderId - The ID of the elder being watched
  * @returns Array of active alerts, newest first
  */
-export function getCompanionAlerts(elderId: string): Promise<CompanionAlert[]> {
-  return apiRequest<CompanionAlert[]>(`/companions/elders/${elderId}/alerts`);
+export async function getCompanionAlerts(elderId: string): Promise<CompanionAlertItem[]> {
+  const alerts = await apiRequest<CompanionAlert[]>(`/companions/elders/${elderId}/alerts`);
+  return alerts.map((alert) => ({
+    id: alert.id,
+    type: alert.type === "celebration" ? "success" : "care",
+    text: alert.message,
+  }));
 }
 
 export function getCompanionTimeline(elderId: string): Promise<TimelineEvent[]> {
@@ -43,7 +73,7 @@ export interface AlertPreferences {
 }
 
 /**
- * PUT /companions/elders/:elderId/alert-preferences
+ * PUT /api/v1/companions/elders/:elderId/alert-preferences
  *
  * Replaces the companion's alert notification preferences for this elder.
  * All preference fields must be provided (full replacement, not partial update).

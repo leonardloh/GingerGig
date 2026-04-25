@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { LANGUAGES, makeT } from './i18n';
-import { GingerLogo, Icon, LANG_CTX, T_CTX } from './components';
+import { makeT } from './i18n';
+import { GingerLogo, Icon, LANG_CTX, T_CTX, LanguagePicker, SiteFooter } from './components';
+import { api } from '../services/api';
+
+function computeInitials(name) {
+  return name.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
 import { ElderDashboard, ElderEarnings, ElderLanguage, ElderListings, ElderProfile, ElderVoice } from './elder-screens';
 import { ProviderDetail, RequestorHome, RequestorProfile, RequestorSearch } from './requestor-screens';
 import { CompanionAlerts, CompanionDashboard, CompanionProfile } from './companion-screens';
 import { OnboardingFlow } from './OnboardingFlow';
-import { getMe, login, logout } from '../services/api/endpoints/auth';
+import { LandingPage } from './LandingPage';
 import './prototype.css';
 
 // ─── Requestor bookings placeholder ───────────────────────────────────────
@@ -69,30 +74,33 @@ function RequestorBookings() {
   );
 }
 
-// ─── Mock demo accounts ────────────────────────────────────────────────────
+// ─── Demo account quick-login cards ───────────────────────────────────────
 const DEMO_ACCOUNTS = [
   {
+    userId: 'user-siti',
     email: 'siti@gingergig.my',
     password: 'demo',
-    persona: 'elder',
     name: 'Makcik Siti',
     initials: 'SH',
+    persona: 'elder',
     subtitle: 'Elder · Home cook in Kepong',
   },
   {
+    userId: 'user-amir',
     email: 'amir@gingergig.my',
     password: 'demo',
-    persona: 'requestor',
     name: 'Amir Razak',
     initials: 'AR',
+    persona: 'requestor',
     subtitle: 'Requestor · Damansara Utama',
   },
   {
+    userId: 'user-faiz',
     email: 'faiz@gingergig.my',
     password: 'demo',
-    persona: 'companion',
     name: 'Faiz Hassan',
     initials: 'FH',
+    persona: 'companion',
     subtitle: 'Family · Watching over Makcik Siti',
   },
 ];
@@ -109,7 +117,7 @@ const TONE_GRADIENT = {
 };
 
 // ─── Login screen ──────────────────────────────────────────────────────────
-function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
+function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
   const t = makeT(lang);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -117,21 +125,44 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const tryLogin = async ({ email: loginEmail, password: loginPassword }) => {
-    setError('');
+  const doLogin = async (credentials) => {
     setLoading(true);
+    setError('');
     try {
-      await onLogin({ email: loginEmail.trim().toLowerCase(), password: loginPassword });
-    } catch (err) {
-      setError(err.message || 'Email or password is incorrect. Use one of the demo accounts below.');
+      const normalizedEmail = credentials.email.trim().toLowerCase();
+      const session = await api.auth.login({ ...credentials, email: normalizedEmail });
+      const profile = await api.auth.getMe();
+      onLogin({
+        id: profile.id,
+        userId: session.userId,
+        role: profile.role,
+        persona: profile.role,
+        name: profile.name,
+        initials: profile.initials || computeInitials(profile.name),
+        locale: profile.locale,
+        area: profile.area,
+        avatarUrl: profile.avatarUrl,
+        accessToken: session.accessToken,
+        watchedElderId:
+          profile.role === 'companion'
+            ? DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail]
+            : undefined,
+        lang: profile.locale || lang,
+      });
+    } catch {
+      setError(t('loginError'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const tryLogin = async (acc) => {
+    await doLogin({ email: acc.email, password: acc.password });
+  };
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    await tryLogin({ email, password });
+    doLogin({ email: email.trim().toLowerCase(), password });
   };
 
   return (
@@ -159,67 +190,29 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg,#fff5ea 0%,#fbe4cc 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(194,102,45,0.25), inset 0 0 0 1px rgba(194,102,45,0.18)',
-            }}
-          >
-            <GingerLogo size={22} />
-          </div>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 20,
-              color: 'var(--text-1)',
-              fontWeight: 400,
-            }}
-          >
-            Ginger Gig
-          </span>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              title="Back to homepage"
+              style={{
+                appearance: 'none', border: '1.5px solid var(--border)',
+                background: 'var(--surface)', borderRadius: 10,
+                width: 36, height: 36, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-2)', flexShrink: 0,
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-2)'; }}
+            >
+              <Icon name="chevron-left" size={18} />
+            </button>
+          )}
+          <GingerLogo size={32} />
         </div>
 
-        {/* Language picker */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 2,
-            padding: 3,
-            background: 'var(--bg-2)',
-            borderRadius: 10,
-            border: '1px solid var(--border)',
-          }}
-        >
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => setLang(l.code)}
-              data-active={lang === l.code}
-              style={{
-                appearance: 'none',
-                border: 0,
-                background: lang === l.code ? 'var(--surface)' : 'transparent',
-                cursor: 'pointer',
-                width: 30,
-                height: 28,
-                borderRadius: 7,
-                fontFamily: 'var(--font-body)',
-                fontSize: 13,
-                fontWeight: 600,
-                color: lang === l.code ? 'var(--text-1)' : 'var(--text-3)',
-              }}
-              title={l.name}
-            >
-              {l.short}
-            </button>
-          ))}
-        </div>
+        <LanguagePicker lang={lang} setLang={setLang} />
       </header>
 
       {/* Main content */}
@@ -247,7 +240,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
             Selamat Datang
           </h1>
           <p style={{ fontSize: 16, color: 'var(--text-2)', margin: '0 0 36px' }}>
-            Sign in to your Ginger Gig account
+            {t('loginSubtitle')}
           </p>
 
           {/* Login form */}
@@ -256,7 +249,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
               <label
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}
               >
-                Email
+                {t('email')}
               </label>
               <input
                 type="email"
@@ -284,7 +277,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
               <label
                 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}
               >
-                Password
+                {t('password')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -353,26 +346,27 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
                 height: 52,
                 borderRadius: 14,
                 border: 0,
-                background: 'var(--primary)',
+                background: loading ? 'var(--border)' : 'var(--primary)',
                 color: '#fff',
                 fontFamily: 'var(--font-body)',
                 fontSize: 16,
                 fontWeight: 700,
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: 4,
                 transition: 'opacity 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
               }}
-              onMouseDown={(e) => (e.currentTarget.style.opacity = '0.88')}
-              onMouseUp={(e) => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              Sign in
+              {loading ? <><div className="spin-tiny" /> Signing in…</> : t('signIn')}
             </button>
           </form>
 
           {/* Sign up link */}
           <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-2)', margin: '20px 0 0' }}>
-            Don't have an account?{' '}
+            {t('noAccount')}{' '}
             <button
               type="button"
               onClick={onSignUp}
@@ -383,7 +377,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
                 textDecoration: 'underline', textUnderlineOffset: 3, padding: 0,
               }}
             >
-              Create account
+              {t('createAccount')}
             </button>
           </p>
 
@@ -398,7 +392,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
           >
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-              or try a demo account
+              {t('orTryDemo')}
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
@@ -409,7 +403,6 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
               <button
                 key={acc.persona}
                 onClick={() => tryLogin(acc)}
-                disabled={loading}
                 style={{
                   appearance: 'none',
                   cursor: 'pointer',
@@ -476,6 +469,9 @@ const ELDER_TABS = [
   { id: 'listings',  icon: 'list',    labelKey: 'tab_listings' },
   { id: 'earnings',  icon: 'wallet',  labelKey: 'tab_earnings' },
   { id: 'profile',   icon: 'user',    labelKey: 'tab_profile' },
+  // Sub-screens navigated to from the nav items above — not shown in the tab bar
+  { id: 'voice',    hidden: true },
+  { id: 'language', hidden: true },
 ];
 const REQUESTOR_TABS = [
   { id: 'home',     icon: 'home',     labelKey: 'tab_home' },
@@ -491,47 +487,51 @@ const COMPANION_TABS = [
 
 // ─── Main app shell ────────────────────────────────────────────────────────
 function App() {
+  const [showLanding, setShowLanding] = useState(true);  // show landing page first
   const [user, setUser] = useState(null);     // null = not logged in
   const [showSignUp, setShowSignUp] = useState(false);
   const [lang, setLang] = useState('en');
   const [tab, setTab] = useState({
     elder: 'dashboard',
+    elderBuyer: 'home',       // tab state when elder is in buyer mode
     requestor: 'home',
     companion: 'dashboard',
+    companionBuyer: 'home',   // tab state when companion is in buyer mode
   });
+  const [elderMode, setElderMode] = useState('provider');    // 'provider' | 'buyer'
+  const [companionMode, setCompanionMode] = useState('carer'); // 'carer' | 'buyer'
   const [providerId, setProviderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleLogin = async (credentials) => {
-    const normalizedEmail = credentials.email.trim().toLowerCase();
-    const session = await login({ email: normalizedEmail, password: credentials.password });
-    const profile = await getMe();
-    const demo = DEMO_ACCOUNTS.find((a) => a.email === normalizedEmail);
-
-    setUser({
-      id: profile.id,
-      persona: profile.role,
-      role: profile.role,
-      name: profile.name,
-      initials: profile.initials || demo?.initials,
-      locale: profile.locale,
-      area: profile.area,
-      avatarUrl: profile.avatarUrl,
-      accessToken: session.accessToken,
-      watchedElderId:
-        profile.role === 'companion'
-          ? DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail]
-          : undefined,
-    });
-  };
-
   const signOut = () => {
-    logout();
+    api.auth.logout();
     setUser(null);
-    setTab({ elder: 'dashboard', requestor: 'home', companion: 'dashboard' });
+    setShowLanding(false);
+    setTab({ elder: 'dashboard', elderBuyer: 'home', requestor: 'home', companion: 'dashboard', companionBuyer: 'home' });
+    setElderMode('provider');
+    setCompanionMode('carer');
     setProviderId(null);
     setSearchQuery('');
   };
+
+  const switchElderMode = (mode) => {
+    setElderMode(mode);
+    setProviderId(null);
+    setSearchQuery('');
+    setTab((s) => ({ ...s, elderBuyer: 'home' }));
+  };
+
+  const switchCompanionMode = (mode) => {
+    setCompanionMode(mode);
+    setProviderId(null);
+    setSearchQuery('');
+    setTab((s) => ({ ...s, companionBuyer: 'home' }));
+  };
+
+  // Show landing page before anything else
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} lang={lang} setLang={setLang} />;
+  }
 
   // Show onboarding / sign-up flow
   if (!user && showSignUp) {
@@ -547,7 +547,7 @@ function App() {
 
   // Show login screen if no user
   if (!user) {
-    return <LoginScreen onLogin={handleLogin} onSignUp={() => setShowSignUp(true)} lang={lang} setLang={setLang} />;
+    return <LoginScreen onLogin={setUser} onSignUp={() => setShowSignUp(true)} onBack={() => setShowLanding(true)} lang={lang} setLang={setLang} />;
   }
 
   const persona = user.persona;
@@ -560,10 +560,49 @@ function App() {
     if (id !== 'search' && id !== 'providerDetail') setProviderId(null);
   };
   const setCompTab = (id) => setTab((s) => ({ ...s, companion: id }));
+  const setCompBuyerTab = (id) => {
+    setTab((s) => ({ ...s, companionBuyer: id }));
+    if (id !== 'search' && id !== 'providerDetail') setProviderId(null);
+  };
+
+  // Tab helper for elder-in-buyer-mode
+  const setElderBuyerTab = (id) => {
+    setTab((s) => ({ ...s, elderBuyer: id }));
+    if (id !== 'search' && id !== 'providerDetail') setProviderId(null);
+  };
+
+  // Shared buyer-flow body resolver — used by elder-buyer, requestor, and companion-buyer
+  const resolveBuyerBody = (currentTab, setTabFn, tabKey) => {
+    const goToProvider = (id) => { setProviderId(id); setTab((s) => ({ ...s, [tabKey]: 'providerDetail' })); };
+    const goBack = () => setTab((s) => ({ ...s, [tabKey]: searchQuery ? 'search' : 'home' }));
+    if (currentTab === 'search')
+      return (
+        <RequestorSearch
+          query={searchQuery}
+          onBack={() => setTabFn('home')}
+          onProvider={goToProvider}
+        />
+      );
+    if (currentTab === 'providerDetail')
+      return <ProviderDetail providerId={providerId} onBack={goBack} />;
+    if (currentTab === 'bookings') return <RequestorBookings />;
+    if (currentTab === 'profile') return <RequestorProfile />;
+    return (
+      <RequestorHome
+        onSearch={(q) => { setSearchQuery(q); setTabFn('search'); }}
+        onProvider={goToProvider}
+      />
+    );
+  };
 
   // Resolve active tabs + body per persona
   let body, tabs, activeTab, onTabChange;
-  if (persona === 'elder') {
+  if (persona === 'elder' && elderMode === 'buyer') {
+    tabs = REQUESTOR_TABS;
+    activeTab = tab.elderBuyer === 'providerDetail' ? 'home' : tab.elderBuyer;
+    onTabChange = setElderBuyerTab;
+    body = resolveBuyerBody(tab.elderBuyer, setElderBuyerTab, 'elderBuyer');
+  } else if (persona === 'elder') {
     tabs = ELDER_TABS;
     activeTab = tab.elder;
     onTabChange = setElderTab;
@@ -572,7 +611,7 @@ function App() {
     else if (tab.elder === 'listings')
       body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
-      body = <ElderVoice user={user} accessToken={user.accessToken} onConfirm={() => setElderTab('listings')} />;
+      body = <ElderVoice onConfirm={() => setElderTab('listings')} />;
     else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (
@@ -582,72 +621,43 @@ function App() {
           onContinue={() => setElderTab('profile')}
         />
       );
-    else if (tab.elder === 'profile')
-      body = <ElderProfile user={user} onChangeLanguage={() => setElderTab('language')} />;
+    else body = <ElderProfile user={user} onChangeLanguage={() => setElderTab('language')} />;
   } else if (persona === 'requestor') {
     tabs = REQUESTOR_TABS;
     activeTab = tab.requestor === 'providerDetail' ? 'home' : tab.requestor;
     onTabChange = setReqTab;
-    if (tab.requestor === 'home')
-      body = (
-        <RequestorHome
-          user={user}
-          onSearch={(q) => { setSearchQuery(q); setReqTab('search'); }}
-          onProvider={(id) => {
-            setProviderId(id);
-            setTab((s) => ({ ...s, requestor: 'providerDetail' }));
-          }}
-        />
-      );
-    else if (tab.requestor === 'search')
-      body = (
-        <RequestorSearch
-          user={user}
-          query={searchQuery}
-          onBack={() => setReqTab('home')}
-          onProvider={(id) => {
-            setProviderId(id);
-            setTab((s) => ({ ...s, requestor: 'providerDetail' }));
-          }}
-        />
-      );
-    else if (tab.requestor === 'providerDetail')
-      body = (
-        <ProviderDetail
-          user={user}
-          providerId={providerId}
-          onBack={() =>
-            setTab((s) => ({ ...s, requestor: searchQuery ? 'search' : 'home' }))
-          }
-        />
-      );
-    else if (tab.requestor === 'bookings') body = <RequestorBookings />;
-    else if (tab.requestor === 'profile') body = <RequestorProfile user={user} />;
-    else
-      body = (
-        <RequestorHome
-          user={user}
-          onSearch={(q) => { setSearchQuery(q); setReqTab('search'); }}
-          onProvider={(id) => {
-            setProviderId(id);
-            setTab((s) => ({ ...s, requestor: 'providerDetail' }));
-          }}
-        />
-      );
+    body = resolveBuyerBody(tab.requestor, setReqTab, 'requestor');
+  } else if (persona === 'companion' && companionMode === 'buyer') {
+    tabs = REQUESTOR_TABS;
+    activeTab = tab.companionBuyer === 'providerDetail' ? 'home' : tab.companionBuyer;
+    onTabChange = setCompBuyerTab;
+    body = resolveBuyerBody(tab.companionBuyer, setCompBuyerTab, 'companionBuyer');
   } else {
     tabs = COMPANION_TABS;
     activeTab = tab.companion;
     onTabChange = setCompTab;
-    if (tab.companion === 'alerts') body = <CompanionAlerts user={user} elderId={user.watchedElderId} />;
-    else if (tab.companion === 'profile') body = <CompanionProfile user={user} elderId={user.watchedElderId} />;
-    else body = <CompanionDashboard user={user} elderId={user.watchedElderId} />;
+    // Demo bridge until the backend exposes companion elder discovery.
+    const companionElderId = user.watchedElderId;
+    if (tab.companion === 'alerts') body = <CompanionAlerts elderId={companionElderId} />;
+    else if (tab.companion === 'profile') body = <CompanionProfile />;
+    else body = <CompanionDashboard elderId={companionElderId} />;
   }
 
-  const tabItems = tabs.map((x) => ({
-    id: x.id,
-    icon: x.icon,
-    label: t(x.labelKey),
-  }));
+  // Map 'voice' and 'language' sub-screens back to their parent nav tab so the
+  // bottom bar always has an active highlight even on hidden sub-screens.
+  const ELDER_SUB_SCREEN_PARENT = { voice: 'listings', language: 'profile' };
+  const resolvedActiveTab =
+    persona === 'elder' && ELDER_SUB_SCREEN_PARENT[activeTab]
+      ? ELDER_SUB_SCREEN_PARENT[activeTab]
+      : activeTab;
+
+  const tabItems = tabs
+    .filter((x) => !x.hidden)
+    .map((x) => ({
+      id: x.id,
+      icon: x.icon,
+      label: t(x.labelKey),
+    }));
 
   return (
     <T_CTX.Provider value={t}>
@@ -657,11 +667,46 @@ function App() {
           <header className="top-nav">
             <div className="top-nav-inner">
               <a className="brand">
-                <span className="brand-mark">
-                  <GingerLogo size={26} />
-                </span>
-                <span className="brand-text">Ginger Gig</span>
+                <GingerLogo size={36} />
               </a>
+
+              {/* Mode toggle — shown for elder and companion personas */}
+              {persona === 'elder' && (
+                <div className="elder-mode-toggle">
+                  <button
+                    data-active={elderMode === 'provider'}
+                    onClick={() => switchElderMode('provider')}
+                    title="Switch to provider mode — offer your services"
+                  >
+                    Offering
+                  </button>
+                  <button
+                    data-active={elderMode === 'buyer'}
+                    onClick={() => switchElderMode('buyer')}
+                    title="Switch to buyer mode — find a service near you"
+                  >
+                    Finding
+                  </button>
+                </div>
+              )}
+              {persona === 'companion' && (
+                <div className="elder-mode-toggle">
+                  <button
+                    data-active={companionMode === 'carer'}
+                    onClick={() => switchCompanionMode('carer')}
+                    title="Switch to carer view — watch over mum"
+                  >
+                    Caring
+                  </button>
+                  <button
+                    data-active={companionMode === 'buyer'}
+                    onClick={() => switchCompanionMode('buyer')}
+                    title="Switch to buyer mode — find a service near you"
+                  >
+                    Finding
+                  </button>
+                </div>
+              )}
 
               <nav className="nav-tabs">
                 {tabItems.map((it) => (
@@ -683,19 +728,7 @@ function App() {
 
               {/* Right side: language + user + sign out */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-                {/* Language picker */}
-                <div className="lang-pick">
-                  {LANGUAGES.map((l) => (
-                    <button
-                      key={l.code}
-                      data-active={lang === l.code}
-                      onClick={() => setLang(l.code)}
-                      title={l.name}
-                    >
-                      {l.short}
-                    </button>
-                  ))}
-                </div>
+                <LanguagePicker lang={lang} setLang={setLang} />
 
                 {/* User badge */}
                 <div
@@ -728,6 +761,7 @@ function App() {
                     {user.initials}
                   </div>
                   <span
+                    className="user-name"
                     style={{
                       fontSize: 13,
                       fontWeight: 600,
@@ -773,10 +807,50 @@ function App() {
             </div>
           </header>
 
+          {/* Mode toggle — mobile version, sits just below the top bar */}
+          {persona === 'elder' && (
+            <div className="elder-mode-toggle-mobile">
+              <button
+                data-active={elderMode === 'provider'}
+                onClick={() => switchElderMode('provider')}
+              >
+                <Icon name="list" size={15} strokeWidth={elderMode === 'provider' ? 2.2 : 1.75} />
+                Offering services
+              </button>
+              <button
+                data-active={elderMode === 'buyer'}
+                onClick={() => switchElderMode('buyer')}
+              >
+                <Icon name="search" size={15} strokeWidth={elderMode === 'buyer' ? 2.2 : 1.75} />
+                Finding services
+              </button>
+            </div>
+          )}
+          {persona === 'companion' && (
+            <div className="elder-mode-toggle-mobile">
+              <button
+                data-active={companionMode === 'carer'}
+                onClick={() => switchCompanionMode('carer')}
+              >
+                <Icon name="heart" size={15} strokeWidth={companionMode === 'carer' ? 2.2 : 1.75} />
+                Caring for mum
+              </button>
+              <button
+                data-active={companionMode === 'buyer'}
+                onClick={() => switchCompanionMode('buyer')}
+              >
+                <Icon name="search" size={15} strokeWidth={companionMode === 'buyer' ? 2.2 : 1.75} />
+                Finding services
+              </button>
+            </div>
+          )}
+
           {/* Main */}
-          <main className="content-frame" key={`${persona}-${activeTab}`}>
+          <main className="content-frame" key={`${persona}-${elderMode}-${companionMode}-${activeTab}`}>
             <div className="screen-wrap">{body}</div>
           </main>
+
+          <SiteFooter />
 
           {/* Mobile bottom nav */}
           <nav
@@ -786,13 +860,13 @@ function App() {
             {tabItems.map((it) => (
               <button
                 key={it.id}
-                data-active={activeTab === it.id}
+                data-active={resolvedActiveTab === it.id}
                 onClick={() => onTabChange(it.id)}
               >
                 <Icon
                   name={it.icon}
                   size={22}
-                  strokeWidth={activeTab === it.id ? 2.2 : 1.75}
+                  strokeWidth={resolvedActiveTab === it.id ? 2.2 : 1.75}
                 />
                 <span>{it.label}</span>
               </button>

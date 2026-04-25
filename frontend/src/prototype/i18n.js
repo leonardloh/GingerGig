@@ -411,6 +411,41 @@ const I18N = {
   alerts: { ms: "Notifikasi", en: "Alerts", zh: "提醒", ta: "எச்சரிக்கைகள்" },
   timeline: { ms: "Garis masa", en: "Timeline", zh: "时间线", ta: "காலவரிசை" },
 
+  // ─── Login screen ───
+  loginSubtitle: {
+    ms: "Log masuk ke akaun Ginger Gig anda",
+    en: "Sign in to your Ginger Gig account",
+    zh: "登入您的 Ginger Gig 账户",
+    ta: "உங்கள் Ginger Gig கணக்கில் உள்நுழையவும்",
+  },
+  email: { ms: "E-mel", en: "Email", zh: "电子邮件", ta: "மின்னஞ்சல்" },
+  password: { ms: "Kata laluan", en: "Password", zh: "密码", ta: "கடவுச்சொல்" },
+  signIn: { ms: "Log masuk", en: "Sign in", zh: "登入", ta: "உள்நுழை" },
+  noAccount: {
+    ms: "Tiada akaun?",
+    en: "Don't have an account?",
+    zh: "还没有账户？",
+    ta: "கணக்கு இல்லையா?",
+  },
+  createAccount: {
+    ms: "Cipta akaun",
+    en: "Create account",
+    zh: "创建账户",
+    ta: "கணக்கு உருவாக்கு",
+  },
+  orTryDemo: {
+    ms: "atau cuba akaun demo",
+    en: "or try a demo account",
+    zh: "或使用示范账户",
+    ta: "அல்லது டெமோ கணக்கை முயற்சிக்கவும்",
+  },
+  loginError: {
+    ms: "E-mel atau kata laluan salah. Cuba salah satu akaun demo di bawah.",
+    en: "Email or password is incorrect. Use one of the demo accounts below.",
+    zh: "电子邮件或密码不正确。请使用下方的示范账户。",
+    ta: "மின்னஞ்சல் அல்லது கடவுச்சொல் தவறானது. கீழே உள்ள டெமோ கணக்கை பயன்படுத்தவும்.",
+  },
+
   // ─── Tabs ───
   tab_home: { ms: "Laman Utama", en: "Home", zh: "首页", ta: "முகப்பு" },
   tab_listings: {
@@ -448,15 +483,10 @@ const I18N = {
 };
 
 const LANGUAGES = [
-  {
-    code: "ms",
-    name: "Bahasa Malaysia",
-    native: "Bahasa Malaysia",
-    short: "BM",
-  },
-  { code: "en", name: "English", native: "English", short: "EN" },
-  { code: "zh", name: "Mandarin", native: "中文", short: "中" },
-  { code: "ta", name: "Tamil", native: "தமிழ்", short: "த" },
+  { code: "en", name: "English",          native: "English",          short: "EN"      },
+  { code: "ms", name: "Bahasa Malaysia",  native: "Bahasa Malaysia",  short: "BM"      },
+  { code: "zh", name: "Mandarin",         native: "中文",              short: "中文"    },
+  { code: "ta", name: "Tamil",            native: "தமிழ்",            short: "தமிழ்"  },
 ];
 
 function makeT(lang) {
@@ -469,3 +499,6 @@ function makeT(lang) {
 
 
 export { I18N, LANGUAGES, makeT };
+
+// Convenience list of language codes in canonical order
+export const LANG_CODES = LANGUAGES.map((l) => l.code);
