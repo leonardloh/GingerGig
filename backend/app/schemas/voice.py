@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-
 VoiceLanguage = Literal["ms-MY", "ta-IN", "en-US", "zh-CN"]
 StreamingVoiceLanguage = Literal["en-US", "zh-CN"]
 BatchVoiceLanguage = Literal["ms-MY", "ta-IN"]

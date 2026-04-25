@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, cast
 
 from openai import AsyncOpenAI
 from pydantic import ValidationError
@@ -22,7 +22,11 @@ def strip_json_fences(raw: str) -> str:
     return match.group(1).strip()
 
 
-def _build_messages(transcript: str, language: str, validation_error: str | None = None) -> list[dict[str, str]]:
+def _build_messages(
+    transcript: str,
+    language: str,
+    validation_error: str | None = None,
+) -> list[dict[str, str]]:
     user_content = (
         "Extract one listing draft from this elder voice transcript.\n"
         f"Language code: {language}\n"
@@ -60,8 +64,9 @@ async def _request_listing_json(
     language: str,
     validation_error: str | None = None,
 ) -> str:
-    response = await client.chat.completions.create(
-        model=getattr(settings, "dashscope_chat_model", "qwen-max"),
+    create_completion = cast(Any, client.chat.completions.create)
+    response = await create_completion(
+        model=settings.dashscope_chat_model,
         messages=_build_messages(transcript, language, validation_error),
         response_format={"type": "json_object"},
         temperature=0,
