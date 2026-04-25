@@ -314,6 +314,43 @@ function ElderVoice({ onConfirm, accessToken }) {
   const voiceLanguage =
     { ms: "ms-MY", en: "en-US", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
 
+  const cleanupVoiceResources = ({ closeWebSocket = false } = {}) => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+
+    if (processorRef.current) {
+      try {
+        processorRef.current.onaudioprocess = null;
+        processorRef.current.disconnect();
+      } catch (_) {}
+      processorRef.current = null;
+    }
+
+    if (workletNodeRef.current) {
+      try {
+        workletNodeRef.current.disconnect();
+      } catch (_) {}
+      workletNodeRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== "closed") {
+          void audioContextRef.current.close();
+        }
+      } catch (_) {}
+      audioContextRef.current = null;
+    }
+
+    if (closeWebSocket && wsRef.current) {
+      try {
+        if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+          wsRef.current.close();
+        }
+      } catch (_) {}
+      wsRef.current = null;
+    }
+  };
   const startSpeechRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
@@ -396,6 +433,7 @@ function ElderVoice({ onConfirm, accessToken }) {
       try {
         await startStreamingCapture();
       } catch (_) {
+        cleanupVoiceResources({ closeWebSocket: true });
         startSpeechRecognition();
       }
     } else {
@@ -417,6 +455,12 @@ function ElderVoice({ onConfirm, accessToken }) {
   };
   const stopRecord = () => {
     clearInterval(tickRef.current);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify({ type: "end" }));
+      } catch (_) {}
+    }
+    cleanupVoiceResources();
     if (recogRef.current) {
       try {
         recogRef.current.stop();
@@ -437,6 +481,7 @@ function ElderVoice({ onConfirm, accessToken }) {
         try {
           recogRef.current.stop();
         } catch (_) {}
+      cleanupVoiceResources({ closeWebSocket: true });
     },
     [],
   );
