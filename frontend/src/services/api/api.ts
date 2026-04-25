@@ -31,6 +31,7 @@ import * as elderMock from "./mock/elder.mock";
 import * as requestorMock from "./mock/requestor.mock";
 import * as companionMock from "./mock/companion.mock";
 import * as kycMock from "./mock/kyc.mock";
+import * as voiceMock from "./mock/voice.mock";
 
 const DEMO_MODE_KEY = "gg_demo_mode";
 
@@ -62,5 +63,5 @@ export const api = {
   get requestor() { return useMock() ? requestorMock : requestorReal; },
   get companion() { return useMock() ? companionMock : companionReal; },
   get kyc() { return useMock() ? kycMock : kycReal; },
-  get voice() { return voiceReal; },
+  get voice() { return useMock() ? voiceMock : voiceReal; },
 } as const;
