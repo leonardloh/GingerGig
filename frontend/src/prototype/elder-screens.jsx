@@ -95,6 +95,8 @@ const adaptDraftToGeneratedListing = (draft) => {
 
 const isStreamingLanguage = (language) => language === "en-US" || language === "zh-CN";
 
+const isBatchLanguage = (language) => language === "ms-MY" || language === "ta-IN";
+
 const floatTo16BitPCM = (float32Array) => {
   const pcm = new Int16Array(float32Array.length);
   for (let i = 0; i < float32Array.length; i++) {
@@ -123,6 +125,51 @@ const downsampleTo16k = (input, inputSampleRate) => {
   }
 
   return output;
+};
+
+const encodeWav = (pcmChunks, sampleRate = 16000) => {
+  const totalSamples = pcmChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const buffer = new ArrayBuffer(44 + totalSamples * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  const writeString = (value) => {
+    for (let i = 0; i < value.length; i++) {
+      view.setUint8(offset + i, value.charCodeAt(i));
+    }
+    offset += value.length;
+  };
+
+  writeString("RIFF");
+  view.setUint32(offset, 36 + totalSamples * 2, true);
+  offset += 4;
+  writeString("WAVE");
+  writeString("fmt ");
+  view.setUint32(offset, 16, true);
+  offset += 4;
+  view.setUint16(offset, 1, true);
+  offset += 2;
+  view.setUint16(offset, 1, true);
+  offset += 2;
+  view.setUint32(offset, sampleRate, true);
+  offset += 4;
+  view.setUint32(offset, sampleRate * 2, true);
+  offset += 4;
+  view.setUint16(offset, 2, true);
+  offset += 2;
+  view.setUint16(offset, 16, true);
+  offset += 2;
+  writeString("data");
+  view.setUint32(offset, totalSamples * 2, true);
+  offset += 4;
+
+  pcmChunks.forEach((chunk) => {
+    for (let i = 0; i < chunk.length; i++) {
+      view.setInt16(offset, chunk[i], true);
+      offset += 2;
+    }
+  });
+
+  return new Blob([buffer], { type: "audio/wav" });
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -310,10 +357,18 @@ function ElderVoice({ onConfirm, accessToken }) {
   const workletNodeRef = useRef(null);
   const wsRef = useRef(null);
   const pcmChunksRef = useRef([]);
+  const transportRef = useRef(null);
+  const batchPollRef = useRef(null);
 
   const voiceLanguage =
     { ms: "ms-MY", en: "en-US", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
 
+  const clearBatchPoll = () => {
+    if (batchPollRef.current) {
+      clearInterval(batchPollRef.current);
+      batchPollRef.current = null;
+    }
+  };
   const cleanupVoiceResources = ({ closeWebSocket = false } = {}) => {
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     mediaStreamRef.current = null;
@@ -352,6 +407,7 @@ function ElderVoice({ onConfirm, accessToken }) {
     }
   };
   const startSpeechRecognition = () => {
+    transportRef.current = "speech";
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       const r = new SR();
@@ -380,6 +436,7 @@ function ElderVoice({ onConfirm, accessToken }) {
         clearInterval(tickRef.current);
         setDraft(message.listing);
         setSteps([2, 2, 2]);
+        transportRef.current = null;
         setState("generated");
       } else if (message.type === "error") {
         clearInterval(tickRef.current);
@@ -424,8 +481,69 @@ function ElderVoice({ onConfirm, accessToken }) {
 
     sourceNode.connect(processorNode);
     processorNode.connect(audioContext.destination);
+    transportRef.current = "stream";
+  };
+  const startBatchCapture = async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!navigator.mediaDevices?.getUserMedia || !AudioContextClass) {
+      throw new Error("Voice batch capture is unavailable");
+    }
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContextClass();
+    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    const processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+    mediaStreamRef.current = mediaStream;
+    audioContextRef.current = audioContext;
+    processorRef.current = processorNode;
+    workletNodeRef.current = null;
+    pcmChunksRef.current = [];
+
+    processorNode.onaudioprocess = (event) => {
+      const input = event.inputBuffer.getChannelData(0);
+      const downsampled = downsampleTo16k(input, audioContext.sampleRate);
+      pcmChunksRef.current.push(floatTo16BitPCM(downsampled));
+    };
+
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+    transportRef.current = "batch";
+  };
+  const pollBatchStatus = (jobId) => {
+    clearBatchPoll();
+    batchPollRef.current = setInterval(async () => {
+      try {
+        const status = await getBatchStatus(jobId);
+        if (status.status === "ready" || status.status === "failed") {
+          clearBatchPoll();
+          setDraft(status.status === "ready" ? status.listing || null : null);
+          setSteps([2, 2, 2]);
+          transportRef.current = null;
+          setState("generated");
+        }
+      } catch (_) {
+        clearBatchPoll();
+        setDraft(null);
+        runProcessing("voice");
+      }
+    }, 1500);
+  };
+  const submitBatchRecording = async () => {
+    try {
+      const audioBlob = encodeWav(pcmChunksRef.current, 16000);
+      const upload = await getAudioUploadUrl({ language: voiceLanguage, contentType: "audio/wav" });
+      await uploadAudioToPresignedUrl(upload.uploadUrl, audioBlob, "audio/wav");
+      const job = await submitBatchJob({ s3Key: upload.s3Key, language: voiceLanguage });
+      pollBatchStatus(job.jobId);
+    } catch (_) {
+      setDraft(null);
+      runProcessing("voice");
+    }
   };
   const startRecord = async () => {
+    clearBatchPoll();
+    transportRef.current = null;
     setSeconds(0);
     setTranscript("");
     setDraft(null);
@@ -436,26 +554,36 @@ function ElderVoice({ onConfirm, accessToken }) {
         cleanupVoiceResources({ closeWebSocket: true });
         startSpeechRecognition();
       }
+    } else if (isBatchLanguage(voiceLanguage) && accessToken) {
+      try {
+        await startBatchCapture();
+      } catch (_) {
+        cleanupVoiceResources();
+        startSpeechRecognition();
+      }
     } else {
       startSpeechRecognition();
     }
     tickRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
     setState("recording");
   };
-  const runProcessing = (source = "voice") => {
+  const runProcessing = (source = "voice", { autoGenerate = true } = {}) => {
     setState("processing");
     setSource(source);
     setSteps([1, 0, 0]);
     setTimeout(() => setSteps([2, 1, 0]), 900);
     setTimeout(() => setSteps([2, 2, 1]), 1900);
-    setTimeout(() => {
-      setSteps([2, 2, 2]);
-      setState("generated");
-    }, 3000);
+    if (autoGenerate) {
+      setTimeout(() => {
+        setSteps([2, 2, 2]);
+        setState("generated");
+      }, 3000);
+    }
   };
   const stopRecord = () => {
     clearInterval(tickRef.current);
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    const transport = transportRef.current;
+    if (transport === "stream" && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
         wsRef.current.send(JSON.stringify({ type: "end" }));
       } catch (_) {}
@@ -467,7 +595,14 @@ function ElderVoice({ onConfirm, accessToken }) {
       } catch (_) {}
       recogRef.current = null;
     }
-    runProcessing("voice");
+    if (transport === "batch") {
+      runProcessing("voice", { autoGenerate: false });
+      void submitBatchRecording();
+    } else if (transport === "stream") {
+      runProcessing("voice", { autoGenerate: false });
+    } else {
+      runProcessing("voice");
+    }
   };
   const submitTyped = () => {
     if (!typed.trim()) return;
@@ -477,6 +612,7 @@ function ElderVoice({ onConfirm, accessToken }) {
   useEffect(
     () => () => {
       clearInterval(tickRef.current);
+      clearBatchPoll();
       if (recogRef.current)
         try {
           recogRef.current.stop();
