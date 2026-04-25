@@ -17,7 +17,9 @@ frontend/.env.local
 .idea/
 .claude/
 .cursor/
-.github/
+.github/*
+!.github/workflows/
+!.github/workflows/*.yml
 dist/
 node_modules/
 screenshots/
