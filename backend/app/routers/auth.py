@@ -1,4 +1,5 @@
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -50,7 +51,10 @@ def _session_for_user(user: User) -> Session:
 
 
 @router.post("/login", response_model=Session)
-async def login(payload: LoginPayload, db: AsyncSession = Depends(get_db)) -> Session:
+async def login(
+    payload: LoginPayload,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Session:
     result = await db.execute(select(User).where(User.email == str(payload.email)))
     user = result.scalar_one_or_none()
     if user is None or user.email not in DEMO_EMAILS:
@@ -64,7 +68,7 @@ async def login(payload: LoginPayload, db: AsyncSession = Depends(get_db)) -> Se
 @router.post("/register", response_model=RegisterResponse)
 async def register(
     payload: RegisterPayload,
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> RegisterResponse:
     result = await db.execute(select(User).where(User.email == str(payload.email)))
     existing_user = result.scalar_one_or_none()
@@ -78,7 +82,7 @@ async def register(
         id=uuid.uuid4(),
         email=str(payload.email),
         phone=payload.phone,
-        password_hash="demo-mock-auth",
+        password_hash="demo-mock-auth",  # noqa: S106 - explicit demo-only placeholder.
         name=payload.name,
         role=payload.role,
         locale=payload.locale,
@@ -97,5 +101,7 @@ async def register(
 
 
 @router.get("/me", response_model=UserProfile)
-async def me(current_user: User = Depends(get_current_user)) -> UserProfile:
+async def me(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> UserProfile:
     return _profile_from_user(current_user)
