@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T17:43:32Z"
+last_updated: "2026-04-25T17:49:56Z"
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 31
-  completed_plans: 17
-  percent: 55
+  completed_plans: 18
+  percent: 58
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 04 plan 04 complete)
+**Last updated:** 2026-04-25 (Phase 04 complete)
 
 ## Project Reference
 
@@ -25,15 +25,15 @@ progress:
 
 ## Current Position
 
-Phase: 04 (voice-to-profile-pipeline) — EXECUTING
-Plan: 5 of 5
-**Phase:** 04 of 6 (voice to profile pipeline)
-**Plan:** Ready for 04-05
-**Status:** Executing Phase 04
-**Progress:** [███████████░░░░░░░░░] 55%
+Phase: 05 (frontend-wiring-type-extensions) — READY
+Plan: 1 of 7
+**Phase:** 05 of 6 (frontend wiring + type extensions)
+**Plan:** Ready for 05-01
+**Status:** Phase 04 complete; ready for Phase 05
+**Progress:** [████████████░░░░░░░░] 58%
 
 ```
-[███████████░░░░░░░░░] 55% (17 of 31 plans)
+[████████████░░░░░░░░] 58% (18 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -43,17 +43,17 @@ Plan: 5 of 5
 | 1 | Backend Scaffold + Schema + Seed | Complete | — |
 | 2 | Auth + Bearer Middleware | Complete | 1 |
 | 3 | Persona Routers (Elder + Requestor + Companion) | Complete | 2 |
-| 4 | Voice-to-Profile Pipeline | In progress | 2 |
+| 4 | Voice-to-Profile Pipeline | Complete | 2 |
 | 5 | Frontend Wiring + Type Extensions | Not started | 3, 4 |
 | 6 | Multi-Cloud Live Deployment | Planned | 5 |
 
 ## Performance Metrics
 
-- **Plans complete:** 17
-- **Verifications passed:** 2
-- **Phases shipped:** 2
+- **Plans complete:** 18
+- **Verifications passed:** 3
+- **Phases shipped:** 3
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 04 plan 04 — batch S3 presign, boto3 Transcribe Batch, async worker/status routes, IDOR protection, and mocked AWS/Qwen tests validated; 12 targeted plan tests passing
+- **Latest phase metric:** Phase 04 plan 05 — unified extraction failure 502/WS message, completed zero-skip route contracts, migration head confirmed, and full voice pytest/ruff/mypy validation passed
 
 ## Accumulated Context
 
@@ -72,6 +72,7 @@ Plan: 5 of 5
 | `bcrypt>=4.2.0,<5.0.0` used directly (no `passlib`) | Yes | bcrypt 5.0 silently breaks passlib |
 | Centralised JWT decode in `core/security.py` with `algorithms=["HS256"]` | Yes | CVE-2022-29217 / CVE-2024-33663 |
 | WebSocket `try/finally` + 90s max-session timer | Yes | Quota exhaustion risk during demo |
+| Single voice extraction failure string | Yes | `LISTING_EXTRACTION_FAILED_MSG` returns `Listing extraction failed` for batch HTTP 502 and WebSocket errors |
 | Companion alerts: 4 locale columns, server picks by user locale | Yes | Matches existing `text_en/ms/zh/ta` shape |
 | Additive type extensions in `types.ts` (no rename/remove) | Yes | Prototype already renders the missing fields |
 | Browser-direct S3 uploads via presigned PUT | Yes | PII off application logs |
@@ -106,8 +107,8 @@ Plan: 5 of 5
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `04-04-PLAN.md`
-**Next action:** Execute `04-05-PLAN.md` (502 unification, contract completion, and full phase verification).
+**Last session ended:** 2026-04-25 — completed `04-05-PLAN.md`
+**Next action:** Execute `05-01-PLAN.md` (frontend API contracts, endpoint gaps, voice helper, and barrel export).
 
 **Resume context for next session:**
 
@@ -142,3 +143,5 @@ Plan: 5 of 5
 **Completed Plan:** 04-03 (Transcribe streaming integration, WebSocket handler, voice service) — 2026-04-25T17:30:45Z
 
 **Completed Plan:** 04-04 (S3 presign, Transcribe batch, async job and status HTTP routes) — 2026-04-25T17:43:32Z
+
+**Completed Plan:** 04-05 (502 unification, contract completion, and full phase verification) — 2026-04-25T17:49:56Z

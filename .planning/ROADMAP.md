@@ -10,7 +10,7 @@
 - [x] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
 - [x] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
 - [x] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
-- [ ] **Phase 4: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
+- [x] **Phase 4: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
 - [ ] **Phase 5: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
 - [ ] **Phase 6: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
 
@@ -80,7 +80,7 @@
 - [x] 04-02-PLAN.md — Schemas, Qwen extract_listing, and unit tests (Wave 1)
 - [x] 04-03-PLAN.md — Transcribe streaming integration, WebSocket handler, voice service (Wave 2)
 - [x] 04-04-PLAN.md — S3 presign, Transcribe batch, async job and status HTTP routes (Wave 2, after 04-03 because both edit `voice.py`)
-- [ ] 04-05-PLAN.md — 502 unification, contract completion, and full phase verification (Wave 3)
+- [x] 04-05-PLAN.md — 502 unification, contract completion, and full phase verification (Wave 3)
 
 ### Phase 5: Frontend Wiring + Type Extensions
 **Goal**: Every prototype mock helper and inline mock data import is replaced with a typed-API import — types are extended additively in `types.ts` first, then mock helpers swap 1:1, then the WebSocket wires to `ElderVoice`. Zero UI/feature/copy/styling change.
@@ -127,7 +127,7 @@
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
-| 4. Voice-to-Profile Pipeline | 4/5 | In Progress | - |
+| 4. Voice-to-Profile Pipeline | 5/5 | Complete | 2026-04-26 |
 | 5. Frontend Wiring + Type Extensions | 0/7 | Planned | - |
 | 6. Multi-Cloud Live Deployment | 0/6 | Planned | - |
 
