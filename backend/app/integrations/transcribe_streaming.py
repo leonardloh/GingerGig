@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
@@ -31,7 +32,20 @@ def _client_region() -> str:
     return TRANSCRIBE_STREAMING_REGION if settings.aws_region else TRANSCRIBE_STREAMING_REGION
 
 
+def _install_settings_credentials() -> None:
+    """Expose .env-loaded settings to the awslabs Transcribe SDK credential chain."""
+
+    if settings.aws_access_key_id:
+        os.environ.setdefault("AWS_ACCESS_KEY_ID", settings.aws_access_key_id)
+    if settings.aws_secret_access_key:
+        os.environ.setdefault("AWS_SECRET_ACCESS_KEY", settings.aws_secret_access_key)
+    if settings.aws_session_token:
+        os.environ.setdefault("AWS_SESSION_TOKEN", settings.aws_session_token)
+    os.environ.setdefault("AWS_DEFAULT_REGION", _client_region())
+
+
 def create_transcribe_streaming_client() -> TranscribeStreamingClient:
+    _install_settings_credentials()
     return TranscribeStreamingClient(region=_client_region())
 
 

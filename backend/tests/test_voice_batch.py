@@ -127,6 +127,29 @@ async def test_audio_upload_url_returns_elder_scoped_presigned_put(
     assert mocks.fake_s3.presign_calls[0]["Params"]["ContentType"] == "audio/wav"
 
 
+async def test_text_transcript_returns_qwen_listing_draft(
+    client,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mocks = _install_voice_mocks(monkeypatch, db_session)
+    token, _elder_id = await _login(client, "siti@gingergig.my")
+
+    response = await client.post(
+        "/api/v1/voice-to-profile/text",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"transcript": "Saya jual nasi lemak RM 8 satu bungkus.", "language": "ms-MY"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["service_offer"] == "Nasi lemak homemade"
+    mocks.extractor.assert_awaited_once_with(
+        "Saya jual nasi lemak RM 8 satu bungkus.",
+        "ms-MY",
+    )
+
+
 async def test_batch_submit_returns_pending_and_status_ready(
     client,
     db_session,

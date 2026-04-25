@@ -2,13 +2,14 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps.auth import get_current_user
 from app.deps.db import get_db
 from app.models.booking import Booking as BookingModel
 from app.models.listing import Listing as ListingModel
+from app.models.listing import ListingMenuItem as ListingMenuItemModel
 from app.models.user import User
 from app.schemas.persona import Booking, CreateBookingPayload, Listing
 from app.services.persona_queries import (
@@ -54,9 +55,38 @@ async def search_listings(
 
     if halal_only:
         stmt = stmt.where(ListingModel.halal.is_(True))
-    if query:
-        pattern = f"%{query.strip()}%"
-        stmt = stmt.where(or_(title_expr.ilike(pattern), ListingModel.description.ilike(pattern)))
+    if query and (normalized_query := query.strip()):
+        pattern = f"%{normalized_query}%"
+        menu_item_match = (
+            select(ListingMenuItemModel.id)
+            .where(
+                ListingMenuItemModel.listing_id == ListingModel.id,
+                ListingMenuItemModel.name.ilike(pattern),
+            )
+            .exists()
+        )
+        stmt = stmt.where(
+            or_(
+                title_expr.ilike(pattern),
+                ListingModel.title_ms.ilike(pattern),
+                ListingModel.title_en.ilike(pattern),
+                ListingModel.title_zh.ilike(pattern),
+                ListingModel.title_ta.ilike(pattern),
+                ListingModel.description.ilike(pattern),
+                match_reason_expr.ilike(pattern),
+                ListingModel.match_reason_ms.ilike(pattern),
+                ListingModel.match_reason_en.ilike(pattern),
+                ListingModel.match_reason_zh.ilike(pattern),
+                ListingModel.match_reason_ta.ilike(pattern),
+                User.name.ilike(pattern),
+                User.area.ilike(pattern),
+                ListingModel.distance_label.ilike(pattern),
+                ListingModel.price_unit.ilike(pattern),
+                cast(ListingModel.price, String).ilike(pattern),
+                cast(ListingModel.price_max, String).ilike(pattern),
+                menu_item_match,
+            )
+        )
     if open_now:
         # Seeded demo availability is day-level, not hour-level; keep active rows.
         pass

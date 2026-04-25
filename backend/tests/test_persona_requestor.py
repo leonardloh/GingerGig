@@ -110,6 +110,38 @@ async def test_query_search_filters_seeded_title_or_description(client) -> None:
         assert "nasi" in haystack
 
 
+async def test_query_search_matches_provider_card_fields(client) -> None:
+    headers = await login_headers(client, AMIR_EMAIL)
+
+    response = await client.get(
+        "/api/v1/requestor/listings/search",
+        headers=headers,
+        params={"query": "kepong"},
+    )
+
+    assert response.status_code == 200
+    listings = response.json()
+    assert listings
+    assert any(
+        listing["elderName"] == "Makcik Siti"
+        and "kepong" in (listing["elderArea"] or "").lower()
+        for listing in listings
+    )
+    for listing in listings:
+        haystack = " ".join(
+            str(value or "")
+            for value in (
+                listing["title"],
+                listing["description"],
+                listing["elderName"],
+                listing["elderArea"],
+                listing["distance"],
+                listing["matchReason"],
+            )
+        ).lower()
+        assert "kepong" in haystack
+
+
 async def test_listing_detail_returns_reviews_and_full_menu(client) -> None:
     listing_id = entity_id("listing", "siti-listing-1")
     headers = await login_headers(client, AMIR_EMAIL)

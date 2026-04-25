@@ -2,7 +2,7 @@ import re
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 VoiceLanguage = Literal["ms-MY", "ta-IN", "en-US", "zh-CN"]
 StreamingVoiceLanguage = Literal["en-US", "zh-CN"]
@@ -52,6 +52,11 @@ class VoiceBatchRequest(BaseModel):
 class AudioUploadUrlRequest(BaseModel):
     contentType: str
     language: BatchVoiceLanguage
+
+
+class VoiceTextDraftRequest(BaseModel):
+    transcript: str = Field(min_length=1, max_length=5000)
+    language: VoiceLanguage
 
 
 class AudioUploadUrlResponse(BaseModel):

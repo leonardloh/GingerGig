@@ -666,6 +666,7 @@ function ProviderDetail({ providerId, onBack }) {
   const [p, setP] = useState(null);
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [faved, setFaved] = useState(false);
+  const [favToast, setFavToast] = useState(false);
 
   useEffect(() => {
     if (providerId) {
@@ -674,7 +675,6 @@ function ProviderDetail({ providerId, onBack }) {
   }, [providerId]);
 
   if (!p) return null;
-  const [favToast, setFavToast] = useState(false);
   const toggleFav = () => {
     const next = !faved;
     setFaved(next);

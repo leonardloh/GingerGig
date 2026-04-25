@@ -22,6 +22,7 @@ def test_voice_http_routes_are_in_openapi() -> None:
     assert "post" in paths["/api/v1/voice-to-profile/batch"]
     assert "get" in paths["/api/v1/voice-to-profile/batch/{job_id}"]
     assert "post" in paths["/api/v1/voice-to-profile/audio-upload-url"]
+    assert "post" in paths["/api/v1/voice-to-profile/text"]
 
 
 def test_voice_websocket_route_is_registered() -> None:

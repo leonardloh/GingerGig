@@ -13,11 +13,21 @@ BATCH_LANGUAGE_CODES = {"ms-MY": "ms-MY", "ta-IN": "ta-IN"}
 
 
 def _transcribe_client() -> Any:
-    return boto3.client("transcribe", region_name="ap-southeast-1")
+    return boto3.client("transcribe", **_aws_client_kwargs())
 
 
 def _s3_client() -> Any:
-    return boto3.client("s3", region_name="ap-southeast-1")
+    return boto3.client("s3", **_aws_client_kwargs())
+
+
+def _aws_client_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"region_name": "ap-southeast-1"}
+    if settings.aws_access_key_id and settings.aws_secret_access_key:
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+        if settings.aws_session_token:
+            kwargs["aws_session_token"] = settings.aws_session_token
+    return kwargs
 
 
 def transcribe_language_code(language: str) -> str:

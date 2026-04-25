@@ -6,6 +6,8 @@ import type {
   StreamingVoiceLanguage,
   VoiceBatchStatusResponse,
   VoiceBatchSubmitResponse,
+  VoiceTextDraftRequest,
+  ListingDraft,
 } from "../types";
 
 export function getAudioUploadUrl(payload: {
@@ -46,6 +48,14 @@ export function submitBatchJob(payload: {
 
 export function getBatchStatus(jobId: string): Promise<VoiceBatchStatusResponse> {
   return apiRequest<VoiceBatchStatusResponse>(`/voice-to-profile/batch/${jobId}`);
+}
+
+export function createListingDraftFromText(payload: VoiceTextDraftRequest): Promise<ListingDraft> {
+  return apiRequest<ListingDraft>("/voice-to-profile/text", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    timeoutMs: 30000,
+  });
 }
 
 export function createVoiceStream({

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { makeT } from './i18n';
 import { GingerLogo, Icon, LANG_CTX, T_CTX, LanguagePicker, SiteFooter } from './components';
-import { api } from '../services/api';
+import { api, setDemoMode } from '../services/api';
 
 function computeInitials(name) {
   return name.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -125,9 +125,10 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const doLogin = async (credentials) => {
+  const doLogin = async (credentials, { demo = false } = {}) => {
     setLoading(true);
     setError('');
+    setDemoMode(demo);
     try {
       const normalizedEmail = credentials.email.trim().toLowerCase();
       const session = await api.auth.login({ ...credentials, email: normalizedEmail });
@@ -150,6 +151,7 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
         lang: profile.locale || lang,
       });
     } catch {
+      if (demo) setDemoMode(false);
       setError(t('loginError'));
     } finally {
       setLoading(false);
@@ -157,7 +159,7 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
   };
 
   const tryLogin = async (acc) => {
-    await doLogin({ email: acc.email, password: acc.password });
+    await doLogin({ email: acc.email, password: acc.password }, { demo: true });
   };
 
   const handleSubmit = (e) => {
@@ -502,9 +504,11 @@ function App() {
   const [companionMode, setCompanionMode] = useState('carer'); // 'carer' | 'buyer'
   const [providerId, setProviderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [generatedElderListings, setGeneratedElderListings] = useState([]);
 
   const signOut = () => {
     api.auth.logout();
+    setDemoMode(false);
     setUser(null);
     setShowLanding(false);
     setTab({ elder: 'dashboard', elderBuyer: 'home', requestor: 'home', companion: 'dashboard', companionBuyer: 'home' });
@@ -512,6 +516,7 @@ function App() {
     setCompanionMode('carer');
     setProviderId(null);
     setSearchQuery('');
+    setGeneratedElderListings([]);
   };
 
   const switchElderMode = (mode) => {
@@ -571,6 +576,31 @@ function App() {
     if (id !== 'search' && id !== 'providerDetail') setProviderId(null);
   };
 
+  const addGeneratedElderListing = (listing) => {
+    if (!listing) {
+      setElderTab('listings');
+      return;
+    }
+    setGeneratedElderListings((current) => [
+      {
+        id: `generated-${Date.now()}`,
+        title: listing.title || 'Untitled service',
+        titleEn: listing.title || 'Untitled service',
+        category: listing.categoryLabel || 'Other',
+        categoryLabel: listing.categoryLabel || 'Other',
+        categoryIcon: listing.categoryIcon || 'sparkles',
+        categoryTone: listing.categoryTone || 'neutral',
+        price: listing.price || 'Not set',
+        priceUnit: listing.priceSub || '',
+        rating: 0,
+        bookings: 0,
+        isActive: true,
+      },
+      ...current,
+    ]);
+    setElderTab('listings');
+  };
+
   // Shared buyer-flow body resolver — used by elder-buyer, requestor, and companion-buyer
   const resolveBuyerBody = (currentTab, setTabFn, tabKey) => {
     const goToProvider = (id) => { setProviderId(id); setTab((s) => ({ ...s, [tabKey]: 'providerDetail' })); };
@@ -609,9 +639,15 @@ function App() {
     if (tab.elder === 'dashboard')
       body = <ElderDashboard user={user} onAddListing={() => setElderTab('listings')} />;
     else if (tab.elder === 'listings')
-      body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
+      body = <ElderListings user={user} generatedListings={generatedElderListings} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
-      body = <ElderVoice accessToken={user.accessToken} onConfirm={() => setElderTab('listings')} />;
+      body = (
+        <ElderVoice
+          accessToken={user.accessToken}
+          onBack={() => setElderTab('listings')}
+          onConfirm={addGeneratedElderListing}
+        />
+      );
     else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (

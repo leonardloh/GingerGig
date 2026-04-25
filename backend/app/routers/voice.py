@@ -38,6 +38,7 @@ from app.schemas.voice import (
     VoiceBatchRequest,
     VoiceBatchStatusResponse,
     VoiceBatchSubmitResponse,
+    VoiceTextDraftRequest,
 )
 from app.services.persona_queries import require_role
 from app.services.qwen_service import (
@@ -83,6 +84,51 @@ async def create_audio_upload_url(
 
     key = s3_audio.build_audio_key_elder(elder_id=current_user.id, ext=ext)
     return s3_audio.presign_put_audio(key=key, content_type=payload.contentType)
+
+
+@router.post("/text", response_model=ListingDraft)
+async def create_listing_draft_from_text(
+    payload: VoiceTextDraftRequest,
+    current_user: CurrentUserDep,
+) -> ListingDraft:
+    """Generate a listing draft from browser-transcribed or typed text."""
+
+    require_role(current_user, "elder")
+    transcript = payload.transcript.strip()
+    try:
+        return await extract_listing(transcript, payload.language)
+    except ListingExtractionError:
+        logger.warning(
+            "voice_text_qwen_fallback",
+            extra={"user_id": str(current_user.id), "language": payload.language},
+        )
+        return _fallback_listing_draft(transcript, payload.language)
+
+
+def _fallback_listing_draft(transcript: str, language: str) -> ListingDraft:
+    text = transcript.strip()
+    lowered = text.lower()
+    category = "other"
+    if any(word in lowered for word in ("cook", "cooking", "nasi", "rendang", "kuih", "meal")):
+        category = "home_cooking"
+    elif any(word in lowered for word in ("craft", "sew", "weav", "songket", "anyaman")):
+        category = "traditional_crafts"
+    elif any(word in lowered for word in ("pet", "cat", "dog")):
+        category = "pet_sitting"
+    elif any(word in lowered for word in ("clean", "house", "housekeep", "laundry")):
+        category = "household_help"
+
+    return ListingDraft(
+        name=None,
+        service_offer=text,
+        category=category,  # type: ignore[arg-type]
+        price_amount=None,
+        price_unit=None,
+        capacity=None,
+        dietary_tags=["halal"] if "halal" in lowered else [],
+        location_hint=None,
+        language=language,  # type: ignore[arg-type]
+    )
 
 
 @router.post(

@@ -213,6 +213,11 @@ export interface ListingDraft {
   language: VoiceLanguage;
 }
 
+export interface VoiceTextDraftRequest {
+  transcript: string;
+  language: VoiceLanguage;
+}
+
 export type VoiceStreamMessage =
   | { type: "partial"; text: string }
   | { type: "final"; listing: ListingDraft }

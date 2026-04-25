@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     aws_region: str = Field(default="ap-southeast-1")
     aws_access_key_id: str = Field(default="")
     aws_secret_access_key: str = Field(default="")
+    aws_session_token: str = Field(default="")
     s3_kyc_bucket: str = Field(default="")
     s3_audio_bucket: str = Field(default="")
     s3_transcribe_output_prefix: str = Field(default="transcribe-output")
