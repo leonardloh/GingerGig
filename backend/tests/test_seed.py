@@ -30,7 +30,7 @@ async def _snapshot(engine: AsyncEngine) -> tuple[dict[str, int], str | None]:
         counts = {}
         for table in TABLES:
             counts[table] = (
-                await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))  # noqa: S608
             ).scalar_one()
         siti_hash = (
             await conn.execute(
