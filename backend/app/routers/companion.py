@@ -12,12 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.deps.auth import get_current_user
 from app.deps.db import get_db
 from app.models.booking import Booking as BookingModel
+from app.models.companion_alert import CompanionAlert as CompanionAlertModel
 from app.models.listing import Listing as ListingModel
 from app.models.user import User
-from app.schemas.persona import CompanionDashboard
+from app.schemas.persona import CompanionAlert, CompanionDashboard
 from app.services.persona_queries import (
     initials,
     last_7_days_window_kl,
+    locale_expr,
     require_companion_link,
     require_role,
 )
@@ -104,3 +106,37 @@ def _demo_elder_initials(name: str) -> str:
     if name == "Makcik Siti":
         return "SH"
     return initials(name)
+
+
+@router.get("/elders/{elderId}/alerts", response_model=list[CompanionAlert])
+async def get_companion_alerts(
+    elderId: UUID,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> list[CompanionAlert]:
+    require_role(current_user, "companion")
+    await require_companion_link(db, current_user.id, elderId)
+
+    title_expr = locale_expr(CompanionAlertModel, "title", current_user.locale, "title")
+    message_expr = locale_expr(CompanionAlertModel, "text", current_user.locale, "message")
+    result = await db.execute(
+        select(CompanionAlertModel, title_expr, message_expr)
+        .where(CompanionAlertModel.elder_user_id == elderId)
+        .order_by(CompanionAlertModel.created_at.desc())
+    )
+    return [
+        CompanionAlert(
+            id=str(alert.id),
+            type=_alert_type(alert.kind, alert.severity),
+            title=title,
+            message=message,
+            createdAt=alert.created_at,
+        )
+        for alert, title, message in result.all()
+    ]
+
+
+def _alert_type(kind: str, severity: str) -> str:
+    if kind in {"celebration", "success"} or severity == "success":
+        return "celebration"
+    return "care"
