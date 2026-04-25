@@ -5,6 +5,7 @@ import { ElderDashboard, ElderEarnings, ElderLanguage, ElderListings, ElderProfi
 import { ProviderDetail, RequestorHome, RequestorProfile, RequestorSearch } from './requestor-screens';
 import { CompanionAlerts, CompanionDashboard, CompanionProfile } from './companion-screens';
 import { OnboardingFlow } from './OnboardingFlow';
+import { getMe, login, logout } from '../services/api/endpoints/auth';
 import './prototype.css';
 
 // ─── Requestor bookings placeholder ───────────────────────────────────────
@@ -109,21 +110,23 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const tryLogin = (acc) => {
-    onLogin({ ...acc, lang });
+  const tryLogin = async ({ email: loginEmail, password: loginPassword }) => {
+    setError('');
+    setLoading(true);
+    try {
+      await onLogin({ email: loginEmail.trim().toLowerCase(), password: loginPassword });
+    } catch (err) {
+      setError(err.message || 'Email or password is incorrect. Use one of the demo accounts below.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const acc = DEMO_ACCOUNTS.find(
-      (a) => a.email === email.trim().toLowerCase() && a.password === password,
-    );
-    if (acc) {
-      tryLogin(acc);
-    } else {
-      setError('Email or password is incorrect. Use one of the demo accounts below.');
-    }
+    await tryLogin({ email, password });
   };
 
   return (
@@ -340,6 +343,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
 
             <button
               type="submit"
+              disabled={loading}
               style={{
                 height: 52,
                 borderRadius: 14,
@@ -400,6 +404,7 @@ function LoginScreen({ onLogin, onSignUp, lang, setLang }) {
               <button
                 key={acc.persona}
                 onClick={() => tryLogin(acc)}
+                disabled={loading}
                 style={{
                   appearance: 'none',
                   cursor: 'pointer',
@@ -492,6 +497,25 @@ function App() {
   const [providerId, setProviderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handleLogin = async (credentials) => {
+    const normalizedEmail = credentials.email.trim().toLowerCase();
+    const session = await login({ email: normalizedEmail, password: credentials.password });
+    const profile = await getMe();
+    const demo = DEMO_ACCOUNTS.find((a) => a.email === normalizedEmail);
+
+    setUser({
+      id: profile.id,
+      persona: profile.role,
+      role: profile.role,
+      name: profile.name,
+      initials: profile.initials || demo?.initials,
+      locale: profile.locale,
+      area: profile.area,
+      avatarUrl: profile.avatarUrl,
+      accessToken: session.accessToken,
+    });
+  };
+
   const signOut = () => {
     setUser(null);
     setTab({ elder: 'dashboard', requestor: 'home', companion: 'dashboard' });
@@ -513,7 +537,7 @@ function App() {
 
   // Show login screen if no user
   if (!user) {
-    return <LoginScreen onLogin={setUser} onSignUp={() => setShowSignUp(true)} lang={lang} setLang={setLang} />;
+    return <LoginScreen onLogin={handleLogin} onSignUp={() => setShowSignUp(true)} lang={lang} setLang={setLang} />;
   }
 
   const persona = user.persona;
