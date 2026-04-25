@@ -1,0 +1,471 @@
+// i18n.jsx — translation strings for Ginger Gig
+// 4 languages: Bahasa Malaysia (ms), English (en), Mandarin (zh), Tamil (ta)
+
+const I18N = {
+  // ─── Common ───
+  appName: {
+    ms: "Ginger Gig",
+    en: "Ginger Gig",
+    zh: "Ginger Gig",
+    ta: "Ginger Gig",
+  },
+  tagline: {
+    ms: "Pasaran komuniti untuk warga emas",
+    en: "A neighborhood marketplace for retirees",
+    zh: "邻里间的银发经济市场",
+    ta: "ஓய்வுபெற்றவர்களுக்கான சமூக சந்தை",
+  },
+  continue: { ms: "Teruskan", en: "Continue", zh: "继续", ta: "தொடரவும்" },
+  back: { ms: "Kembali", en: "Back", zh: "返回", ta: "பின்செல்" },
+  cancel: { ms: "Batal", en: "Cancel", zh: "取消", ta: "ரத்து" },
+  done: { ms: "Selesai", en: "Done", zh: "完成", ta: "முடிந்தது" },
+  perMonth: { ms: "sebulan", en: "this month", zh: "本月", ta: "இந்த மாதம்" },
+  aiGenerated: {
+    ms: "Dijana oleh AI",
+    en: "AI Generated",
+    zh: "AI 生成",
+    ta: "AI உருவாக்கியது",
+  },
+
+  // ─── SCREEN 1: Language ───
+  welcome: {
+    ms: "Selamat Datang",
+    en: "Selamat Datang",
+    zh: "Selamat Datang",
+    ta: "Selamat Datang",
+  },
+  chooseLanguage: {
+    ms: "Pilih bahasa anda",
+    en: "Choose your language",
+    zh: "选择您的语言",
+    ta: "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்",
+  },
+  setupWithFamily: {
+    ms: "Sediakan dengan ahli keluarga",
+    en: "Set up with a family member",
+    zh: "由家人协助设置",
+    ta: "குடும்ப உறுப்பினருடன் அமைக்கவும்",
+  },
+
+  // ─── SCREEN 2: Voice-to-profile ───
+  v_title: {
+    ms: "Beritahu kami apa yang anda boleh buat",
+    en: "Tell us what you can do",
+    zh: "告诉我们您能做什么",
+    ta: "உங்களால் என்ன செய்ய முடியும் என்று சொல்லுங்கள்",
+  },
+  v_subtitle: {
+    ms: "Bercakap secara semula jadi. Kami akan uruskan selebihnya.",
+    en: "Just speak naturally. We'll handle the rest.",
+    zh: "请自然地说话,其余交给我们处理。",
+    ta: "இயல்பாகப் பேசுங்கள். மீதியை நாங்கள் கவனித்துக் கொள்வோம்.",
+  },
+  v_tap: {
+    ms: "Ketuk untuk mula bercakap",
+    en: "Tap to start speaking",
+    zh: "点击开始说话",
+    ta: "பேச தொடங்க தட்டவும்",
+  },
+  v_stop: {
+    ms: "Ketuk untuk berhenti",
+    en: "Tap to stop",
+    zh: "点击停止",
+    ta: "நிறுத்த தட்டவும்",
+  },
+  v_example: {
+    ms: "Contoh: \u201CSaya pandai masak rendang, nasi lemak, lauk Melayu kampung\u2026\u201D",
+    en: "Example: \u201CI can cook traditional Malay food — rendang, nasi lemak, kampung dishes\u2026\u201D",
+    zh: "例如:“我会做传统马来菜 — 仁当、椰浆饭、乡村菜⋯”",
+    ta: "உதாரணம்: \u201Cநான் பாரம்பரிய மலாய் உணவு சமைப்பேன் — ரெண்டாங், நாசி லெமாக்⋯\u201D",
+  },
+  v_processing: {
+    ms: "Menjana penyenaraian anda\u2026",
+    en: "Generating your listing\u2026",
+    zh: "正在为您生成列表⋯",
+    ta: "உங்கள் பட்டியலை உருவாக்குகிறோம்⋯",
+  },
+  v_step1: {
+    ms: "Mendengar suara anda\u2026",
+    en: "Listening to your voice\u2026",
+    zh: "正在聆听您的声音⋯",
+    ta: "உங்கள் குரலைக் கேட்கிறோம்⋯",
+  },
+  v_step1_typed: {
+    ms: "Membaca perkataan anda\u2026",
+    en: "Reading what you wrote\u2026",
+    zh: "正在阅读您输入的内容⋯",
+    ta: "நீங்கள் எழுதியதைப் படிக்கிறோம்⋯",
+  },
+  v_step2: {
+    ms: "Memahami kemahiran anda\u2026",
+    en: "Understanding your skills\u2026",
+    zh: "理解您的技能⋯",
+    ta: "உங்கள் திறமைகளை புரிந்துகொள்கிறோம்⋯",
+  },
+  v_step3: {
+    ms: "Mencipta penyenaraian anda\u2026",
+    en: "Creating your listing\u2026",
+    zh: "正在创建您的列表⋯",
+    ta: "உங்கள் பட்டியலை உருவாக்குகிறோம்⋯",
+  },
+  v_looksGood: {
+    ms: "Ini nampak bagus!",
+    en: "This looks good!",
+    zh: "看起来不错!",
+    ta: "இது நன்றாக இருக்கிறது!",
+  },
+  bookingConfirmed: {
+    ms: "Tempahan disahkan",
+    en: "Booking confirmed",
+    zh: "预订已确认",
+    ta: "முன்பதிவு உறுதி செய்யப்பட்டது",
+  },
+  confirmedNote: {
+    ms: "Pelanggan telah dimaklumkan. Kami akan hantar peringatan.",
+    en: "The customer has been notified. We'll send a reminder before the booking.",
+    zh: "客户已收到通知。我们会在预订前发送提醒。",
+    ta: "வாடிக்கையாளருக்கு அறிவிக்கப்பட்டது. நினைவூட்டல் அனுப்பப்படும்.",
+  },
+  v_tryAgain: {
+    ms: "Cuba sekali lagi",
+    en: "Let me try again",
+    zh: "再试一次",
+    ta: "மீண்டும் முயற்சிக்கவும்",
+  },
+  v_orType: {
+    ms: "atau taip sahaja",
+    en: "or type instead",
+    zh: "或改为输入文字",
+    ta: "அல்லது தட்டச்சு செய்யவும்",
+  },
+  v_editListing: {
+    ms: "Edit penyenaraian",
+    en: "Edit listing",
+    zh: "编辑列表",
+    ta: "பட்டியலைத் திருத்து",
+  },
+  v_doneEditing: {
+    ms: "Simpan",
+    en: "Save changes",
+    zh: "保存更改",
+    ta: "சேமி",
+  },
+  v_cancelEdit: {
+    ms: "Batal",
+    en: "Cancel",
+    zh: "取消",
+    ta: "ரத்து செய்",
+  },
+  v_discardChanges: {
+    ms: "Buang perubahan?",
+    en: "Discard changes?",
+    zh: "放弃更改吗？",
+    ta: "மாற்றங்களை விட்டுவிடவா?",
+  },
+  v_keepEditing: {
+    ms: "Teruskan edit",
+    en: "Keep editing",
+    zh: "继续编辑",
+    ta: "தொடர்ந்து திருத்து",
+  },
+  v_discardYes: {
+    ms: "Ya, buang",
+    en: "Yes, discard",
+    zh: "是，放弃",
+    ta: "ஆம், விட்டுவிடு",
+  },
+  v_serviceTitle: {
+    ms: "Tajuk perkhidmatan",
+    en: "Service title",
+    zh: "服务标题",
+    ta: "சேவை தலைப்பு",
+  },
+  v_description: {
+    ms: "Penerangan",
+    en: "Description",
+    zh: "描述",
+    ta: "விவரம்",
+  },
+  v_useVoice: {
+    ms: "Gunakan suara",
+    en: "Use voice instead",
+    zh: "改用语音",
+    ta: "குரலைப் பயன்படுத்தவும்",
+  },
+  v_typePlaceholder: {
+    ms: "Tulis apa yang anda boleh buat\u2026",
+    en: "Type what you can do\u2026",
+    zh: "输入您能做的事⋯",
+    ta: "உங்களால் என்ன செய்ய முடியும் என்று எழுதவும்⋯",
+  },
+  v_generate: {
+    ms: "Jana penyenaraian",
+    en: "Generate listing",
+    zh: "生成列表",
+    ta: "பட்டியலை உருவாக்கவும்",
+  },
+  v_suggestedPrice: {
+    ms: "Harga dicadangkan",
+    en: "Suggested price",
+    zh: "建议价格",
+    ta: "பரிந்துரைக்கப்பட்ட விலை",
+  },
+  v_availability: {
+    ms: "Ketersediaan",
+    en: "Availability",
+    zh: "可预订时间",
+    ta: "கிடைக்கும் நேரம்",
+  },
+  v_capacity: {
+    ms: "Kapasiti",
+    en: "Capacity",
+    zh: "可服务人数",
+    ta: "திறன்",
+  },
+
+  // ─── Dashboard earnings & bookings ───
+  hello: { ms: "Helo", en: "Hello", zh: "您好,", ta: "வணக்கம்," },
+  todayEarnings: {
+    ms: "Pendapatan hari ini",
+    en: "Earned today",
+    zh: "今日收入",
+    ta: "இன்றைய வருமானம்",
+  },
+  lastBooking: {
+    ms: "Tempahan terakhir",
+    en: "Most recent booking",
+    zh: "最近的订单",
+    ta: "சமீபத்திய பதிவு",
+  },
+  totalToday: {
+    ms: "tempahan disiapkan hari ini",
+    en: "bookings completed today",
+    zh: "今日已完成订单",
+    ta: "இன்று முடிக்கப்பட்ட பதிவுகள்",
+  },
+  needsAction: {
+    ms: "Perlukan tindakan",
+    en: "Needs your attention",
+    zh: "需要回应",
+    ta: "உங்கள் பதில் தேவை",
+  },
+  confirmedHeader: {
+    ms: "Disahkan",
+    en: "Confirmed",
+    zh: "已确认",
+    ta: "உறுதிப்படுத்தப்பட்டது",
+  },
+  completedHeader: {
+    ms: "Selesai",
+    en: "Recently completed",
+    zh: "最近完成",
+    ta: "சமீபத்தில் முடிந்தது",
+  },
+  thisMonth: {
+    ms: "Pendapatan bulan ini",
+    en: "This month",
+    zh: "本月收入",
+    ta: "இந்த மாதம்",
+  },
+  moreThanLast: {
+    ms: "lebih daripada bulan lepas",
+    en: "more than last month",
+    zh: "比上个月多",
+    ta: "கடந்த மாதத்தை விட அதிகம்",
+  },
+  yourListings: {
+    ms: "Penyenaraian anda",
+    en: "Your listings",
+    zh: "您的服务",
+    ta: "உங்கள் பட்டியல்கள்",
+  },
+  upcomingBookings: {
+    ms: "Tempahan akan datang",
+    en: "Upcoming bookings",
+    zh: "即将到来的预订",
+    ta: "வரவிருக்கும் முன்பதிவுகள்",
+  },
+  active: { ms: "Aktif", en: "Active", zh: "已开放", ta: "செயலில்" },
+  paused: {
+    ms: "Dijeda",
+    en: "Paused",
+    zh: "已暂停",
+    ta: "இடைநிறுத்தப்பட்டது",
+  },
+  accept: { ms: "Terima", en: "Accept", zh: "接受", ta: "ஏற்கவும்" },
+  decline: { ms: "Tolak", en: "Decline", zh: "拒绝", ta: "மறுக்கவும்" },
+  bookings: {
+    ms: "tempahan",
+    en: "bookings",
+    zh: "次预订",
+    ta: "முன்பதிவுகள்",
+  },
+  learnAboutISaraan: {
+    ms: "Ketahui tentang i-Saraan",
+    en: "Learn about i-Saraan",
+    zh: "了解 i-Saraan",
+    ta: "i-Saraan பற்றி அறிய",
+  },
+  nudge_save: {
+    ms: "Anda peroleh RM680 bulan ini! Mahu simpan RM50 untuk tabung ubat-ubatan?",
+    en: "You earned RM680 this month! Would you like to set aside RM50 for your medication fund?",
+    zh: "您本月赚了 RM680!想要拨出 RM50 作为药费储蓄吗?",
+    ta: "இந்த மாதம் RM680 சம்பாதித்தீர்கள்! மருந்து நிதிக்கு RM50 ஒதுக்கி வைக்க விரும்புகிறீர்களா?",
+  },
+
+  // ─── SCREEN 4: Requestor home ───
+  greetEvening: {
+    ms: "Selamat petang",
+    en: "Good evening",
+    zh: "晚上好",
+    ta: "மாலை வணக்கம்",
+  },
+  needToday: {
+    ms: "Apa yang anda perlukan hari ini?",
+    en: "What do you need today?",
+    zh: "您今天需要什么?",
+    ta: "இன்று உங்களுக்கு என்ன தேவை?",
+  },
+  searchPlaceholder: {
+    ms: "Cari layanan atau bercakap\u2026",
+    en: "Search services or speak\u2026",
+    zh: "搜索服务或语音输入⋯",
+    ta: "சேவைகளைத் தேடவும் அல்லது பேசவும்⋯",
+  },
+  cat_cooking: {
+    ms: "Masakan rumah",
+    en: "Home cooking",
+    zh: "家常菜",
+    ta: "வீட்டு சமையல்",
+  },
+  cat_crafts: {
+    ms: "Kraf tradisional",
+    en: "Traditional crafts",
+    zh: "传统手工",
+    ta: "பாரம்பரிய கைவினை",
+  },
+  cat_pet: {
+    ms: "Jagaan haiwan",
+    en: "Pet sitting",
+    zh: "宠物照看",
+    ta: "செல்லப்பிராணி பராமரிப்பு",
+  },
+  cat_household: {
+    ms: "Bantuan rumah",
+    en: "Household help",
+    zh: "家务帮手",
+    ta: "வீட்டு உதவி",
+  },
+  popularNearYou: {
+    ms: "Popular berdekatan anda",
+    en: "Popular near you",
+    zh: "附近热门",
+    ta: "உங்களுக்கு அருகில் பிரபலமானவை",
+  },
+  recentlyBooked: {
+    ms: "Tempahan terkini",
+    en: "Recently booked",
+    zh: "最近预订",
+    ta: "சமீபத்தில் முன்பதிவு",
+  },
+  away: { ms: "jauh", en: "away", zh: "外", ta: "தொலைவில்" },
+
+  // ─── SCREEN 5: Search results ───
+  matchesFound: {
+    ms: "padanan dijumpai",
+    en: "matches found",
+    zh: "个匹配结果",
+    ta: "பொருத்தங்கள் கண்டுபிடிக்கப்பட்டன",
+  },
+  match: { ms: "padanan", en: "match", zh: "匹配", ta: "பொருத்தம்" },
+  bookNow: {
+    ms: "Tempah sekarang",
+    en: "Book now",
+    zh: "立即预订",
+    ta: "இப்போதே முன்பதிவு",
+  },
+
+  // ─── SCREEN 6: Provider detail ───
+  verified: {
+    ms: "Disahkan",
+    en: "Verified",
+    zh: "已认证",
+    ta: "சரிபார்க்கப்பட்டது",
+  },
+  reviews: { ms: "Ulasan", en: "Reviews", zh: "评价", ta: "மதிப்புரைகள்" },
+  menu: { ms: "Menu", en: "Menu", zh: "菜单", ta: "மெனு" },
+  bookThis: {
+    ms: "Tempah perkhidmatan ini",
+    en: "Book this service",
+    zh: "预订此服务",
+    ta: "இந்த சேவையை முன்பதிவு செய்க",
+  },
+
+  // ─── SCREEN 7: Companion ───
+  mumActivity: {
+    ms: "Aktiviti Mak",
+    en: "Mum's activity",
+    zh: "妈妈的活动",
+    ta: "அம்மாவின் செயல்பாடு",
+  },
+  alerts: { ms: "Notifikasi", en: "Alerts", zh: "提醒", ta: "எச்சரிக்கைகள்" },
+  timeline: { ms: "Garis masa", en: "Timeline", zh: "时间线", ta: "காலவரிசை" },
+
+  // ─── Tabs ───
+  tab_home: { ms: "Laman Utama", en: "Home", zh: "首页", ta: "முகப்பு" },
+  tab_listings: {
+    ms: "Penyenaraian",
+    en: "Listings",
+    zh: "我的服务",
+    ta: "பட்டியல்கள்",
+  },
+  tab_earnings: {
+    ms: "Pendapatan",
+    en: "Earnings",
+    zh: "收入",
+    ta: "வருமானம்",
+  },
+  tab_profile: { ms: "Profil", en: "Profile", zh: "个人", ta: "சுயவிவரம்" },
+  tab_search: { ms: "Cari", en: "Search", zh: "搜索", ta: "தேடல்" },
+  tab_bookings: {
+    ms: "Tempahan",
+    en: "Bookings",
+    zh: "预订",
+    ta: "முன்பதிவுகள்",
+  },
+  tab_dashboard: {
+    ms: "Papan pemuka",
+    en: "Dashboard",
+    zh: "概览",
+    ta: "டாஷ்போர்டு",
+  },
+  tab_alerts: {
+    ms: "Notifikasi",
+    en: "Alerts",
+    zh: "提醒",
+    ta: "அறிவிப்புகள்",
+  },
+};
+
+const LANGUAGES = [
+  {
+    code: "ms",
+    name: "Bahasa Malaysia",
+    native: "Bahasa Malaysia",
+    short: "BM",
+  },
+  { code: "en", name: "English", native: "English", short: "EN" },
+  { code: "zh", name: "Mandarin", native: "中文", short: "中" },
+  { code: "ta", name: "Tamil", native: "தமிழ்", short: "த" },
+];
+
+function makeT(lang) {
+  return function t(key) {
+    const e = I18N[key];
+    if (!e) return key;
+    return e[lang] || e.en || key;
+  };
+}
+
+
+export { I18N, LANGUAGES, makeT };
