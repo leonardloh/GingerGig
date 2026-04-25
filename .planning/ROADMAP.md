@@ -79,7 +79,7 @@
 - [x] 04-01-PLAN.md — Voice batch DB migration, contract test harness, and guardrails (Wave 0)
 - [x] 04-02-PLAN.md — Schemas, Qwen extract_listing, and unit tests (Wave 1)
 - [x] 04-03-PLAN.md — Transcribe streaming integration, WebSocket handler, voice service (Wave 2)
-- [ ] 04-04-PLAN.md — S3 presign, Transcribe batch, async job and status HTTP routes (Wave 2, after 04-03 because both edit `voice.py`)
+- [x] 04-04-PLAN.md — S3 presign, Transcribe batch, async job and status HTTP routes (Wave 2, after 04-03 because both edit `voice.py`)
 - [ ] 04-05-PLAN.md — 502 unification, contract completion, and full phase verification (Wave 3)
 
 ### Phase 5: Frontend Wiring + Type Extensions
@@ -92,7 +92,14 @@
   3. `elder-screens.jsx` / `requestor-screens.jsx` / `companion-screens.jsx` no longer import from `mock-data.js`; every screen drives data via `useEffect` + the typed API client; loading/error states reuse the prototype's existing inline patterns (no new libraries — no router, no TanStack Query, no SWR).
   4. `ElderVoice` opens the WebSocket via the new `voice.ts` helper for `en-US`/`zh-CN` and uses the batch path with browser-direct S3 PUT for `ms-MY`/`ta-IN`; `window.SpeechRecognition` remains as a graceful fallback.
   5. The 3 quick-login chips on `PrototypeApp.jsx` continue to work end-to-end (now hitting `auth.ts → login` against the real backend) and `VITE_API_BASE_URL` is configured for both local-dev and the deployed Alibaba ECS endpoint.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 05-01-PLAN.md — Frontend API contracts, endpoint gaps, voice helper, and barrel export (Wave 0)
+- [ ] 05-02-PLAN.md — Auth quick-login, signout, and onboarding register wiring (Wave 1)
+- [ ] 05-03-PLAN.md — Elder screens mock import removal and API adapters (Wave 2)
+- [ ] 05-04-PLAN.md — Requestor screens mock import removal, search, and listing detail adapters (Wave 2)
+- [ ] 05-05-PLAN.md — Companion screens mock import removal, timeline, alerts, and preference adapters (Wave 2)
+- [ ] 05-06-PLAN.md — ElderVoice WebSocket, batch transport, and ListingDraft adapter (Wave 3, after Phase 4 voice contract)
+- [ ] 05-07-PLAN.md — Environment configuration, no-visual-change guardrails, and final verification (Wave 4)
 **UI hint**: yes
 
 ### Phase 6: Multi-Cloud Live Deployment
@@ -105,7 +112,13 @@
   3. `DASHSCOPE_API_KEY` is provisioned and live; an AWS budget alert is configured at $50/$100 thresholds before any judging traffic hits the URL.
   4. Smoke test from the deployed CloudFront URL completes in one sitting: log in as Siti → browse listings as Amir → create booking → log in as Siti → accept booking → voice-to-profile in en-US produces a listing draft.
   5. The whole frontend renders correctly with `VITE_API_BASE_URL` pointing at the deployed Alibaba ECS endpoint — no CORS errors in the browser console for any of the 5 smoke-test screens.
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 06-01-PLAN.md — AWS frontend edge, audio bucket, IAM, and budget foundation (Wave 0, parallel-safe before Phase 5)
+- [ ] 06-02-PLAN.md — Alibaba ECS, SLB, ApsaraDB, OSS, and DashScope foundation (Wave 0, parallel-safe before Phase 5)
+- [ ] 06-03-PLAN.md — Backend container rollout, runtime env, migrations, and health checks (Wave 1, gated on Phase 4/5 completion)
+- [ ] 06-04-PLAN.md — Frontend production build, S3 upload, and CloudFront publication (Wave 2, gated on Phase 5 + backend health)
+- [ ] 06-05-PLAN.md — Cross-cloud CORS, WebSocket, S3, and secret hardening (Wave 3)
+- [ ] 06-06-PLAN.md — Public end-to-end smoke test and demo handoff (Wave 4)
 
 ## Progress
 
@@ -114,9 +127,9 @@
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
-| 4. Voice-to-Profile Pipeline | 3/5 | In Progress | - |
-| 5. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
-| 6. Multi-Cloud Live Deployment | 0/0 | Not started | - |
+| 4. Voice-to-Profile Pipeline | 4/5 | In Progress | - |
+| 5. Frontend Wiring + Type Extensions | 0/7 | Planned | - |
+| 6. Multi-Cloud Live Deployment | 0/6 | Planned | - |
 
 ## Phase Ordering Rationale
 

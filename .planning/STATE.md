@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T17:30:45Z"
+last_updated: "2026-04-25T17:43:32Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 18
-  completed_plans: 16
-  percent: 89
+  total_plans: 31
+  completed_plans: 17
+  percent: 55
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 04 plan 03 complete)
+**Last updated:** 2026-04-25 (Phase 04 plan 04 complete)
 
 ## Project Reference
 
@@ -26,14 +26,14 @@ progress:
 ## Current Position
 
 Phase: 04 (voice-to-profile-pipeline) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 **Phase:** 04 of 6 (voice to profile pipeline)
-**Plan:** Ready for 04-04
+**Plan:** Ready for 04-05
 **Status:** Executing Phase 04
-**Progress:** [██████████████████░░] 89%
+**Progress:** [███████████░░░░░░░░░] 55%
 
 ```
-[██████████████████░░] 89% (16 of 18 plans)
+[███████████░░░░░░░░░] 55% (17 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -45,15 +45,15 @@ Plan: 4 of 5
 | 3 | Persona Routers (Elder + Requestor + Companion) | Complete | 2 |
 | 4 | Voice-to-Profile Pipeline | In progress | 2 |
 | 5 | Frontend Wiring + Type Extensions | Not started | 3, 4 |
-| 6 | Multi-Cloud Live Deployment | Not started | 5 |
+| 6 | Multi-Cloud Live Deployment | Planned | 5 |
 
 ## Performance Metrics
 
-- **Plans complete:** 15
+- **Plans complete:** 17
 - **Verifications passed:** 2
 - **Phases shipped:** 2
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 04 plan 03 — streaming WebSocket, Transcribe wrapper, cleanup discipline, and mocked tests validated; 13 targeted tests passing, 1 planned skip
+- **Latest phase metric:** Phase 04 plan 04 — batch S3 presign, boto3 Transcribe Batch, async worker/status routes, IDOR protection, and mocked AWS/Qwen tests validated; 12 targeted plan tests passing
 
 ## Accumulated Context
 
@@ -85,6 +85,8 @@ Plan: 4 of 5
 | 02-01 demo auth policy | Yes | Phase 2 deliberately ships a demo-only auth shim: seeded demo emails get JWTs without runtime password verification; production bcrypt checks remain deferred |
 | 04-01 voice batch correlation | Yes | `voice_sessions` stores nullable `audio_s3_key` and `transcribe_job_name`; Alembic revision ids must stay ≤32 chars for the current version table |
 | 04-02 Qwen listing extraction | Yes | `ListingDraft` keeps canonical snake_case Qwen fields; `extract_listing` uses DashScope `json_object`, strips fences, Pydantic-validates, and retries exactly once on validation failure |
+| 04-04 batch worker boundary | Yes | `POST /voice-to-profile/batch` returns `pending` immediately; background work is scheduled with `asyncio.create_task` and opens a fresh session via `get_sessionmaker(app.state.engine)` |
+| 06 deployment split | Yes | AWS/Alibaba provisioning plans can run before Phase 5; backend rollout, frontend publication, hardening, and smoke test stay gated on Phase 4/5 completion |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -104,8 +106,8 @@ Plan: 4 of 5
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `04-03-PLAN.md`
-**Next action:** Execute `04-04-PLAN.md` (S3 presign, Transcribe batch, async job and status HTTP routes).
+**Last session ended:** 2026-04-25 — completed `04-04-PLAN.md`
+**Next action:** Execute `04-05-PLAN.md` (502 unification, contract completion, and full phase verification).
 
 **Resume context for next session:**
 
@@ -119,7 +121,9 @@ Plan: 4 of 5
 
 **Completed Plan:** 02-01 (Demo auth shim and bearer dependencies) — 2026-04-25T16:16:37Z
 
-**Planned Phase:** 03 (Persona Routers (Elder + Requestor + Companion)) — 5 plans — 2026-04-25T16:24:17.391Z
+**Planned Phase:** 5 (Frontend Wiring + Type Extensions) — 7 plans — 2026-04-25T17:28:20.599Z
+
+**Planned Phase:** 6 (Multi-Cloud Live Deployment) — 6 plans — 2026-04-25T17:35:00Z
 
 **Completed Plan:** 03-01 (Persona router contract test harness) — 2026-04-25T16:30:12Z
 
@@ -136,3 +140,5 @@ Plan: 4 of 5
 **Completed Plan:** 04-02 (Schemas, Qwen extract_listing, and unit tests) — 2026-04-25T17:23:22Z
 
 **Completed Plan:** 04-03 (Transcribe streaming integration, WebSocket handler, voice service) — 2026-04-25T17:30:45Z
+
+**Completed Plan:** 04-04 (S3 presign, Transcribe batch, async job and status HTTP routes) — 2026-04-25T17:43:32Z
