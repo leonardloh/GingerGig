@@ -34,7 +34,7 @@
 - [x] 01-03-PLAN.md — SQLAlchemy 2 models for all 11 tables with CHECK constraints, FKs, indexes, TimestampMixin, denormalisation, 4-locale columns (Wave 2)
 - [x] 01-04-PLAN.md — Alembic init + 0001_initial_schema.py + [BLOCKING] migration apply against gingergig_test (Wave 3)
 - [x] 01-05-PLAN.md — scripts/seed_data.py (hand-ported mocks) + scripts/seed.py (idempotent + SeedRefusedError + bcrypt rounds=12) + [BLOCKING] two-run idempotency test (Wave 3)
-- [ ] 01-06-PLAN.md — Wave 0 conftest + 4 pinned tests (D-17) + 5 recommended tests (dep_pins, no_forbidden_imports, cors_no_wildcard, no_create_all, seed_refused_without_env) (Wave 4)
+- [x] 01-06-PLAN.md — Wave 0 conftest + 4 pinned tests (D-17) + 5 recommended tests (dep_pins, no_forbidden_imports, cors_no_wildcard, no_create_all, seed_refused_without_env) (Wave 4)
 - [ ] 01-07-PLAN.md — ApsaraDB Postgres provisioning runbook + smoke test (autonomous: false, gates Wave 3) (Wave 4)
 
 ### Phase 2: Auth + Bearer Middleware
@@ -126,7 +126,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Scaffold + Schema + Seed | 3/7 | In Progress | - |
+| 1. Backend Scaffold + Schema + Seed | 6/7 | In Progress | - |
 | 2. Auth + Bearer Middleware | 0/0 | Not started | - |
 | 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
 | 4. eKYC Pipeline | 0/0 | Not started | - |

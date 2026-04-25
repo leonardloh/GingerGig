@@ -4,7 +4,28 @@
 
 ## Test Framework
 
-**No test framework configured yet.**
+**Backend test framework configured in Phase 01 Plan 06.**
+
+Backend:
+- `backend/pyproject.toml` configures `pytest`, `pytest-asyncio`, and `httpx`.
+- `backend/Makefile` exposes `make test` as `uv run pytest -q`.
+- `backend/tests/conftest.py` provides a session-scoped async SQLAlchemy engine, function-scoped SAVEPOINT rollback, and an `httpx.AsyncClient` with `ASGITransport`.
+- DB-backed tests prefer `TEST_DATABASE_URL`; if absent, they use the approved normalized `DATABASE_URL` fallback with `postgresql+asyncpg://`.
+
+Backend suite:
+- `backend/tests/test_health.py` checks `GET /health`.
+- `backend/tests/test_migrations.py` checks all 11 Phase 1 tables and Alembic head revision.
+- `backend/tests/test_seed.py` checks seed idempotency and demo-account bcrypt hashes.
+- `backend/tests/test_error_envelope.py` checks 500 and 404 ApiError envelopes.
+- `backend/tests/test_dep_pins.py` checks critical dependency pins and forbidden dependencies.
+- `backend/tests/test_no_forbidden_imports.py` checks forbidden imports plus boto3 Transcribe Streaming misuse.
+- `backend/tests/test_cors_no_wildcard.py` checks CORS is not `"*"`.
+- `backend/tests/test_no_create_all.py` checks Alembic remains the only schema mechanism.
+- `backend/tests/test_seed_refused_without_env.py` checks seed safety refusal.
+
+Frontend:
+
+**No frontend test framework configured yet.**
 
 Findings:
 - `frontend/package.json` declares no `test` script. The full script list is: `dev`, `build`, `typecheck`, `preview`, `lint`, `format`, `format:check`.
@@ -14,7 +35,7 @@ Findings:
 - No `frontend/tests/`, `frontend/__tests__/`, or `frontend/e2e/` directory exists.
 - No `setupTests.ts` / `test-setup.ts` file exists.
 
-The closest thing to runtime verification today is `npm run typecheck` (`tsc -b`), which is gated by the strict TS config in `frontend/tsconfig.app.json`. That is type-checking, not testing.
+The closest frontend runtime verification today is `npm run typecheck` (`tsc -b`), which is gated by the strict TS config in `frontend/tsconfig.app.json`. That is type-checking, not testing.
 
 ## Recommended Setup (not yet adopted)
 

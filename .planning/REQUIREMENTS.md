@@ -19,7 +19,7 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 
 ### Database & Seed
 
-- [ ] **DATA-01**: Postgres schema migrated via Alembic (no `Base.metadata.create_all`); covers `users`, `companion_links`, `listings`, `listing_menu_items`, `bookings`, `reviews`, `companion_alerts`, `companion_alert_preferences`, `timeline_events`, `kyc_sessions`, `voice_sessions`
+- [x] **DATA-01**: Postgres schema migrated via Alembic (no `Base.metadata.create_all`); covers `users`, `companion_links`, `listings`, `listing_menu_items`, `bookings`, `reviews`, `companion_alerts`, `companion_alert_preferences`, `timeline_events`, `kyc_sessions`, `voice_sessions`
 - [x] **DATA-02**: `users` schema includes `id`, `email`, `phone`, `password_hash`, `name`, `role` (`elder`/`requestor`/`companion`), `locale` (`ms`/`en`/`zh`/`ta`), `kyc_status`, `area`, `age`, `avatar_url`, `created_at`
 - [x] **DATA-03**: `listings` schema preserves every field the prototype renders: `category`, `price`, `price_max`, `price_unit`, `rating`, `review_count`, `halal`, `is_active`, `title_ms/en/zh/ta`, `description`, `days[]`, plus 1:N `listing_menu_items` with `name`/`price`
 - [x] **DATA-04**: `bookings` schema denormalises requestor + listing snapshot fields (`requestor_name`, `requestor_initials`, `requestor_avatar_url`, `listing_title`, `quantity_label`, `item_description`, `amount`, `scheduled_at`, `status`); booking row survives requestor/listing edits unchanged
@@ -188,12 +188,12 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | FOUND-05 | Phase 1 | Complete |
 | FOUND-06 | Phase 1 | Complete |
 | FOUND-07 | Phase 1 | Complete |
-| DATA-01 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
-| DATA-06 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 1 | Pending |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
