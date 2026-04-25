@@ -585,22 +585,6 @@ textarea {
   color: var(--text-3);
 }
 
-.site-footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.site-footer-logo {
-  height: 26px;
-  width: auto;
-  display: block;
-  opacity: 0.75;
-  flex-shrink: 0;
-}
-
 .site-footer-links {
   display: flex;
   align-items: center;
@@ -629,11 +613,6 @@ textarea {
   color: rgba(255,255,255,0.3);
 }
 
-.lp-footer .site-footer-logo {
-  filter: brightness(0) invert(1);
-  opacity: 0.55;
-}
-
 .lp-footer .site-footer-link {
   color: rgba(255,255,255,0.35);
 }
@@ -658,9 +637,6 @@ textarea {
   .site-footer {
     padding: 14px 18px;
     gap: 10px;
-  }
-  .site-footer-logo {
-    height: 22px;
   }
   .site-footer-copy {
     font-size: 10px;

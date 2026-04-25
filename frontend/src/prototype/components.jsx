@@ -656,16 +656,9 @@ const LanguagePicker = ({ lang, setLang, variant = 'light' }) => {
 // ─── Site Footer ───────────────────────────────────────────────────────────
 const SiteFooter = ({ variant = 'light' }) => (
   <footer className={`site-footer${variant === 'dark' ? ' lp-footer' : ''}`}>
-    <div className="site-footer-brand">
-      <img
-        src={cdnUrl('/gingergig-wordmark.png')}
-        alt="Ginger Gig"
-        className="site-footer-logo"
-      />
-      <span className="site-footer-copy">
-        © {new Date().getFullYear()} BLUE PATHERS · Financial Inclusion
-      </span>
-    </div>
+    <span className="site-footer-copy">
+      © {new Date().getFullYear()} THE BLUE PANTHERS · FINANCIAL INCLUSION
+    </span>
     <div className="site-footer-links">
       <a href="#privacy-policy" className="site-footer-link" onClick={(e) => e.preventDefault()}>
         Privacy Policy
