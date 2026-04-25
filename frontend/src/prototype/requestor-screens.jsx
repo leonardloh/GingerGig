@@ -1,7 +1,53 @@
-import { ELDER_BOOKINGS, PORTRAITS, PROVIDERS, REVIEWS } from './mock-data';
 import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 // requestor-screens.jsx — Home, Search results, Provider detail
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getListingById, searchListings } from '../services/api/endpoints/requestor';
+
+function formatListingPrice(listing) {
+  const price = `RM${listing.price}`;
+  return listing.priceMax ? `${price}-${listing.priceMax}` : price;
+}
+
+function formatMenuPrice(price) {
+  return typeof price === "number" ? `RM${price}` : price;
+}
+
+function providerTone(provider) {
+  return provider.id === "chen"
+    ? "teal"
+    : provider.id === "raju"
+      ? "gold"
+      : provider.id === "hassan"
+        ? "sand"
+        : "warm";
+}
+
+function adaptListingToProvider(listing) {
+  return {
+    id: listing.id,
+    name: listing.elderName || "Provider",
+    initials: listing.elderInitials || "GG",
+    area: listing.elderArea || "",
+    portrait: listing.elderPortraitUrl,
+    service: listing.title,
+    description: listing.description,
+    rating: listing.rating,
+    reviews: listing.reviewCount,
+    price: formatListingPrice(listing),
+    priceUnit: listing.priceUnit,
+    distance: listing.distance,
+    matchScore: listing.matchScore,
+    matchReason: listing.matchReason,
+    days: listing.days,
+    menu: listing.menu.map((item) => ({
+      ...item,
+      price: formatMenuPrice(item.price),
+    })),
+    halal: listing.halal,
+    age: listing.age,
+    tone: providerTone(listing),
+  };
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
