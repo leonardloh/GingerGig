@@ -1,6 +1,7 @@
 import { LANGUAGES } from './i18n';
 import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 import { getElderBookings, getElderEarnings, getElderListings, respondToBooking, updateListing } from '../services/api/endpoints/elder';
+import { createVoiceStream, getAudioUploadUrl, getBatchStatus, submitBatchJob, uploadAudioToPresignedUrl } from '../services/api/endpoints/voice';
 // elder-screens.jsx — Language pick, Voice flow, Elder dashboard
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -50,6 +51,47 @@ const adaptListing = (listing) => ({
   bookings: listing.reviewCount,
   active: listing.isActive,
 });
+
+const GENERATED_LISTING_FALLBACK = {
+  title: "Masakan Melayu Tradisional",
+  description:
+    "Home-cooked rendang, nasi lemak, and kampung favourites — recipes I have been making for over 30 years. Cooked fresh every morning, packed with love.",
+  price: "RM15-20",
+  priceSub: "per meal",
+  capacity: "10 pax",
+  capacitySub: "per day",
+  availability: "Mon-Fri",
+  availabilitySub: "6 AM - 7 PM",
+  area: "Kepong",
+  areaSub: "3 km radius",
+};
+
+const adaptDraftToGeneratedListing = (draft) => {
+  if (!draft) return GENERATED_LISTING_FALLBACK;
+
+  const priceUnitLabels = {
+    per_meal: "per meal",
+    per_hour: "per hour",
+    per_day: "per day",
+    per_month: "per month",
+  };
+
+  return {
+    ...GENERATED_LISTING_FALLBACK,
+    title: draft.service_offer || GENERATED_LISTING_FALLBACK.title,
+    description: draft.service_offer || GENERATED_LISTING_FALLBACK.description,
+    price:
+      draft.price_amount !== null && draft.price_amount !== undefined
+        ? `RM${formatCurrencyValue(draft.price_amount)}`
+        : GENERATED_LISTING_FALLBACK.price,
+    priceSub: priceUnitLabels[draft.price_unit] || GENERATED_LISTING_FALLBACK.priceSub,
+    capacity:
+      draft.capacity !== null && draft.capacity !== undefined
+        ? `${draft.capacity} pax`
+        : GENERATED_LISTING_FALLBACK.capacity,
+    area: draft.location_hint || GENERATED_LISTING_FALLBACK.area,
+  };
+};
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
@@ -218,7 +260,7 @@ function ElderLanguage({ lang, setLang, onContinue }) {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 2 — Voice-to-Profile (HERO)
 // ═══════════════════════════════════════════════════════════════
-function ElderVoice({ onConfirm }) {
+function ElderVoice({ onConfirm, accessToken }) {
   const t = useT();
   const lang = useLang();
   const [state, setState] = useState("ready");
@@ -227,21 +269,23 @@ function ElderVoice({ onConfirm }) {
   const [typed, setTyped] = useState("");
   const [steps, setSteps] = useState([0, 0, 0]);
   const [source, setSource] = useState("voice"); // "voice" | "typed" — affects step 1 label
+  const [draft, setDraft] = useState(null);
   const recogRef = useRef(null);
   const tickRef = useRef(null);
 
-  const speechLangCode =
-    { ms: "ms-MY", en: "en-MY", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
+  const voiceLanguage =
+    { ms: "ms-MY", en: "en-US", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
 
   const startRecord = () => {
     setSeconds(0);
     setTranscript("");
+    setDraft(null);
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       const r = new SR();
       r.continuous = true;
       r.interimResults = true;
-      r.lang = speechLangCode;
+      r.lang = voiceLanguage;
       r.onresult = (e) => {
         let full = "";
         for (let i = 0; i < e.results.length; i++)
@@ -675,6 +719,7 @@ function ElderVoice({ onConfirm }) {
       {state === "generated" && (
         <GeneratedListing
           t={t}
+          draft={draft}
           onConfirm={() => onConfirm && onConfirm()}
           onTryAgain={() => {
             setState("ready");
@@ -686,20 +731,8 @@ function ElderVoice({ onConfirm }) {
 }
 
 // ─── Editable AI-generated listing card ───
-function GeneratedListing({ t, onConfirm, onTryAgain }) {
-  const initial = {
-    title: "Masakan Melayu Tradisional",
-    description:
-      "Home-cooked rendang, nasi lemak, and kampung favourites — recipes I have been making for over 30 years. Cooked fresh every morning, packed with love.",
-    price: "RM15-20",
-    priceSub: "per meal",
-    capacity: "10 pax",
-    capacitySub: "per day",
-    availability: "Mon-Fri",
-    availabilitySub: "6 AM - 7 PM",
-    area: "Kepong",
-    areaSub: "3 km radius",
-  };
+function GeneratedListing({ t, draft, onConfirm, onTryAgain }) {
+  const initial = adaptDraftToGeneratedListing(draft);
   const [editing, setEditing] = useState(false);
   const [data, setData] = useState(initial);
   const [snapshot, setSnapshot] = useState(initial); // saved baseline to revert to
