@@ -98,7 +98,7 @@
 - [x] 05-03-PLAN.md — Elder screens mock import removal and API adapters (Wave 2)
 - [x] 05-04-PLAN.md — Requestor screens mock import removal, search, and listing detail adapters (Wave 2)
 - [x] 05-05-PLAN.md — Companion screens mock import removal, timeline, alerts, and preference adapters (Wave 2)
-- [ ] 05-06-PLAN.md — ElderVoice WebSocket, batch transport, and ListingDraft adapter (Wave 3, after Phase 4 voice contract)
+- [x] 05-06-PLAN.md — ElderVoice WebSocket, batch transport, and ListingDraft adapter (Wave 3, after Phase 4 voice contract)
 - [ ] 05-07-PLAN.md — Environment configuration, no-visual-change guardrails, and final verification (Wave 4)
 **UI hint**: yes
 
@@ -128,7 +128,7 @@
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
 | 4. Voice-to-Profile Pipeline | 5/5 | Complete | 2026-04-26 |
-| 5. Frontend Wiring + Type Extensions | 5/7 | In Progress | - |
+| 5. Frontend Wiring + Type Extensions | 6/7 | In Progress | - |
 | 6. Multi-Cloud Live Deployment | 0/6 | Planned | - |
 
 ## Phase Ordering Rationale

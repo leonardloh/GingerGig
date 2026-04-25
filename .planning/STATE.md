@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T18:39:57Z"
+last_updated: "2026-04-25T18:46:55Z"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 31
-  completed_plans: 23
-  percent: 74
+  completed_plans: 24
+  percent: 77
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 05 plan 05 complete)
+**Last updated:** 2026-04-25 (Phase 05 plan 06 complete)
 
 ## Project Reference
 
@@ -26,14 +26,14 @@ progress:
 ## Current Position
 
 Phase: 05 (frontend-wiring-type-extensions) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 **Phase:** 05 of 6 (frontend wiring + type extensions)
-**Plan:** Ready for 05-06
+**Plan:** Ready for 05-07
 **Status:** Executing Phase 05
-**Progress:** [███████░░░] 74%
+**Progress:** [████████░░] 77%
 
 ```
-[███████░░░] 74% (23 of 31 plans)
+[████████░░] 77% (24 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -49,11 +49,11 @@ Plan: 6 of 7
 
 ## Performance Metrics
 
-- **Plans complete:** 23
+- **Plans complete:** 24
 - **Verifications passed:** 3
 - **Phases shipped:** 3
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 05 plan 05 — companion dashboard, alerts, timeline, and preference updates now use companion-safe typed API helpers; frontend typecheck and build passed
+- **Latest phase metric:** Phase 05 plan 06 — ElderVoice now streams en-US/zh-CN PCM over WebSocket and batches ms-MY/ta-IN WAV via S3 presign; backend voice tests, frontend typecheck, and build passed
 
 ## Accumulated Context
 
@@ -92,6 +92,7 @@ Plan: 6 of 7
 | 05-03 elder frontend boundary | Yes | Elder-owned dashboard/listing calls use authenticated `user.id`; screen-local adapters preserve existing display shapes while removing elder mock-data imports |
 | 05-04 requestor frontend boundary | Yes | Requestor home/search/detail/profile calls use typed requestor helpers; `providerId` is now a backend listing id; `createBooking` remains unwired until a real scheduling UI exists |
 | 05-05 companion frontend boundary | Yes | Companion screens use only companion-safe elder dashboard/alerts/timeline/preferences helpers; watched elder discovery remains an isolated Faiz-to-Siti demo bridge; upcoming bookings remain demo-only until a companion endpoint exists |
+| 05-06 ElderVoice frontend boundary | Yes | Voice transport uses `accessToken` prop only; streaming sends 16 kHz Int16 PCM over `createVoiceStream`; batch records WAV/PCM for browser-direct S3 PUT and status polling; SpeechRecognition remains fallback |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -111,8 +112,8 @@ Plan: 6 of 7
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `05-05-PLAN.md`
-**Next action:** Execute `05-06-PLAN.md` (ElderVoice WebSocket, batch transport, and ListingDraft adapter).
+**Last session ended:** 2026-04-25 — completed `05-06-PLAN.md`
+**Next action:** Execute `05-07-PLAN.md` (environment configuration, no-visual-change guardrails, and final verification).
 
 **Resume context for next session:**
 
@@ -142,3 +143,4 @@ Plan: 6 of 7
 **Completed Plan:** 05-03 (Elder screens mock import removal and API adapters) — 2026-04-25T18:28:31Z
 **Completed Plan:** 05-04 (Requestor screens mock import removal, search, and listing detail adapters) — 2026-04-25T18:33:49Z
 **Completed Plan:** 05-05 (Companion screens mock import removal, timeline, alerts, and preference adapters) — 2026-04-25T18:39:57Z
+**Completed Plan:** 05-06 (ElderVoice WebSocket, batch transport, and ListingDraft adapter) — 2026-04-25T18:46:55Z

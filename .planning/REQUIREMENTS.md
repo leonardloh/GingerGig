@@ -80,7 +80,7 @@ The frontend is preserved as-is except for the additive changes below. No UI fea
 - [x] **FE-04**: Inline auth/register helper in `OnboardingFlow.jsx` replaced with imports from `src/services/api/endpoints/auth`; the 8-step KYC stepper UI remains unchanged and outside the active backend scope
 - [x] **FE-05**: Every screen file (`elder-screens.jsx`, `requestor-screens.jsx`, `companion-screens.jsx`) replaces direct imports of `mock-data.js` constants with `useEffect`-driven calls to the typed API client; loading/error states match the prototype's existing inline patterns (no new libraries)
 - [x] **FE-06**: `DEMO_ACCOUNTS` in `PrototypeApp.jsx` keeps its visual chips for quick-login UX, but the click handler calls `auth.ts → login` against the real backend instead of running an in-memory match
-- [ ] **FE-07**: `ElderVoice` component wires the WebSocket via `voice.ts` for `en-US`/`zh-CN`; `ms-MY`/`ta-IN` use the batch path with browser-direct S3 PUT; the existing `window.SpeechRecognition` code is retained as a graceful fallback for browsers without `AudioWorklet`
+- [x] **FE-07**: `ElderVoice` component wires the WebSocket via `voice.ts` for `en-US`/`zh-CN`; `ms-MY`/`ta-IN` use the batch path with browser-direct S3 PUT; the existing `window.SpeechRecognition` code is retained as a graceful fallback for browsers without `AudioWorklet`
 - [ ] **FE-08**: `frontend/.env.local` updated to point `VITE_API_BASE_URL` at the local FastAPI backend during dev, the deployed Alibaba ECS endpoint in production
 - [x] **FE-09**: Type extensions are strictly additive — no field is renamed or removed in `types.ts`; existing `apiRequest`, `setApiAccessToken`, `ApiError` shape, and `/api/v1` prefix are unchanged
 
@@ -204,12 +204,12 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | VOICE-06 | Phase 4 | Complete |
 | VOICE-07 | Phase 4 | Complete |
 | FE-01 | Phase 5 | Pending |
-| FE-02 | Phase 5 | Pending |
+| FE-02 | Phase 5 | Complete |
 | FE-03 | Phase 5 | Complete |
 | FE-04 | Phase 5 | Complete |
 | FE-05 | Phase 5 | Complete |
 | FE-06 | Phase 5 | Complete |
-| FE-07 | Phase 5 | Pending |
+| FE-07 | Phase 5 | Complete |
 | FE-08 | Phase 5 | Pending |
 | FE-09 | Phase 5 | Complete |
 | DEPLOY-01 | Phase 6 | Pending |
