@@ -35,6 +35,7 @@ PARTIAL_MIN_INTERVAL_SECONDS = 0.25
 STREAMING_CLOSE_BATCH_ONLY = 4400
 STREAMING_CLOSE_AUTH = 4401
 STREAMING_CLOSE_ERROR = 4500
+STREAMING_INFRASTRUCTURE_FAILED_MSG = "Voice streaming failed"
 
 AudioQueueItem = bytes | None
 
@@ -200,6 +201,23 @@ async def run_streaming_session(
                 "failed",
                 error="WebSocket disconnected",
             )
+    except Exception:
+        logger.exception(
+            "voice_streaming_infrastructure_failed",
+            extra={
+                "voice_session_id": str(voice_session.id) if voice_session else None,
+                "user_id": str(user.id),
+            },
+        )
+        if voice_session is not None:
+            await _mark_voice_session(
+                db_session,
+                voice_session,
+                "failed",
+                error=STREAMING_INFRASTRUCTURE_FAILED_MSG,
+            )
+        await _send_error(websocket, STREAMING_INFRASTRUCTURE_FAILED_MSG)
+        await _close_websocket(websocket, code=STREAMING_CLOSE_ERROR)
     finally:
         await _cleanup_streaming(
             input_stream=input_stream,
