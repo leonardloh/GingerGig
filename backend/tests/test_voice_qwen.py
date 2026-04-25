@@ -88,6 +88,24 @@ async def test_extract_listing_converts_transport_errors_to_safe_error() -> None
 
 
 @pytest.mark.asyncio
+async def test_extract_listing_converts_retry_transport_errors_to_safe_error() -> None:
+    invalid = json.dumps({"category": "not_a_category"})
+    create = AsyncMock(
+        side_effect=[
+            _completion(invalid),
+            RuntimeError("dashscope retry timeout with request id abc123"),
+        ]
+    )
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+    with patch("app.services.qwen_service.AsyncOpenAI", Mock(return_value=client)):
+        with pytest.raises(ListingExtractionError, match="Listing extraction failed"):
+            await extract_listing("I cook nasi lemak for neighbours.", "en-US")
+
+    assert create.await_count == 2
+
+
+@pytest.mark.asyncio
 async def test_extract_listing_overrides_model_language_with_requested_language() -> None:
     patched_client = _mock_async_openai(_valid_listing(language="zh-CN"))
 

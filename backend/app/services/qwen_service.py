@@ -91,25 +91,28 @@ async def extract_listing(transcript: str, language: str) -> ListingDraft:
         logger.exception("qwen_listing_extraction_client_init_failed")
         raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
 
-    try:
-        raw_json = await _request_listing_json(client, transcript, language)
-        return _validate_listing_json(raw_json, language)
-    except ValidationError as first_error:
+    validation_error: str | None = None
+    for attempt in range(2):
         try:
             raw_json = await _request_listing_json(
                 client,
                 transcript,
                 language,
-                str(first_error),
+                validation_error,
             )
             return _validate_listing_json(raw_json, language)
-        except ValidationError as second_error:
-            raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from second_error
-    except ListingExtractionError:
-        raise
-    except Exception as exc:
-        logger.exception("qwen_listing_extraction_transport_failed")
-        raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
+        except ValidationError as exc:
+            if attempt == 0:
+                validation_error = str(exc)
+                continue
+            raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
+        except ListingExtractionError as exc:
+            raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
+        except Exception as exc:
+            logger.exception("qwen_listing_extraction_transport_failed")
+            raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG) from exc
+
+    raise ListingExtractionError(LISTING_EXTRACTION_FAILED_MSG)
 
 
 def _validate_listing_json(raw_json: str, language: str) -> ListingDraft:
