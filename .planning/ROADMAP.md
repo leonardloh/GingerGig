@@ -11,7 +11,7 @@
 - [x] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
 - [x] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [x] **Phase 4: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
-- [ ] **Phase 5: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
+- [x] **Phase 5: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
 - [ ] **Phase 6: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
 
 ## Phase Details
@@ -99,7 +99,7 @@
 - [x] 05-04-PLAN.md — Requestor screens mock import removal, search, and listing detail adapters (Wave 2)
 - [x] 05-05-PLAN.md — Companion screens mock import removal, timeline, alerts, and preference adapters (Wave 2)
 - [x] 05-06-PLAN.md — ElderVoice WebSocket, batch transport, and ListingDraft adapter (Wave 3, after Phase 4 voice contract)
-- [ ] 05-07-PLAN.md — Environment configuration, no-visual-change guardrails, and final verification (Wave 4)
+- [x] 05-07-PLAN.md — Environment configuration, no-visual-change guardrails, and final verification (Wave 4)
 **UI hint**: yes
 
 ### Phase 6: Multi-Cloud Live Deployment
@@ -128,7 +128,7 @@
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
 | 4. Voice-to-Profile Pipeline | 5/5 | Complete | 2026-04-26 |
-| 5. Frontend Wiring + Type Extensions | 6/7 | In Progress | - |
+| 5. Frontend Wiring + Type Extensions | 7/7 | Complete | 2026-04-25 |
 | 6. Multi-Cloud Live Deployment | 0/6 | Planned | - |
 
 ## Phase Ordering Rationale

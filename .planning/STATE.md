@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T18:46:55Z"
+last_updated: "2026-04-25T18:59:14Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 31
-  completed_plans: 24
-  percent: 77
+  completed_plans: 25
+  percent: 81
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 05 plan 06 complete)
+**Last updated:** 2026-04-25 (Phase 05 plan 07 complete)
 
 ## Project Reference
 
@@ -25,15 +25,15 @@ progress:
 
 ## Current Position
 
-Phase: 05 (frontend-wiring-type-extensions) — EXECUTING
-Plan: 7 of 7
-**Phase:** 05 of 6 (frontend wiring + type extensions)
-**Plan:** Ready for 05-07
-**Status:** Executing Phase 05
-**Progress:** [████████░░] 77%
+Phase: 06 (multi-cloud-live-deployment) — READY
+Plan: 1 of 6
+**Phase:** 06 of 6 (multi-cloud live deployment)
+**Plan:** Ready for 06-01
+**Status:** Phase 05 complete; ready to execute Phase 06 deployment
+**Progress:** [████████░░] 81%
 
 ```
-[████████░░] 77% (24 of 31 plans)
+[████████░░] 81% (25 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -44,16 +44,16 @@ Plan: 7 of 7
 | 2 | Auth + Bearer Middleware | Complete | 1 |
 | 3 | Persona Routers (Elder + Requestor + Companion) | Complete | 2 |
 | 4 | Voice-to-Profile Pipeline | Complete | 2 |
-| 5 | Frontend Wiring + Type Extensions | In progress | 3, 4 |
+| 5 | Frontend Wiring + Type Extensions | Complete | 3, 4 |
 | 6 | Multi-Cloud Live Deployment | Planned | 5 |
 
 ## Performance Metrics
 
-- **Plans complete:** 24
-- **Verifications passed:** 3
-- **Phases shipped:** 3
+- **Plans complete:** 25
+- **Verifications passed:** 4
+- **Phases shipped:** 4
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 05 plan 06 — ElderVoice now streams en-US/zh-CN PCM over WebSocket and batches ms-MY/ta-IN WAV via S3 presign; backend voice tests, frontend typecheck, and build passed
+- **Latest phase metric:** Phase 05 plan 07 — frontend API origin docs, static checks, mock/token/prefix guards, backend contract tests, and three-persona browser smoke passed
 
 ## Accumulated Context
 
@@ -93,6 +93,7 @@ Plan: 7 of 7
 | 05-04 requestor frontend boundary | Yes | Requestor home/search/detail/profile calls use typed requestor helpers; `providerId` is now a backend listing id; `createBooking` remains unwired until a real scheduling UI exists |
 | 05-05 companion frontend boundary | Yes | Companion screens use only companion-safe elder dashboard/alerts/timeline/preferences helpers; watched elder discovery remains an isolated Faiz-to-Siti demo bridge; upcoming bookings remain demo-only until a companion endpoint exists |
 | 05-06 ElderVoice frontend boundary | Yes | Voice transport uses `accessToken` prop only; streaming sends 16 kHz Int16 PCM over `createVoiceStream`; batch records WAV/PCM for browser-direct S3 PUT and status polling; SpeechRecognition remains fallback |
+| 05-07 frontend verification boundary | Yes | `VITE_API_BASE_URL` is origin-only and local ignored env is untracked; final guards confirmed no mock-data imports, token storage, double `/api/v1`, or CSS drift |
 
 ### Open Decisions (to resolve at phase start)
 
@@ -112,8 +113,8 @@ Plan: 7 of 7
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `05-06-PLAN.md`
-**Next action:** Execute `05-07-PLAN.md` (environment configuration, no-visual-change guardrails, and final verification).
+**Last session ended:** 2026-04-25 — completed `05-07-PLAN.md`
+**Next action:** Execute `06-01-PLAN.md` (AWS frontend edge, audio bucket, IAM, and budget foundation).
 
 **Resume context for next session:**
 
@@ -144,3 +145,4 @@ Plan: 7 of 7
 **Completed Plan:** 05-04 (Requestor screens mock import removal, search, and listing detail adapters) — 2026-04-25T18:33:49Z
 **Completed Plan:** 05-05 (Companion screens mock import removal, timeline, alerts, and preference adapters) — 2026-04-25T18:39:57Z
 **Completed Plan:** 05-06 (ElderVoice WebSocket, batch transport, and ListingDraft adapter) — 2026-04-25T18:46:55Z
+**Completed Plan:** 05-07 (Environment configuration, no-visual-change guardrails, and final verification) — 2026-04-25T18:59:14Z
