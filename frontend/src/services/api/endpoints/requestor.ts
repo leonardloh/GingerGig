@@ -1,5 +1,5 @@
 import { apiRequest } from "../http";
-import type { Booking, Provider } from "../types";
+import type { Booking, Listing, ListingDetail, Provider } from "../types";
 
 /** Filters for searching available elder service listings. */
 export interface SearchListingsParams {
@@ -23,7 +23,45 @@ export interface SearchListingsParams {
  * @param params - Optional filters (query, distance, halal, availability)
  * @returns Array of matching listings
  */
-export function searchListings(params: SearchListingsParams) {
+function formatListingPrice(listing: Listing | ListingDetail): string {
+  const min = `RM${listing.price}`;
+  return listing.priceMax ? `${min}-${listing.priceMax}` : min;
+}
+
+function formatMenuPrice(price: number | string): string {
+  return typeof price === "number" ? `RM${price}` : price;
+}
+
+function adaptListingToProvider(listing: Listing | ListingDetail): Provider {
+  return {
+    id: listing.id,
+    name: listing.elderName || "Provider",
+    age: listing.elderAge ?? 64,
+    area: listing.elderArea || "",
+    distance: listing.distance || "",
+    initials: listing.elderInitials || "GG",
+    portrait: listing.elderPortraitUrl ?? null,
+    service: listing.title,
+    serviceEn: listing.titleEn ?? undefined,
+    category: listing.category,
+    rating: Number(listing.rating ?? 0),
+    reviews: listing.reviewCount,
+    price: formatListingPrice(listing),
+    priceUnit: listing.priceUnit,
+    halal: listing.halal,
+    tone: "warm",
+    description: listing.description,
+    matchScore: listing.matchScore ?? Math.round(Math.min(Number(listing.rating) || 0, 5) * 20),
+    matchReason: listing.matchReason ?? undefined,
+    menu: listing.menu.map((item) => ({
+      name: item.name,
+      price: formatMenuPrice(item.price),
+    })),
+    days: listing.days,
+  };
+}
+
+export async function searchListings(params: SearchListingsParams): Promise<Provider[]> {
   const search = new URLSearchParams();
   if (params.query) search.set("query", params.query);
   if (typeof params.maxDistanceKm === "number") {
@@ -32,9 +70,10 @@ export function searchListings(params: SearchListingsParams) {
   if (params.halalOnly) search.set("halal_only", "true");
   if (params.openNow) search.set("open_now", "true");
 
-  return apiRequest<Provider[]>(
+  const listings = await apiRequest<Listing[]>(
     `/requestor/listings/search?${search.toString()}`,
   );
+  return listings.map(adaptListingToProvider);
 }
 
 /**
@@ -46,8 +85,9 @@ export function searchListings(params: SearchListingsParams) {
  * @returns Full Provider object including menu, days, match scores
  * @throws {ApiError} 404 if the provider does not exist or is not active
  */
-export function getProvider(providerId: string) {
-  return apiRequest<Provider>(`/requestor/providers/${providerId}`);
+export async function getProvider(providerId: string): Promise<Provider> {
+  const listing = await apiRequest<ListingDetail>(`/listings/${providerId}`);
+  return adaptListingToProvider(listing);
 }
 
 /**

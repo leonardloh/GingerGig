@@ -24,6 +24,7 @@ import * as elderReal from "./endpoints/elder";
 import * as requestorReal from "./endpoints/requestor";
 import * as companionReal from "./endpoints/companion";
 import * as kycReal from "./endpoints/kyc";
+import * as voiceReal from "./endpoints/voice";
 
 import * as authMock from "./mock/auth.mock";
 import * as elderMock from "./mock/elder.mock";
@@ -61,4 +62,5 @@ export const api = {
   get requestor() { return useMock() ? requestorMock : requestorReal; },
   get companion() { return useMock() ? companionMock : companionReal; },
   get kyc() { return useMock() ? kycMock : kycReal; },
+  get voice() { return voiceReal; },
 } as const;

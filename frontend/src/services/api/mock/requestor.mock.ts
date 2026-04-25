@@ -49,9 +49,16 @@ export async function createBooking(payload: {
     id: `b-${Date.now()}`,
     listingId: payload.listingId,
     requestorName: "Amir Razak",
+    requestorInitials: "AR",
+    requestorAvatarUrl: null,
+    listingTitle: "Masakan Melayu Tradisional",
+    qty: "1 portion",
+    itemDescription: "Rendang + Nasi Lemak",
     status: "pending",
     amount: 36,
+    currency: "MYR",
     scheduledAt: payload.scheduledAt,
+    notes: payload.notes,
   };
 }
 
@@ -61,8 +68,14 @@ export async function getRequestorBookings(): Promise<Booking[]> {
     id: b.id,
     listingId: "l1",
     requestorName: b.requestor,
+    requestorInitials: b.requestorInitials,
+    requestorAvatarUrl: b.portrait,
+    listingTitle: b.item,
+    qty: b.qty,
+    itemDescription: b.item,
     status: b.status,
     amount: parseFloat(b.price.replace("RM", "")),
+    currency: "MYR",
     scheduledAt: new Date().toISOString(),
   }));
 }

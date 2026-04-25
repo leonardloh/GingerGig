@@ -1,5 +1,11 @@
 import { apiRequest } from "../http";
-import type { CompanionAlertItem, CompanionDashboardData } from "../types";
+import type {
+  CompanionAlert,
+  CompanionAlertItem,
+  CompanionDashboard,
+  CompanionDashboardData,
+  TimelineEvent,
+} from "../types";
 
 /**
  * Each companion is paired with one elder they watch over.
@@ -9,8 +15,24 @@ import type { CompanionAlertItem, CompanionDashboardData } from "../types";
  * Returns the richer CompanionDashboardData shape (elder name, status,
  * last-active text, timeline) that the companion dashboard UI needs.
  */
-export function getCompanionDashboard(elderId: string): Promise<CompanionDashboardData> {
-  return apiRequest<CompanionDashboardData>(`/companions/elders/${elderId}/dashboard`);
+export async function getCompanionDashboard(elderId: string): Promise<CompanionDashboardData> {
+  const [dashboard, timeline] = await Promise.all([
+    apiRequest<CompanionDashboard>(`/companions/elders/${elderId}/dashboard`),
+    getCompanionTimeline(elderId),
+  ]);
+  return {
+    elderName: dashboard.elder.name,
+    elderStatus: dashboard.status,
+    lastActiveText: timeline[0]?.time ?? "",
+    weeklyEarnings: Number(dashboard.weeklyEarnings ?? 0),
+    bookingsCompleted: dashboard.completedBookings,
+    activeDays: dashboard.activeDays,
+    timeline: timeline.map((event) => ({
+      id: event.id,
+      time: event.time,
+      text: event.text,
+    })),
+  };
 }
 
 /**
@@ -23,8 +45,17 @@ export function getCompanionDashboard(elderId: string): Promise<CompanionDashboa
  * @param elderId - The ID of the elder being watched
  * @returns Array of active alerts, newest first
  */
-export function getCompanionAlerts(elderId: string): Promise<CompanionAlertItem[]> {
-  return apiRequest<CompanionAlertItem[]>(`/companions/elders/${elderId}/alerts`);
+export async function getCompanionAlerts(elderId: string): Promise<CompanionAlertItem[]> {
+  const alerts = await apiRequest<CompanionAlert[]>(`/companions/elders/${elderId}/alerts`);
+  return alerts.map((alert) => ({
+    id: alert.id,
+    type: alert.type === "celebration" ? "success" : "care",
+    text: alert.message,
+  }));
+}
+
+export function getCompanionTimeline(elderId: string): Promise<TimelineEvent[]> {
+  return apiRequest<TimelineEvent[]>(`/companions/elders/${elderId}/timeline`);
 }
 
 /** Notification preferences for a companion's alert subscriptions. */

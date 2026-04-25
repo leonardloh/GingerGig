@@ -1,0 +1,48 @@
+import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logger = logging.getLogger(__name__)
+
+
+def _envelope(status: int, message: str, detail: Any | None = None) -> JSONResponse:
+    body: dict[str, Any] = {"status": status, "message": message}
+    if detail is not None:
+        body["detail"] = detail
+    return JSONResponse(status_code=status, content=body)
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    @app.middleware("http")
+    async def unhandled_exception_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        try:
+            return await call_next(request)
+        except Exception:
+            logger.exception("unhandled", extra={"path": request.url.path})
+            return _envelope(500, "Internal server error")
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(
+        request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        return _envelope(exc.status_code, exc.detail or "Request failed")
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        return _envelope(422, "Validation failed", detail=exc.errors())
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        logger.exception("unhandled", extra={"path": request.url.path})
+        return _envelope(500, "Internal server error")

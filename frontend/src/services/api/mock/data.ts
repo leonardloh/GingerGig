@@ -91,6 +91,12 @@ export function makeMockProfile(account: DemoAccount): UserProfile {
     name: account.name,
     role: account.role,
     locale: account.locale,
+    kycStatus: account.role === "elder" ? "approved" : "not_started",
+    avatarUrl: account.portrait,
+    area: account.role === "elder" ? "Kepong, Kuala Lumpur" : "Damansara Utama",
+    age: account.role === "elder" ? 64 : null,
+    phone: "+60123456789",
+    initials: account.initials,
   };
 }
 

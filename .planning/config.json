@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "mode": "yolo",
+  "granularity": "standard",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "balanced",
+  "models": {
+    "researcher": "claude-sonnet-4-6",
+    "synthesizer": "claude-sonnet-4-6",
+    "roadmapper": "claude-sonnet-4-6",
+    "planner": "claude-sonnet-4-6",
+    "executor": "claude-sonnet-4-6",
+    "verifier": "claude-sonnet-4-6",
+    "plan_checker": "claude-sonnet-4-6"
+  },
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true,
+    "auto_advance": true,
+    "_auto_chain_active": false
+  },
+  "planning": {
+    "sub_repos": [],
+    "is_brownfield": true,
+    "has_codebase_map": true,
+    "frontend_dir": "frontend",
+    "backend_dir": "backend"
+  }
+}

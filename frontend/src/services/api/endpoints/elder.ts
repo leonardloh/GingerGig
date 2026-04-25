@@ -1,5 +1,56 @@
 import { apiRequest } from "../http";
-import type { Booking, EarningsSummary, Listing } from "../types";
+import type { Booking, BookingItem, EarningsSummary, ElderEarningsData, ElderListing, Listing } from "../types";
+
+function formatCurrencyValue(value: number | string | null | undefined): string {
+  const numeric = Number(value ?? 0);
+  return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(2);
+}
+
+function formatMoney(amount: number | string, currency = "MYR"): string {
+  const value = formatCurrencyValue(amount);
+  return currency === "MYR" ? `RM${value}` : `${currency} ${value}`;
+}
+
+function formatPriceRange(listing: Listing): string {
+  const min = formatMoney(listing.price, listing.currency);
+  return listing.priceMax ? `${min}-${formatCurrencyValue(listing.priceMax)}` : min;
+}
+
+function formatBookingDate(iso: string): string {
+  return new Date(iso).toLocaleString([], {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function adaptListing(listing: Listing): ElderListing {
+  return {
+    id: listing.id,
+    title: listing.title,
+    titleEn: listing.titleEn ?? undefined,
+    category: listing.category,
+    price: formatPriceRange(listing),
+    priceUnit: listing.priceUnit,
+    rating: Number(listing.rating ?? 0),
+    bookings: listing.reviewCount,
+    isActive: listing.isActive,
+  };
+}
+
+function adaptBooking(booking: Booking): BookingItem {
+  return {
+    id: booking.id,
+    requestor: booking.requestorName,
+    requestorInitials: booking.requestorInitials,
+    portrait: booking.requestorAvatarUrl ?? null,
+    date: formatBookingDate(booking.scheduledAt),
+    qty: booking.qty,
+    item: booking.listingTitle || booking.itemDescription,
+    status: booking.status,
+    price: formatMoney(booking.amount, booking.currency),
+  };
+}
 
 /**
  * GET /api/v1/elders/:elderId/listings
@@ -10,8 +61,9 @@ import type { Booking, EarningsSummary, Listing } from "../types";
  * @returns Array of the elder's listings
  * @throws {ApiError} 404 if the elder does not exist
  */
-export function getElderListings(elderId: string) {
-  return apiRequest<Listing[]>(`/elders/${elderId}/listings`);
+export async function getElderListings(elderId: string): Promise<ElderListing[]> {
+  const listings = await apiRequest<Listing[]>(`/elders/${elderId}/listings`);
+  return listings.map(adaptListing);
 }
 
 /**
@@ -27,11 +79,12 @@ export function getElderListings(elderId: string) {
  * @throws {ApiError} 403 if the authenticated elder does not own this listing
  * @throws {ApiError} 404 if the listing does not exist
  */
-export function updateListing(listingId: string, payload: Partial<Listing>) {
-  return apiRequest<Listing>(`/listings/${listingId}`, {
+export async function updateListing(listingId: string, payload: Partial<ElderListing>): Promise<ElderListing> {
+  const listing = await apiRequest<Listing>(`/listings/${listingId}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+  return adaptListing(listing);
 }
 
 /**
@@ -43,8 +96,9 @@ export function updateListing(listingId: string, payload: Partial<Listing>) {
  * @param elderId - The elder's user ID
  * @returns Array of bookings for this elder's listings
  */
-export function getElderBookings(elderId: string) {
-  return apiRequest<Booking[]>(`/elders/${elderId}/bookings`);
+export async function getElderBookings(elderId: string): Promise<BookingItem[]> {
+  const bookings = await apiRequest<Booking[]>(`/elders/${elderId}/bookings`);
+  return bookings.map(adaptBooking);
 }
 
 /**
@@ -79,6 +133,12 @@ export function respondToBooking(
  * @param elderId - The elder's user ID
  * @returns Earnings summary (monthTotal, lifetimeTotal, completedCount)
  */
-export function getElderEarnings(elderId: string) {
-  return apiRequest<EarningsSummary>(`/elders/${elderId}/earnings/summary`);
+export async function getElderEarnings(elderId: string): Promise<ElderEarningsData> {
+  const earnings = await apiRequest<EarningsSummary>(`/elders/${elderId}/earnings/summary`);
+  return {
+    monthTotal: Number(earnings.monthTotal ?? 0),
+    lifetimeTotal: Number(earnings.lifetimeTotal ?? 0),
+    completedCount: earnings.completedCount,
+    weeklyBar: [320, 410, 480, 510, 500, Number(earnings.monthTotal ?? 0)],
+  };
 }

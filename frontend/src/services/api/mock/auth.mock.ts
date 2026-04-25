@@ -3,6 +3,8 @@ import type { LoginPayload } from "../endpoints/auth";
 import { DEMO_ACCOUNTS, makeMockSession, makeMockProfile } from "./data";
 import { mockDelay } from "./delay";
 
+let currentAccount = DEMO_ACCOUNTS[0];
+
 export async function login(payload: LoginPayload): Promise<Session> {
   await mockDelay();
   const account = DEMO_ACCOUNTS.find(
@@ -11,10 +13,12 @@ export async function login(payload: LoginPayload): Promise<Session> {
   if (!account) {
     throw { status: 401, message: "Invalid email or password." };
   }
+  currentAccount = account;
   return makeMockSession(account);
 }
 
 export async function register(_payload: RegisterPayload): Promise<RegisterResponse> {
+  void _payload;
   await mockDelay(200, 600);
   return {
     userId: `user-${Date.now()}`,
@@ -28,11 +32,9 @@ export async function register(_payload: RegisterPayload): Promise<RegisterRespo
 
 export async function getMe(): Promise<UserProfile> {
   await mockDelay(80, 200);
-  // Return Makcik Siti as the default — in a real app this reads from the JWT
-  const account = DEMO_ACCOUNTS[0];
-  return makeMockProfile(account);
+  return makeMockProfile(currentAccount);
 }
 
 export function logout(): void {
-  // No-op in mock mode
+  currentAccount = DEMO_ACCOUNTS[0];
 }

@@ -84,6 +84,26 @@ export interface UserProfile {
   name: string;
   role: "elder" | "requestor" | "companion";
   locale: "ms" | "en" | "zh" | "ta";
+  kycStatus: KycStatus;
+  avatarUrl?: string | null;
+  area?: string | null;
+  age?: number | null;
+  phone?: string | null;
+  initials: string;
+}
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  price: number | string;
+}
+
+export interface Review {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }
 
 // ─── Base / backend-contract types ────────────────────────────────────────
@@ -94,17 +114,48 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  priceMax?: number | null;
+  priceUnit: string;
   currency: "MYR";
+  category: string;
+  rating: number;
+  reviewCount: number;
+  halal: boolean;
   isActive: boolean;
+  days: string[];
+  menu: MenuItem[];
+  titleMs?: string | null;
+  titleEn?: string | null;
+  titleZh?: string | null;
+  titleTa?: string | null;
+  elderName?: string | null;
+  elderAge?: number | null;
+  elderInitials?: string | null;
+  elderArea?: string | null;
+  elderPortraitUrl?: string | null;
+  distance?: string | null;
+  matchScore?: number | null;
+  matchReason?: string | null;
+}
+
+export interface ListingDetail extends Listing {
+  reviews: Review[];
 }
 
 export interface Booking {
   id: string;
   listingId: string;
   requestorName: string;
+  requestorInitials: string;
+  requestorAvatarUrl?: string | null;
+  listingTitle: string;
+  qty: string;
+  itemDescription: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   amount: number;
+  currency: string;
   scheduledAt: string;
+  notes?: string | null;
 }
 
 export interface EarningsSummary {
@@ -121,11 +172,74 @@ export interface CompanionAlert {
   createdAt: string;
 }
 
+export interface CompanionElderSnapshot {
+  id: string;
+  name: string;
+  initials: string;
+  area?: string | null;
+  portraitUrl?: string | null;
+}
+
 export interface CompanionDashboard {
   status: string;
-  weeklyEarnings: EarningsSummary;
+  weeklyEarnings: EarningsSummary | number;
   activeDays: number;
   completedBookings: number;
+  elder: CompanionElderSnapshot;
+}
+
+export interface TimelineEvent {
+  id: string;
+  eventType: string;
+  text: string;
+  time: string;
+  occurredAt: string;
+  relatedId?: string | null;
+}
+
+export type VoiceLanguage = "en-US" | "zh-CN" | "ms-MY" | "ta-IN";
+export type StreamingVoiceLanguage = "en-US" | "zh-CN";
+export type BatchVoiceLanguage = "ms-MY" | "ta-IN";
+
+export interface ListingDraft {
+  name?: string | null;
+  service_offer: string;
+  category: "home_cooking" | "traditional_crafts" | "pet_sitting" | "household_help" | "other";
+  price_amount?: number | null;
+  price_unit?: "per_meal" | "per_hour" | "per_day" | "per_month" | null;
+  capacity?: number | null;
+  dietary_tags: string[];
+  location_hint?: string | null;
+  language: VoiceLanguage;
+}
+
+export interface VoiceTextDraftRequest {
+  transcript: string;
+  language: VoiceLanguage;
+}
+
+export type VoiceStreamMessage =
+  | { type: "partial"; text: string }
+  | { type: "final"; listing: ListingDraft }
+  | { type: "error"; message: string };
+
+export interface AudioUploadUrlResponse {
+  uploadUrl: string;
+  s3Key: string;
+  expiresIn: number;
+}
+
+export interface VoiceBatchSubmitResponse {
+  jobId: string;
+  status: "pending";
+  estimatedSeconds: number;
+}
+
+export interface VoiceBatchStatusResponse {
+  jobId: string;
+  status: "pending" | "transcribing" | "extracting" | "ready" | "failed";
+  listing?: ListingDraft;
+  message?: string;
 }
 
 // ─── Rich UI types (returned by search / dashboard endpoints) ─────────────

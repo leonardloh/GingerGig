@@ -24,6 +24,8 @@ export async function uploadDocument(
   _presignedUrl: string,
   _file: File,
 ): Promise<void> {
+  void _presignedUrl;
+  void _file;
   await mockDelay(500, 1200);
   // Simulate successful S3 upload — no-op in mock mode
 }

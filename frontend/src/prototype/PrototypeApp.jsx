@@ -75,10 +75,6 @@ function RequestorBookings() {
 }
 
 // ─── Demo account quick-login cards ───────────────────────────────────────
-// Clicking a card bypasses api.auth.login entirely (see tryLogin below) and
-// activates "demo mode" — every api.* call is forced to mock for the rest
-// of the session, regardless of VITE_USE_MOCK_API. This lets us demo the
-// product without a running backend.
 const DEMO_ACCOUNTS = [
   {
     userId: 'user-siti',
@@ -109,6 +105,11 @@ const DEMO_ACCOUNTS = [
   },
 ];
 
+// Demo bridge only until backend exposes companion elder discovery.
+const DEMO_WATCHED_ELDER_BY_EMAIL = {
+  'faiz@gingergig.my': '5a9017b1-acc2-51a2-be47-538b8bffb800',
+};
+
 const TONE_GRADIENT = {
   elder: 'linear-gradient(135deg,#E8A87C,#C2662D)',
   requestor: 'linear-gradient(135deg,#4DA6A6,#2D6A6A)',
@@ -124,38 +125,41 @@ function LoginScreen({ onLogin, onSignUp, onBack, lang, setLang }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const doLogin = async (credentials) => {
+  const doLogin = async (credentials, { demo = false } = {}) => {
     setLoading(true);
     setError('');
+    setDemoMode(demo);
     try {
-      const session = await api.auth.login(credentials);
+      const normalizedEmail = credentials.email.trim().toLowerCase();
+      const session = await api.auth.login({ ...credentials, email: normalizedEmail });
       const profile = await api.auth.getMe();
       onLogin({
+        id: profile.id,
         userId: session.userId,
+        role: profile.role,
         persona: profile.role,
         name: profile.name,
-        initials: computeInitials(profile.name),
-        lang,
+        initials: profile.initials || computeInitials(profile.name),
+        locale: profile.locale,
+        area: profile.area,
+        avatarUrl: profile.avatarUrl,
+        accessToken: session.accessToken,
+        watchedElderId:
+          profile.role === 'companion'
+            ? DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail]
+            : undefined,
+        lang: profile.locale || lang,
       });
     } catch {
+      if (demo) setDemoMode(false);
       setError(t('loginError'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Demo accounts skip the network entirely. We flip the runtime mock switch
-  // and hand-craft the user state so the rest of the app behaves as if we
-  // had successfully called api.auth.login + api.auth.getMe.
-  const tryLogin = (acc) => {
-    setDemoMode(true);
-    onLogin({
-      userId: acc.userId,
-      persona: acc.persona,
-      name: acc.name,
-      initials: acc.initials,
-      lang,
-    });
+  const tryLogin = async (acc) => {
+    await doLogin({ email: acc.email, password: acc.password }, { demo: true });
   };
 
   const handleSubmit = (e) => {
@@ -500,8 +504,10 @@ function App() {
   const [companionMode, setCompanionMode] = useState('carer'); // 'carer' | 'buyer'
   const [providerId, setProviderId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [generatedElderListings, setGeneratedElderListings] = useState([]);
 
   const signOut = () => {
+    api.auth.logout();
     setDemoMode(false);
     setUser(null);
     setShowLanding(false);
@@ -510,6 +516,7 @@ function App() {
     setCompanionMode('carer');
     setProviderId(null);
     setSearchQuery('');
+    setGeneratedElderListings([]);
   };
 
   const switchElderMode = (mode) => {
@@ -569,6 +576,31 @@ function App() {
     if (id !== 'search' && id !== 'providerDetail') setProviderId(null);
   };
 
+  const addGeneratedElderListing = (listing) => {
+    if (!listing) {
+      setElderTab('listings');
+      return;
+    }
+    setGeneratedElderListings((current) => [
+      {
+        id: `generated-${Date.now()}`,
+        title: listing.title || 'Untitled service',
+        titleEn: listing.title || 'Untitled service',
+        category: listing.categoryLabel || 'Other',
+        categoryLabel: listing.categoryLabel || 'Other',
+        categoryIcon: listing.categoryIcon || 'sparkles',
+        categoryTone: listing.categoryTone || 'neutral',
+        price: listing.price || 'Not set',
+        priceUnit: listing.priceSub || '',
+        rating: 0,
+        bookings: 0,
+        isActive: true,
+      },
+      ...current,
+    ]);
+    setElderTab('listings');
+  };
+
   // Shared buyer-flow body resolver — used by elder-buyer, requestor, and companion-buyer
   const resolveBuyerBody = (currentTab, setTabFn, tabKey) => {
     const goToProvider = (id) => { setProviderId(id); setTab((s) => ({ ...s, [tabKey]: 'providerDetail' })); };
@@ -607,9 +639,15 @@ function App() {
     if (tab.elder === 'dashboard')
       body = <ElderDashboard user={user} onAddListing={() => setElderTab('listings')} />;
     else if (tab.elder === 'listings')
-      body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
+      body = <ElderListings user={user} generatedListings={generatedElderListings} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
-      body = <ElderVoice onConfirm={() => setElderTab('listings')} />;
+      body = (
+        <ElderVoice
+          accessToken={user.accessToken}
+          onBack={() => setElderTab('listings')}
+          onConfirm={addGeneratedElderListing}
+        />
+      );
     else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (
@@ -634,9 +672,8 @@ function App() {
     tabs = COMPANION_TABS;
     activeTab = tab.companion;
     onTabChange = setCompTab;
-    // elderId is the elder this companion watches over — resolved from the companion's profile
-    // For demo: Faiz (companion) is always linked to Makcik Siti (user-siti)
-    const companionElderId = 'user-siti';
+    // Demo bridge until the backend exposes companion elder discovery.
+    const companionElderId = user.watchedElderId;
     if (tab.companion === 'alerts') body = <CompanionAlerts elderId={companionElderId} />;
     else if (tab.companion === 'profile') body = <CompanionProfile />;
     else body = <CompanionDashboard elderId={companionElderId} />;

@@ -1,13 +1,64 @@
 [project]
-name = "gingergig-backend"
+name = "gingergig-api"
 version = "0.1.0"
-description = "GingerGig API - Silver Economy Marketplace"
-readme = "README.md"
-requires-python = ">=3.12"
+description = "GingerGig backend API — multi-cloud FastAPI on Alibaba ECS + AWS"
+requires-python = ">=3.12,<3.14"
 dependencies = [
-    "asyncpg>=0.31.0",
     "fastapi>=0.136.1",
-    "python-dotenv>=1.2.2",
-    "sqlalchemy>=2.0.49",
-    "uvicorn>=0.46.0",
+    "uvicorn[standard]>=0.46.0",
+    "sqlalchemy[asyncio]>=2.0.49",
+    "asyncpg>=0.31.0",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "alembic>=1.18.4",
+    "email-validator>=2.3.0",
+    "python-multipart>=0.0.26",
+    "boto3>=1.42.96",
+    "amazon-transcribe>=0.6.4",
+    "alibabacloud-oss-v2>=1.2.5",
+    "openai>=2.32.0",
+    "redis>=7.4.0",
+    "pyjwt[crypto]>=2.12.1",
+    "bcrypt>=4.2.0,<5.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.12",
+    "mypy>=1.13.0",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "httpx>=0.28.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC"]
+ignore = ["S101"]  # assert in tests is fine
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]  # hardcoded test passwords ok
+"scripts/seed.py" = ["S106"]    # demo password ok
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+plugins = ["pydantic.mypy"]

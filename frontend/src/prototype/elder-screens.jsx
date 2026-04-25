@@ -4,6 +4,166 @@ import { LANGUAGES } from './i18n';
 import { AILabel, Avatar, Badge, Button, Card, EarningsHeroCard, Icon, Stars, useLang, useT } from './components';
 import { api } from '../services/api';
 
+const formatCurrencyValue = (value) => {
+  const numeric = Number(value ?? 0);
+  return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(2);
+};
+
+const GENERATED_LISTING_FALLBACK = {
+  title: "Masakan Melayu Tradisional",
+  description:
+    "Home-cooked rendang, nasi lemak, and kampung favourites — recipes I have been making for over 30 years. Cooked fresh every morning, packed with love.",
+  categoryLabel: "Home Cooking",
+  categoryIcon: "chef",
+  categoryTone: "primary",
+  halal: true,
+  price: "RM15-20",
+  priceSub: "per meal",
+  capacity: "10 pax",
+  capacitySub: "per day",
+  availability: "Mon-Fri",
+  availabilitySub: "6 AM - 7 PM",
+  area: "Kepong",
+  areaSub: "3 km radius",
+};
+
+const EMPTY_GENERATED_LISTING = {
+  title: "Untitled service",
+  description: "No description captured yet.",
+  categoryLabel: "Other",
+  categoryIcon: "sparkles",
+  categoryTone: "neutral",
+  halal: false,
+  price: "Not set",
+  priceSub: "",
+  capacity: "Not set",
+  capacitySub: "",
+  availability: "Flexible",
+  availabilitySub: "",
+  area: "Not set",
+  areaSub: "",
+};
+
+const adaptDraftToGeneratedListing = (draft) => {
+  if (!draft) return GENERATED_LISTING_FALLBACK;
+
+  const priceUnitLabels = {
+    per_meal: "per meal",
+    per_hour: "per hour",
+    per_day: "per day",
+    per_month: "per month",
+  };
+  const categoryLabels = {
+    home_cooking: { label: "Home Cooking", icon: "chef", tone: "primary" },
+    traditional_crafts: { label: "Traditional Crafts", icon: "scissors", tone: "accent" },
+    pet_sitting: { label: "Pet Sitting", icon: "paw", tone: "teal" },
+    household_help: { label: "Household Help", icon: "broom", tone: "neutral" },
+    other: { label: "Other", icon: "sparkles", tone: "neutral" },
+  };
+  const category = categoryLabels[draft.category] || categoryLabels.other;
+  const dietaryTags = Array.isArray(draft.dietary_tags) ? draft.dietary_tags : [];
+
+  return {
+    ...EMPTY_GENERATED_LISTING,
+    title: draft.service_offer || draft.name || EMPTY_GENERATED_LISTING.title,
+    description: draft.service_offer || EMPTY_GENERATED_LISTING.description,
+    categoryLabel: category.label,
+    categoryIcon: category.icon,
+    categoryTone: category.tone,
+    halal: dietaryTags.some((tag) => tag.toLowerCase() === "halal"),
+    price:
+      draft.price_amount !== null && draft.price_amount !== undefined
+        ? `RM${formatCurrencyValue(draft.price_amount)}`
+        : EMPTY_GENERATED_LISTING.price,
+    priceSub: priceUnitLabels[draft.price_unit] || EMPTY_GENERATED_LISTING.priceSub,
+    capacity:
+      draft.capacity !== null && draft.capacity !== undefined
+        ? `${draft.capacity} pax`
+        : EMPTY_GENERATED_LISTING.capacity,
+    area: draft.location_hint || EMPTY_GENERATED_LISTING.area,
+  };
+};
+
+const isStreamingLanguage = (language) => language === "en-US" || language === "zh-CN";
+
+const isBatchLanguage = (language) => language === "ms-MY" || language === "ta-IN";
+
+const floatTo16BitPCM = (float32Array) => {
+  const pcm = new Int16Array(float32Array.length);
+  for (let i = 0; i < float32Array.length; i++) {
+    const sample = Math.max(-1, Math.min(1, float32Array[i]));
+    pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return pcm;
+};
+
+const downsampleTo16k = (input, inputSampleRate) => {
+  if (inputSampleRate === 16000) return input;
+  const ratio = inputSampleRate / 16000;
+  const outputLength = Math.max(1, Math.round(input.length / ratio));
+  const output = new Float32Array(outputLength);
+
+  for (let i = 0; i < outputLength; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(Math.floor((i + 1) * ratio), input.length);
+    let sum = 0;
+    let count = 0;
+    for (let j = start; j < end; j++) {
+      sum += input[j];
+      count += 1;
+    }
+    output[i] = count ? sum / count : input[start] || 0;
+  }
+
+  return output;
+};
+
+const encodeWav = (pcmChunks, sampleRate = 16000) => {
+  const totalSamples = pcmChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const buffer = new ArrayBuffer(44 + totalSamples * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  const writeString = (value) => {
+    for (let i = 0; i < value.length; i++) {
+      view.setUint8(offset + i, value.charCodeAt(i));
+    }
+    offset += value.length;
+  };
+
+  writeString("RIFF");
+  view.setUint32(offset, 36 + totalSamples * 2, true);
+  offset += 4;
+  writeString("WAVE");
+  writeString("fmt ");
+  view.setUint32(offset, 16, true);
+  offset += 4;
+  view.setUint16(offset, 1, true);
+  offset += 2;
+  view.setUint16(offset, 1, true);
+  offset += 2;
+  view.setUint32(offset, sampleRate, true);
+  offset += 4;
+  view.setUint32(offset, sampleRate * 2, true);
+  offset += 4;
+  view.setUint16(offset, 2, true);
+  offset += 2;
+  view.setUint16(offset, 16, true);
+  offset += 2;
+  writeString("data");
+  view.setUint32(offset, totalSamples * 2, true);
+  offset += 4;
+
+  pcmChunks.forEach((chunk) => {
+    for (let i = 0; i < chunk.length; i++) {
+      view.setInt16(offset, chunk[i], true);
+      offset += 2;
+    }
+  });
+
+  return new Blob([buffer], { type: "audio/wav" });
+};
+
+
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 1 — Language Selection
 // ═══════════════════════════════════════════════════════════════
@@ -171,7 +331,7 @@ function ElderLanguage({ lang, setLang, onContinue }) {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 2 — Voice-to-Profile (HERO)
 // ═══════════════════════════════════════════════════════════════
-function ElderVoice({ onConfirm }) {
+function ElderVoice({ onConfirm, onBack, accessToken }) {
   const t = useT();
   const lang = useLang();
   const [state, setState] = useState("ready");
@@ -180,75 +340,381 @@ function ElderVoice({ onConfirm }) {
   const [typed, setTyped] = useState("");
   const [steps, setSteps] = useState([0, 0, 0]);
   const [source, setSource] = useState("voice"); // "voice" | "typed" — affects step 1 label
+  const [draft, setDraft] = useState(null);
+  const [generationError, setGenerationError] = useState("");
   const recogRef = useRef(null);
   const tickRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const processorRef = useRef(null);
+  const workletNodeRef = useRef(null);
+  const wsRef = useRef(null);
+  const pcmChunksRef = useRef([]);
+  const transportRef = useRef(null);
+  const batchPollRef = useRef(null);
+  const processingTimersRef = useRef([]);
+  const transcriptRef = useRef("");
+  const recordingRef = useRef(false);
 
-  const speechLangCode =
-    { ms: "ms-MY", en: "en-MY", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
+  const voiceLanguage =
+    { ms: "ms-MY", en: "en-US", zh: "zh-CN", ta: "ta-IN" }[lang] || "en-US";
 
-  const startRecord = () => {
-    setSeconds(0);
-    setTranscript("");
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) {
-      const r = new SR();
-      r.continuous = true;
-      r.interimResults = true;
-      r.lang = speechLangCode;
-      r.onresult = (e) => {
-        let full = "";
-        for (let i = 0; i < e.results.length; i++)
-          full += e.results[i][0].transcript + " ";
-        setTranscript(full.trim());
-      };
-      r.onerror = () => {};
+  const setTranscriptText = (value) => {
+    transcriptRef.current = value;
+    setTranscript(value);
+  };
+  const clearProcessingTimers = () => {
+    processingTimersRef.current.forEach((timer) => clearTimeout(timer));
+    processingTimersRef.current = [];
+  };
+  const clearBatchPoll = () => {
+    if (batchPollRef.current) {
+      clearInterval(batchPollRef.current);
+      batchPollRef.current = null;
+    }
+  };
+  const fallbackToSpeechRecognition = () => {
+    cleanupVoiceResources({ closeWebSocket: true });
+    startSpeechRecognition();
+  };
+  const showGenerationError = (message, text = "") => {
+    clearProcessingTimers();
+    setDraft(null);
+    setSteps([0, 0, 0]);
+    setGenerationError(message);
+    if (text) setTyped(text);
+    setState(text ? "typing" : "ready");
+  };
+  const cleanupVoiceResources = ({ closeWebSocket = false } = {}) => {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+
+    if (processorRef.current) {
       try {
-        r.start();
-        recogRef.current = r;
+        processorRef.current.onaudioprocess = null;
+        processorRef.current.disconnect();
       } catch (_) {}
+      processorRef.current = null;
+    }
+
+    if (workletNodeRef.current) {
+      try {
+        workletNodeRef.current.disconnect();
+      } catch (_) {}
+      workletNodeRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== "closed") {
+          void audioContextRef.current.close();
+        }
+      } catch (_) {}
+      audioContextRef.current = null;
+    }
+
+    if (closeWebSocket && wsRef.current) {
+      try {
+        if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+          wsRef.current.close();
+        }
+      } catch (_) {}
+      wsRef.current = null;
+    }
+  };
+  const startSpeechRecognition = () => {
+    transportRef.current = "speech";
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return false;
+
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = true;
+    r.lang = voiceLanguage;
+    r.onresult = (e) => {
+      let full = "";
+      for (let i = 0; i < e.results.length; i++)
+        full += e.results[i][0].transcript + " ";
+      setTranscriptText(full.trim());
+    };
+    r.onerror = () => {};
+    try {
+      r.start();
+      recogRef.current = r;
+      return true;
+    } catch (_) {
+      recogRef.current = null;
+      transportRef.current = null;
+      return false;
+    }
+  };
+  const handleVoiceStreamMessage = (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "partial") {
+        setTranscriptText(message.text || "");
+      } else if (message.type === "final") {
+        clearInterval(tickRef.current);
+        if (message.listing) {
+          setDraft(message.listing);
+          setSteps([2, 2, 2]);
+          transportRef.current = null;
+          setState("generated");
+        } else {
+          void generateListingFromText(transcriptRef.current, "voice");
+        }
+      } else if (message.type === "error") {
+        clearInterval(tickRef.current);
+        setDraft(null);
+        void generateListingFromText(transcriptRef.current, "voice");
+      }
+    } catch (_) {}
+  };
+  const startStreamingCapture = async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!navigator.mediaDevices?.getUserMedia || !AudioContextClass || !window.WebSocket) {
+      throw new Error("Voice streaming is unavailable");
+    }
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContextClass();
+    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    const processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+    const ws = api.voice.createVoiceStream({ token: accessToken, language: voiceLanguage });
+
+    mediaStreamRef.current = mediaStream;
+    audioContextRef.current = audioContext;
+    processorRef.current = processorNode;
+    workletNodeRef.current = null;
+    wsRef.current = ws;
+    pcmChunksRef.current = [];
+
+    ws.addEventListener("message", handleVoiceStreamMessage);
+    ws.addEventListener("error", () => {
+      setDraft(null);
+      if (recordingRef.current && !transcriptRef.current.trim()) fallbackToSpeechRecognition();
+      else void generateListingFromText(transcriptRef.current, "voice");
+    });
+    ws.addEventListener("close", () => {
+      if (transportRef.current === "stream") {
+        if (recordingRef.current && !transcriptRef.current.trim()) fallbackToSpeechRecognition();
+        else void generateListingFromText(transcriptRef.current, "voice");
+      }
+    });
+
+    processorNode.onaudioprocess = (event) => {
+      const input = event.inputBuffer.getChannelData(0);
+      const downsampled = downsampleTo16k(input, audioContext.sampleRate);
+      const pcm = floatTo16BitPCM(downsampled);
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength));
+      }
+    };
+
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+    transportRef.current = "stream";
+  };
+  const startBatchCapture = async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!navigator.mediaDevices?.getUserMedia || !AudioContextClass) {
+      throw new Error("Voice batch capture is unavailable");
+    }
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new AudioContextClass();
+    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    const processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+    mediaStreamRef.current = mediaStream;
+    audioContextRef.current = audioContext;
+    processorRef.current = processorNode;
+    workletNodeRef.current = null;
+    pcmChunksRef.current = [];
+
+    processorNode.onaudioprocess = (event) => {
+      const input = event.inputBuffer.getChannelData(0);
+      const downsampled = downsampleTo16k(input, audioContext.sampleRate);
+      pcmChunksRef.current.push(floatTo16BitPCM(downsampled));
+    };
+
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+    transportRef.current = "batch";
+  };
+  const pollBatchStatus = (jobId) => {
+    clearBatchPoll();
+    batchPollRef.current = setInterval(async () => {
+      try {
+        const status = await api.voice.getBatchStatus(jobId);
+        if (status.status === "ready" || status.status === "failed") {
+          clearBatchPoll();
+          transportRef.current = null;
+          if (status.status === "ready" && status.listing) {
+            setDraft(status.listing);
+            setSteps([2, 2, 2]);
+            setState("generated");
+          } else {
+            showGenerationError("Voice generation failed. Please try again or type it.");
+          }
+        }
+      } catch (_) {
+        clearBatchPoll();
+        void generateListingFromText(transcriptRef.current, "voice");
+      }
+    }, 1500);
+  };
+  const submitBatchRecording = async () => {
+    try {
+      const audioBlob = encodeWav(pcmChunksRef.current, 16000);
+      const upload = await api.voice.getAudioUploadUrl({ language: voiceLanguage, contentType: "audio/wav" });
+      await api.voice.uploadAudioToPresignedUrl(upload.uploadUrl, audioBlob, "audio/wav");
+      const job = await api.voice.submitBatchJob({ s3Key: upload.s3Key, language: voiceLanguage });
+      pollBatchStatus(job.jobId);
+    } catch (_) {
+      setDraft(null);
+      void generateListingFromText(transcriptRef.current, "voice");
+    }
+  };
+  const startRecord = async () => {
+    clearBatchPoll();
+    transportRef.current = null;
+    recordingRef.current = true;
+    setSeconds(0);
+    setTranscriptText("");
+    setDraft(null);
+    setGenerationError("");
+    if (startSpeechRecognition()) {
+      // Browser transcription is the demo-happy path; Qwen still fills the form.
+    } else if (isStreamingLanguage(voiceLanguage) && accessToken) {
+      try {
+        await startStreamingCapture();
+      } catch (_) {
+        cleanupVoiceResources({ closeWebSocket: true });
+        startSpeechRecognition();
+      }
+    } else if (isBatchLanguage(voiceLanguage) && accessToken) {
+      try {
+        await startBatchCapture();
+      } catch (_) {
+        cleanupVoiceResources();
+        startSpeechRecognition();
+      }
+    } else {
+      startSpeechRecognition();
     }
     tickRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
     setState("recording");
   };
-  const runProcessing = (source = "voice") => {
+  const runProcessing = (source = "voice", { autoGenerate = true } = {}) => {
+    clearProcessingTimers();
     setState("processing");
     setSource(source);
     setSteps([1, 0, 0]);
-    setTimeout(() => setSteps([2, 1, 0]), 900);
-    setTimeout(() => setSteps([2, 2, 1]), 1900);
-    setTimeout(() => {
-      setSteps([2, 2, 2]);
-      setState("generated");
-    }, 3000);
+    processingTimersRef.current.push(setTimeout(() => setSteps([2, 1, 0]), 900));
+    processingTimersRef.current.push(setTimeout(() => setSteps([2, 2, 1]), 1900));
+    if (autoGenerate) {
+      processingTimersRef.current.push(
+        setTimeout(() => {
+          setSteps([2, 2, 2]);
+          setState("generated");
+        }, 3000),
+      );
+    }
+  };
+  const generateListingFromText = async (text, source = "voice") => {
+    const transcriptText = (text || "").trim();
+    transportRef.current = null;
+    if (!transcriptText) {
+      showGenerationError("I couldn't catch that. Please try again or type it.");
+      return;
+    }
+
+    runProcessing(source, { autoGenerate: false });
+    try {
+      const listing = await api.voice.createListingDraftFromText({
+        transcript: transcriptText,
+        language: voiceLanguage,
+      });
+      setDraft(listing);
+    } catch (_) {
+      showGenerationError("Listing generation failed. Please try again or type it.", transcriptText);
+      return;
+    }
+    clearProcessingTimers();
+    setSteps([2, 2, 2]);
+    transportRef.current = null;
+    setState("generated");
   };
   const stopRecord = () => {
     clearInterval(tickRef.current);
+    recordingRef.current = false;
+    const transport = transportRef.current;
+    if (transport === "stream" && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify({ type: "end" }));
+      } catch (_) {}
+    }
+    cleanupVoiceResources();
     if (recogRef.current) {
       try {
         recogRef.current.stop();
       } catch (_) {}
       recogRef.current = null;
     }
-    runProcessing("voice");
+    if (transport === "batch") {
+      runProcessing("voice", { autoGenerate: false });
+      void submitBatchRecording();
+    } else if (transport === "stream") {
+      runProcessing("voice", { autoGenerate: false });
+    } else if (transport === "speech") {
+      processingTimersRef.current.push(
+        setTimeout(() => {
+          void generateListingFromText(transcriptRef.current, "voice");
+        }, 800),
+      );
+    } else {
+      showGenerationError("I couldn't catch that. Please try again or type it.");
+    }
   };
   const submitTyped = () => {
     if (!typed.trim()) return;
-    runProcessing("typed");
+    setGenerationError("");
+    void generateListingFromText(typed, "typed");
+  };
+  const handleBack = () => {
+    clearInterval(tickRef.current);
+    recordingRef.current = false;
+    clearProcessingTimers();
+    clearBatchPoll();
+    if (recogRef.current) {
+      try {
+        recogRef.current.stop();
+      } catch (_) {}
+      recogRef.current = null;
+    }
+    cleanupVoiceResources({ closeWebSocket: true });
+    onBack?.();
   };
 
   useEffect(
     () => () => {
       clearInterval(tickRef.current);
+      recordingRef.current = false;
+      clearProcessingTimers();
+      clearBatchPoll();
       if (recogRef.current)
         try {
           recogRef.current.stop();
         } catch (_) {}
+      cleanupVoiceResources({ closeWebSocket: true });
     },
     [],
   );
 
   const mm = String(Math.floor(seconds / 60));
   const ss = String(seconds % 60).padStart(2, "0");
+  const guidelineItems = t("v_guideline_items");
 
   return (
     <div
@@ -262,6 +728,31 @@ function ElderVoice({ onConfirm }) {
       }}
     >
       <div style={{ paddingTop: 12 }}>
+        {onBack && (
+          <button
+            type="button"
+            onClick={handleBack}
+            style={{
+              appearance: "none",
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              cursor: "pointer",
+              color: "var(--text-2)",
+              borderRadius: 10,
+              padding: "8px 12px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontFamily: "var(--font-body)",
+              fontSize: 14,
+              fontWeight: 600,
+              marginBottom: 18,
+            }}
+          >
+            <Icon name="chevron-left" size={16} strokeWidth={2.2} />
+            <span>{t("back")}</span>
+          </button>
+        )}
         <h1
           style={{
             fontFamily: "var(--font-display)",
@@ -294,10 +785,59 @@ function ElderVoice({ onConfirm }) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "48px 0 32px",
+            padding: "28px 0 32px",
             minHeight: 460,
           }}
         >
+          <Card
+            style={{
+              padding: "18px 20px",
+              width: "100%",
+              maxWidth: 520,
+              background: "var(--bg-2)",
+              marginBottom: 28,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--primary)",
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              <Icon name="list" size={15} strokeWidth={2.2} />
+              <span>{t("v_guideline_title")}</span>
+            </div>
+            <p
+              style={{
+                margin: "0 0 12px",
+                color: "var(--text-2)",
+                fontSize: 15,
+                lineHeight: 1.45,
+              }}
+            >
+              {t("v_guideline_subtitle")}
+            </p>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: 20,
+                color: "var(--text-1)",
+                fontSize: 15,
+                lineHeight: 1.55,
+              }}
+            >
+              {(Array.isArray(guidelineItems) ? guidelineItems : []).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </Card>
           <div
             style={{
               position: "relative",
@@ -410,10 +950,27 @@ function ElderVoice({ onConfirm }) {
           )}
           {state === "ready" && (
             <>
+              {generationError && (
+                <Card
+                  style={{
+                    padding: "14px 18px",
+                    marginTop: 24,
+                    maxWidth: 420,
+                    background: "rgba(196,74,74,0.08)",
+                    borderColor: "rgba(196,74,74,0.25)",
+                    color: "var(--error)",
+                    fontSize: 15,
+                    lineHeight: 1.45,
+                    textAlign: "center",
+                  }}
+                >
+                  {generationError}
+                </Card>
+              )}
               <Card
                 style={{
                   padding: "14px 18px",
-                  marginTop: 32,
+                  marginTop: generationError ? 14 : 32,
                   maxWidth: 420,
                   background: "var(--bg-2)",
                 }}
@@ -479,7 +1036,10 @@ function ElderVoice({ onConfirm }) {
         >
           <textarea
             value={typed}
-            onChange={(e) => setTyped(e.target.value)}
+            onChange={(e) => {
+              setTyped(e.target.value);
+              setGenerationError("");
+            }}
             placeholder={t("v_typePlaceholder")}
             autoFocus
             rows={6}
@@ -505,6 +1065,22 @@ function ElderVoice({ onConfirm }) {
               (e.currentTarget.style.borderColor = "var(--border)")
             }
           />
+          {generationError && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: "12px 14px",
+                borderRadius: 10,
+                background: "rgba(196,74,74,0.08)",
+                color: "var(--error)",
+                border: "1px solid rgba(196,74,74,0.2)",
+                fontSize: 14,
+                lineHeight: 1.45,
+              }}
+            >
+              {generationError}
+            </div>
+          )}
           <div
             style={{
               display: "flex",
@@ -528,6 +1104,7 @@ function ElderVoice({ onConfirm }) {
               variant="secondary"
               icon="mic"
               onClick={() => {
+                setGenerationError("");
                 setState("ready");
               }}
             >
@@ -625,10 +1202,11 @@ function ElderVoice({ onConfirm }) {
         </div>
       )}
 
-      {state === "generated" && (
+      {state === "generated" && draft && (
         <GeneratedListing
           t={t}
-          onConfirm={() => onConfirm && onConfirm()}
+          draft={draft}
+          onConfirm={(listing) => onConfirm && onConfirm(listing)}
           onTryAgain={() => {
             setState("ready");
           }}
@@ -639,20 +1217,8 @@ function ElderVoice({ onConfirm }) {
 }
 
 // ─── Editable AI-generated listing card ───
-function GeneratedListing({ t, onConfirm, onTryAgain }) {
-  const initial = {
-    title: "Masakan Melayu Tradisional",
-    description:
-      "Home-cooked rendang, nasi lemak, and kampung favourites — recipes I have been making for over 30 years. Cooked fresh every morning, packed with love.",
-    price: "RM15-20",
-    priceSub: "per meal",
-    capacity: "10 pax",
-    capacitySub: "per day",
-    availability: "Mon-Fri",
-    availabilitySub: "6 AM - 7 PM",
-    area: "Kepong",
-    areaSub: "3 km radius",
-  };
+function GeneratedListing({ t, draft, onConfirm, onTryAgain }) {
+  const initial = adaptDraftToGeneratedListing(draft);
   const [editing, setEditing] = useState(false);
   const [data, setData] = useState(initial);
   const [snapshot, setSnapshot] = useState(initial); // saved baseline to revert to
@@ -799,12 +1365,14 @@ function GeneratedListing({ t, onConfirm, onTryAgain }) {
         />
 
         <div style={{ marginBottom: 16 }}>
-          <Badge tone="primary">
-            <Icon name="chef" size={12} /> Home Cooking
+          <Badge tone={data.categoryTone}>
+            <Icon name={data.categoryIcon} size={12} /> {data.categoryLabel}
           </Badge>
-          <Badge tone="success" style={{ marginLeft: 6 }}>
-            <Icon name="shield" size={12} /> Halal
-          </Badge>
+          {data.halal && (
+            <Badge tone="success" style={{ marginLeft: 6 }}>
+              <Icon name="shield" size={12} /> Halal
+            </Badge>
+          )}
         </div>
 
         {/* Description */}
@@ -908,7 +1476,7 @@ function GeneratedListing({ t, onConfirm, onTryAgain }) {
         <Button
           size="lg"
           icon="check"
-          onClick={onConfirm}
+          onClick={() => onConfirm(data)}
           disabled={editing}
           style={{ flex: "1 1 200px" }}
         >
@@ -1930,10 +2498,11 @@ function CompletedRow({ booking }) {
 // ═══════════════════════════════════════════════════════════════
 // ElderListings — dedicated listings tab
 // ═══════════════════════════════════════════════════════════════
-function ElderListings({ user, onAddListing }) {
+function ElderListings({ user, onAddListing, generatedListings = [] }) {
   const t = useT();
   const [listings, setListings] = useState([]);
   const [activeListings, setActiveListings] = useState({});
+  const visibleListings = [...generatedListings, ...listings];
 
   useEffect(() => {
     if (user?.userId) {
@@ -1943,6 +2512,14 @@ function ElderListings({ user, onAddListing }) {
       }).catch(() => {});
     }
   }, [user?.userId]);
+  useEffect(() => {
+    if (generatedListings.length) {
+      setActiveListings((prev) => ({
+        ...Object.fromEntries(generatedListings.map((l) => [l.id, l.isActive])),
+        ...prev,
+      }));
+    }
+  }, [generatedListings]);
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
       <div
@@ -1992,7 +2569,7 @@ function ElderListings({ user, onAddListing }) {
           alignItems: "stretch",
         }}
       >
-        {listings.map((l) => (
+        {visibleListings.map((l) => (
           <Card
             key={l.id}
             style={{
@@ -2013,8 +2590,8 @@ function ElderListings({ user, onAddListing }) {
             >
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ marginBottom: 8 }}>
-                  <Badge tone="primary">
-                    <Icon name="chef" size={12} /> Home Cooking
+                  <Badge tone={l.categoryTone || "primary"}>
+                    <Icon name={l.categoryIcon || "chef"} size={12} /> {l.categoryLabel || "Home Cooking"}
                   </Badge>
                 </div>
                 <div
@@ -2061,7 +2638,7 @@ function ElderListings({ user, onAddListing }) {
                 </div>
               </div>
               <Toggle
-                on={activeListings[l.id]}
+                on={activeListings[l.id] ?? l.isActive}
                 onChange={(val) =>
                   setActiveListings((prev) => ({ ...prev, [l.id]: val }))
                 }

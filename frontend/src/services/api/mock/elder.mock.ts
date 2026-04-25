@@ -4,6 +4,7 @@ import { ELDER_BOOKINGS, ELDER_COMPLETED, ELDER_EARNINGS, ELDER_LISTINGS } from 
 import { mockDelay } from "./delay";
 
 export async function getElderListings(_elderId: string): Promise<ElderListing[]> {
+  void _elderId;
   await mockDelay();
   return ELDER_LISTINGS;
 }
@@ -19,6 +20,7 @@ export async function updateListing(
 }
 
 export async function getElderBookings(_elderId: string): Promise<BookingItem[]> {
+  void _elderId;
   await mockDelay();
   return [...ELDER_BOOKINGS, ...ELDER_COMPLETED];
 }
@@ -34,13 +36,20 @@ export async function respondToBooking(
     id: booking.id,
     listingId: "l1",
     requestorName: booking.requestor,
+    requestorInitials: booking.requestorInitials,
+    requestorAvatarUrl: booking.portrait,
+    listingTitle: booking.item,
+    qty: booking.qty,
+    itemDescription: booking.item,
     status: action === "accept" ? "confirmed" : "cancelled",
     amount: parseFloat(booking.price.replace("RM", "")),
+    currency: "MYR",
     scheduledAt: new Date().toISOString(),
   };
 }
 
 export async function getElderEarnings(_elderId: string): Promise<ElderEarningsData> {
+  void _elderId;
   await mockDelay();
   return ELDER_EARNINGS;
 }
