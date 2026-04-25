@@ -2,9 +2,10 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,9 @@ def register_exception_handlers(app: FastAPI) -> None:
             logger.exception("unhandled", extra={"path": request.url.path})
             return _envelope(500, "Internal server error")
 
-    @app.exception_handler(HTTPException)
+    @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(
-        request: Request, exc: HTTPException
+        request: Request, exc: StarletteHTTPException
     ) -> JSONResponse:
         return _envelope(exc.status_code, exc.detail or "Request failed")
 

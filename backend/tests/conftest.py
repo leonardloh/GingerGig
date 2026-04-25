@@ -28,10 +28,14 @@ def _test_settings() -> Settings:
         raise RuntimeError(
             "TEST_DATABASE_URL or DATABASE_URL is not set; tests require a migrated Postgres DB."
         )
+    if test_url.startswith("postgresql://"):
+        test_url = "postgresql+asyncpg://" + test_url.removeprefix("postgresql://")
+    os.environ["DATABASE_URL"] = test_url
+    os.environ["TEST_DATABASE_URL"] = test_url
     return settings.model_copy(update={"database_url": test_url})
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def engine() -> AsyncIterator[AsyncEngine]:
     """Session-scoped engine pointing at the configured test database."""
     eng = build_engine(_test_settings())
@@ -41,7 +45,7 @@ async def engine() -> AsyncIterator[AsyncEngine]:
     await eng.dispose()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     """Per-test SAVEPOINT rollback (D-18)."""
     async with engine.connect() as conn:
@@ -55,7 +59,7 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
                 await outer_trans.rollback()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def client(db_session: AsyncSession, engine: AsyncEngine) -> AsyncIterator[httpx.AsyncClient]:
     """ASGITransport client (D-19) wired to the SAVEPOINT-isolated session."""
 
