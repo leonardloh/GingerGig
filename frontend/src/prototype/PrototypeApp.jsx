@@ -97,6 +97,7 @@ const DEMO_ACCOUNTS = [
   },
 ];
 
+// Demo bridge only until backend exposes companion elder discovery.
 const DEMO_WATCHED_ELDER_BY_EMAIL = {
   'faiz@gingergig.my': '5a9017b1-acc2-51a2-be47-538b8bffb800',
 };
@@ -517,7 +518,10 @@ function App() {
       area: profile.area,
       avatarUrl: profile.avatarUrl,
       accessToken: session.accessToken,
-      watchedElderId: DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail],
+      watchedElderId:
+        profile.role === 'companion'
+          ? DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail]
+          : undefined,
     });
   };
 
