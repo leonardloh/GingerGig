@@ -611,7 +611,7 @@ function App() {
     else if (tab.elder === 'listings')
       body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
-      body = <ElderVoice onConfirm={() => setElderTab('listings')} />;
+      body = <ElderVoice accessToken={user.accessToken} onConfirm={() => setElderTab('listings')} />;
     else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (
