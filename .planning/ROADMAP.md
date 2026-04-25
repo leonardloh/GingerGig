@@ -30,7 +30,7 @@
   5. `pyproject.toml` pins all the non-obvious deps (`amazon-transcribe>=0.6.4`, `bcrypt>=4.2.0,<5.0.0`, `pyjwt[crypto]`, `alibabacloud-oss-v2`) so downstream phases have a locked `uv.lock` to build on.
 **Plans**: 7 plans
 - [x] 01-01-PLAN.md — Project skeleton: pyproject.toml + app.core (config/enums/ids/errors/security) + app.db.session + app.deps.db + Makefile + Dockerfile + .env.example (Wave 1)
-- [ ] 01-02-PLAN.md — FastAPI main.py with lifespan, CORS allowlist, exception handlers, /health, six router stubs under /api/v1 (Wave 2)
+- [x] 01-02-PLAN.md — FastAPI main.py with lifespan, CORS allowlist, exception handlers, /health, six router stubs under /api/v1 (Wave 2)
 - [ ] 01-03-PLAN.md — SQLAlchemy 2 models for all 11 tables with CHECK constraints, FKs, indexes, TimestampMixin, denormalisation, 4-locale columns (Wave 2)
 - [ ] 01-04-PLAN.md — Alembic init + 0001_initial_schema.py + [BLOCKING] migration apply against gingergig_test (Wave 3)
 - [ ] 01-05-PLAN.md — scripts/seed_data.py (hand-ported mocks) + scripts/seed.py (idempotent + SeedRefusedError + bcrypt rounds=12) + [BLOCKING] two-run idempotency test (Wave 3)
@@ -126,7 +126,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Scaffold + Schema + Seed | 1/7 | In Progress | - |
+| 1. Backend Scaffold + Schema + Seed | 2/7 | In Progress | - |
 | 2. Auth + Bearer Middleware | 0/0 | Not started | - |
 | 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
 | 4. eKYC Pipeline | 0/0 | Not started | - |
