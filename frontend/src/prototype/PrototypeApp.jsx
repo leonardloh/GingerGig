@@ -97,6 +97,10 @@ const DEMO_ACCOUNTS = [
   },
 ];
 
+const DEMO_WATCHED_ELDER_BY_EMAIL = {
+  'faiz@gingergig.my': '5a9017b1-acc2-51a2-be47-538b8bffb800',
+};
+
 const TONE_GRADIENT = {
   elder: 'linear-gradient(135deg,#E8A87C,#C2662D)',
   requestor: 'linear-gradient(135deg,#4DA6A6,#2D6A6A)',
@@ -513,6 +517,7 @@ function App() {
       area: profile.area,
       avatarUrl: profile.avatarUrl,
       accessToken: session.accessToken,
+      watchedElderId: DEMO_WATCHED_ELDER_BY_EMAIL[normalizedEmail],
     });
   };
 
@@ -559,12 +564,12 @@ function App() {
     activeTab = tab.elder;
     onTabChange = setElderTab;
     if (tab.elder === 'dashboard')
-      body = <ElderDashboard onAddListing={() => setElderTab('listings')} />;
+      body = <ElderDashboard user={user} onAddListing={() => setElderTab('listings')} />;
     else if (tab.elder === 'listings')
-      body = <ElderListings onAddListing={() => setElderTab('voice')} />;
+      body = <ElderListings user={user} onAddListing={() => setElderTab('voice')} />;
     else if (tab.elder === 'voice')
-      body = <ElderVoice onConfirm={() => setElderTab('listings')} />;
-    else if (tab.elder === 'earnings') body = <ElderEarnings />;
+      body = <ElderVoice user={user} accessToken={user.accessToken} onConfirm={() => setElderTab('listings')} />;
+    else if (tab.elder === 'earnings') body = <ElderEarnings user={user} />;
     else if (tab.elder === 'language')
       body = (
         <ElderLanguage
@@ -574,7 +579,7 @@ function App() {
         />
       );
     else if (tab.elder === 'profile')
-      body = <ElderProfile onChangeLanguage={() => setElderTab('language')} />;
+      body = <ElderProfile user={user} onChangeLanguage={() => setElderTab('language')} />;
   } else if (persona === 'requestor') {
     tabs = REQUESTOR_TABS;
     activeTab = tab.requestor === 'providerDetail' ? 'home' : tab.requestor;
@@ -582,6 +587,7 @@ function App() {
     if (tab.requestor === 'home')
       body = (
         <RequestorHome
+          user={user}
           onSearch={(q) => { setSearchQuery(q); setReqTab('search'); }}
           onProvider={(id) => {
             setProviderId(id);
@@ -592,6 +598,7 @@ function App() {
     else if (tab.requestor === 'search')
       body = (
         <RequestorSearch
+          user={user}
           query={searchQuery}
           onBack={() => setReqTab('home')}
           onProvider={(id) => {
@@ -603,6 +610,7 @@ function App() {
     else if (tab.requestor === 'providerDetail')
       body = (
         <ProviderDetail
+          user={user}
           providerId={providerId}
           onBack={() =>
             setTab((s) => ({ ...s, requestor: searchQuery ? 'search' : 'home' }))
@@ -610,10 +618,11 @@ function App() {
         />
       );
     else if (tab.requestor === 'bookings') body = <RequestorBookings />;
-    else if (tab.requestor === 'profile') body = <RequestorProfile />;
+    else if (tab.requestor === 'profile') body = <RequestorProfile user={user} />;
     else
       body = (
         <RequestorHome
+          user={user}
           onSearch={(q) => { setSearchQuery(q); setReqTab('search'); }}
           onProvider={(id) => {
             setProviderId(id);
@@ -625,9 +634,9 @@ function App() {
     tabs = COMPANION_TABS;
     activeTab = tab.companion;
     onTabChange = setCompTab;
-    if (tab.companion === 'alerts') body = <CompanionAlerts />;
-    else if (tab.companion === 'profile') body = <CompanionProfile />;
-    else body = <CompanionDashboard />;
+    if (tab.companion === 'alerts') body = <CompanionAlerts user={user} elderId={user.watchedElderId} />;
+    else if (tab.companion === 'profile') body = <CompanionProfile user={user} elderId={user.watchedElderId} />;
+    else body = <CompanionDashboard user={user} elderId={user.watchedElderId} />;
   }
 
   const tabItems = tabs.map((x) => ({
