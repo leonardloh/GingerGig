@@ -2,7 +2,7 @@
 
 ## What This Is
 
-GingerGig is a hyperlocal gig platform for Malaysian elders — a mobile-first React app that lets seniors offer services (home cooking, traditional crafts, pet sitting, light housekeeping) to nearby requestors, with a "companion" persona so adult children can monitor mum/dad's activity, earnings, and well-being. The frontend is built and runs on mock data; this milestone replaces all in-memory constants with a real multi-cloud backend (FastAPI on Alibaba Cloud + AWS for ASR/eKYC) and feeds the existing UI from Postgres.
+GingerGig is a hyperlocal gig platform for Malaysian elders — a mobile-first React app that lets seniors offer services (home cooking, traditional crafts, pet sitting, light housekeeping) to nearby requestors, with a "companion" persona so adult children can monitor mum/dad's activity, earnings, and well-being. The frontend is built and runs on mock data; this milestone replaces all in-memory constants with a real multi-cloud backend (FastAPI on Alibaba Cloud + AWS for ASR) and feeds the existing UI from Postgres.
 
 ## Core Value
 
@@ -24,6 +24,7 @@ The frontend continues to work exactly as today — every screen, every persona,
 - ✓ Typed API client at `frontend/src/services/api/` covering auth, kyc, elder, requestor, companion endpoints — existing
 - ✓ Generic HTTP wrapper with `Authorization: Bearer` injection, `AbortController` timeout, `ApiError` envelope — existing
 - ✓ Phase 1 backend foundation — FastAPI scaffold, async SQLAlchemy/Alembic schema, ApsaraDB connectivity, idempotent prototype seed data, demo bcrypt accounts, and backend test harness validated on 2026-04-25
+- ✓ Phase 5 frontend wiring — additive DTO extensions, typed auth/persona/voice endpoint imports, no `mock-data.js` screen imports, origin-only `VITE_API_BASE_URL`, and no visual/CSS drift validated on 2026-04-25
 
 ### Active
 
@@ -39,12 +40,11 @@ The frontend continues to work exactly as today — every screen, every persona,
 - [ ] Companion endpoints implemented (dashboard, alerts, alert preferences)
 - [ ] Voice-to-profile streaming WebSocket (`en-US`/`zh-CN`) wired to AWS Transcribe Streaming via the `amazon-transcribe` Python SDK (boto3 does not support streaming), then to Qwen for JSON extraction
 - [ ] Voice-to-profile batch path (`ms-MY`/`ta-IN`) wired to S3 presigned PUT + AWS Transcribe Batch + Qwen
-- [ ] eKYC pipeline: presigned S3 PUT for IC/selfie → AWS Textract `AnalyzeDocument` (FORMS+TABLES) + IC-number regex parser (Textract `AnalyzeID` is US-document-only, despite what `MULTI-CLOUD-ARCHITECTURE.md` and `kyc.ts` JSDoc say) → AWS Rekognition `CompareFaces` (+ optional Liveness) → poll-able status endpoint
 - [ ] Redis (Tair) read-through cache for listing search results and session lookups
 - [ ] Alibaba OSS for provider photo uploads
-- [ ] Frontend wired: every prototype mock helper replaced with the corresponding `src/services/api/endpoints/*` import; no behavior change
-- [ ] Live multi-cloud deployment: frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), ApsaraDB Postgres, Tair Redis, Alibaba OSS, AWS S3 (audio + KYC buckets), DashScope/Qwen account
-- [ ] Type extensions in `frontend/src/services/api/types.ts` for fields the prototype already renders but aren't in DTOs (`Listing.category/priceUnit/rating/reviewCount/halal/days/menu/matchScore/matchReason/distance`, `Booking.requestorInitials/portrait/qty/itemDescription`, etc.) — additive only
+- [x] Frontend wired: every prototype mock helper replaced with the corresponding `src/services/api/endpoints/*` import; no behavior change — validated in Phase 5
+- [ ] Live multi-cloud deployment: frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), ApsaraDB Postgres, Tair Redis, Alibaba OSS, AWS S3 audio bucket, DashScope/Qwen account
+- [x] Type extensions in `frontend/src/services/api/types.ts` for fields the prototype already renders but aren't in DTOs (`Listing.category/priceUnit/rating/reviewCount/halal/days/menu/matchScore/matchReason/distance`, `Booking.requestorInitials/portrait/qty/itemDescription`, etc.) — additive only; validated in Phase 5
 
 ### Out of Scope
 
@@ -74,9 +74,9 @@ The frontend continues to work exactly as today — every screen, every persona,
 - API client (typed, ready to use, not yet wired): `src/services/api/{http,types,index}.ts` + `src/services/api/endpoints/{auth,elder,requestor,companion,kyc}.ts`.
 
 **Multi-cloud split (per `MULTI-CLOUD-ARCHITECTURE.md`):**
-- AWS (`ap-southeast-1`): S3+CloudFront for frontend; S3 audio bucket for batch ASR; S3 KYC bucket for IC/selfie (24h auto-delete); Transcribe Streaming + Batch; Textract `AnalyzeID`; Rekognition `CompareFaces` + Liveness.
+- AWS (`ap-southeast-1`): S3+CloudFront for frontend; S3 audio bucket for batch ASR; Transcribe Streaming + Batch.
 - Alibaba (`ap-southeast-3`): ECS for FastAPI; ApsaraDB PostgreSQL; Tair (Redis); OSS for provider photos; DashScope/Qwen for JSON extraction.
-- PII isolation: IC images and audio for batch never pass through the application server — browser uploads via presigned URLs.
+- PII isolation: batch audio never passes through the application server — browser uploads via presigned URLs.
 
 **Known field gaps** (from `frontend/docs/API_READY_MIGRATION.md` — fields rendered by prototype but missing from the typed DTOs):
 - `Listing` is missing `category`, `priceUnit`, `priceMax`, `rating`, `reviewCount`, `halal`, `titleMs/En/Zh/Ta`, `days`, `menu`, `matchScore`, `matchReason`, `distance`.
@@ -91,7 +91,7 @@ These need to be added to `types.ts` before swapping mock helpers — this is al
 - **Tech stack (backend)**: FastAPI ≥0.136, SQLAlchemy 2.x async + asyncpg, `uv` for deps & lockfile, Python ≥3.12 — explicit user requirement
 - **Tech stack (frontend)**: No changes — React 19 + TypeScript 5.8 + Vite 8, native `fetch` via existing `apiRequest<T>` wrapper. Do not introduce a router, state library, data-fetching library (TanStack Query, SWR), or CSS framework
 - **Multi-cloud**: AWS + Alibaba split per `MULTI-CLOUD-ARCHITECTURE.md` is non-negotiable — it's the hackathon judging criterion
-- **PII**: IC images and batch-ASR audio go browser → AWS S3 directly via presigned URLs. Backend never sees raw bytes
+- **PII**: batch-ASR audio goes browser → AWS S3 directly via presigned URLs. Backend never sees raw bytes
 - **Region**: AWS resources in `ap-southeast-1` (Singapore); Alibaba resources in `ap-southeast-3` (Malaysia)
 - **API prefix**: `/api/v1` (frontend's `apiRequest` already prepends this)
 - **Auth**: in-memory bearer token on the frontend (existing) — no localStorage/cookie persistence for v1
@@ -106,16 +106,15 @@ These need to be added to `types.ts` before swapping mock helpers — this is al
 | FastAPI + `uv` for backend | Explicit user requirement; matches deleted scaffold + README | — Pending |
 | Re-scaffold backend (don't restore commit `3de5f53`) | Cleaner foundation; prior scaffold was stub-only | — Pending |
 | Live multi-cloud deployment (real AWS + Alibaba) | Hackathon judging criterion; user picked "Live multi-cloud" | — Pending |
-| Real AI features (Transcribe + Qwen + Textract + Rekognition) | User picked "Both, real" — keep frontend `SpeechRecognition` only as graceful fallback | — Pending |
+| Real AI features (Transcribe + Qwen) | User picked "Both, real" — keep frontend `SpeechRecognition` only as graceful fallback | — Pending |
 | Real auth, seed DEMO_ACCOUNTS | User picked "Real auth, seeded users"; preserves prototype quick-login UX | — Pending |
 | Postgres as system-of-record (not DynamoDB) | `MULTI-CLOUD-ARCHITECTURE.md` says Postgres; the lone DynamoDB JSDoc reference in `kyc.ts` is stale | — Pending |
 | Use `amazon-transcribe` Python SDK for streaming ASR (not boto3) | boto3 has zero Transcribe Streaming support — `amazon-transcribe>=0.6.4` is the only Python option | — Pending |
-| Use Textract `AnalyzeDocument` + regex IC parser for MyKad OCR | `AnalyzeID` is hard-restricted to US driver's licenses + US passports; the architecture doc and `kyc.ts` JSDoc are factually wrong | — Pending |
 | Use bcrypt directly (no `passlib`); pin `bcrypt>=4.2.0,<5.0.0` | bcrypt 5.0 (Sep 2025) silently breaks passlib's backend introspection with a misleading 72-byte error | — Pending |
 | Centralise JWT decode in `core/security.py` with explicit `algorithms=["HS256"]` | CVE-2022-29217 / CVE-2024-33663 — algorithm-confusion bypass if any decode call omits the allowlist | — Pending |
 | WebSocket handlers must `try/finally` end Transcribe session and a 90s max-session timer | Browser disconnect does not auto-close upstream stream — quota exhaustion risk during demo | — Pending |
 | Companion alerts: store all 4 locales in DB, server picks by user locale | Matches existing `text_en/ms/zh/ta` shape; no realtime translation cost | — Pending |
-| Additive type extensions in `types.ts` | Prototype already renders fields not in DTOs; backend will provide them | — Pending |
+| Additive type extensions in `types.ts` | Prototype already renders fields not in DTOs; backend will provide them | Validated in Phase 5 |
 | Tair as read-through cache (not job queue) | `MULTI-CLOUD-ARCHITECTURE.md` decision | — Pending |
 | Browser-direct S3 uploads via presigned PUT | PII off application logs; matches frontend's `kyc.ts uploadDocument` | — Pending |
 
@@ -137,4 +136,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-25 after initialization*
+*Last updated: 2026-04-25 after Phase 5 completion*
