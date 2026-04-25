@@ -10,12 +10,12 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 ### Foundation
 
 - [x] **FOUND-01**: FastAPI app scaffolded with `uv` (Python ≥3.12), runs at `http://localhost:8000`, exposes `GET /health` returning `200 {"status":"ok"}`
-- [x] **FOUND-02**: `pyproject.toml` declares the locked stack: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `pydantic`, `pydantic-settings`, `boto3`, `amazon-transcribe>=0.6.4`, `alibabacloud-oss-v2>=1.2.5`, `openai>=2.32.0`, `redis>=7.4.0`, `pyjwt[crypto]`, `bcrypt>=4.2.0,<5.0.0`
+- [x] **FOUND-02**: `pyproject.toml` declares the locked stack: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `pydantic`, `pydantic-settings`, `boto3`, `amazon-transcribe>=0.6.4`, `alibabacloud-oss-v2>=1.2.5`, `openai>=2.32.0`, `pyjwt[crypto]`, `bcrypt>=4.2.0,<5.0.0`
 - [x] **FOUND-03**: All routers mounted under `/api/v1/*` matching the frontend's `apiRequest` prefix; CORS configured to accept the frontend origin (no `*` allowlist)
 - [x] **FOUND-04**: Module layout mirrors frontend: `routers/{auth,elder,requestor,companion,kyc,voice}.py`, `services/`, `models/`, `schemas/`, `integrations/`, `core/`, `deps/`, `db.py`, `main.py`
-- [x] **FOUND-05**: Pydantic-settings reads typed config from environment (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `AWS_*`, `DASHSCOPE_API_KEY`, `OSS_*`, region pins); `.env.example` lists every required variable
+- [x] **FOUND-05**: Pydantic-settings reads typed config from environment (`DATABASE_URL`, `JWT_SECRET`, `AWS_*`, `DASHSCOPE_API_KEY`, `OSS_*`, region pins); `.env.example` lists every required variable
 - [x] **FOUND-06**: Global exception handler returns `{status, message, detail?}` JSON matching the frontend's `ApiError` shape; `debug=False` in production; tracebacks logged but not surfaced
-- [x] **FOUND-07**: Per-request `AsyncSession` via `Depends(get_db)`; engine + Redis pool + boto3 clients are process-singletons built in FastAPI `lifespan`
+- [x] **FOUND-07**: Per-request `AsyncSession` via `Depends(get_db)`; engine + external service clients are process-singletons built in FastAPI `lifespan`
 
 ### Database & Seed
 
@@ -81,14 +81,6 @@ Backend behaviors required so the existing frontend prototype works unchanged. E
 - [ ] **VOICE-06**: Both streaming and batch paths share `services/qwen_service.py::extract_listing(transcript, language)` which calls DashScope (Qwen) via the OpenAI-compatible endpoint with `response_format={"type": "json_object"}` against the schema in `MULTI-CLOUD-ARCHITECTURE.md` (`{name, service_offer, category, price_amount, price_unit, capacity, dietary_tags, location_hint, language}`)
 - [ ] **VOICE-07**: Qwen output is Pydantic-validated; on `ValidationError` the prompt is retried once with the validation error appended; markdown fences are stripped before parse; persistent failure returns `502 {message: "Listing extraction failed"}`
 
-### Cache & Performance (Tair / Redis)
-
-- [ ] **CACHE-01**: Listing search results are read-through cached in Tair under `listings:search:{sha1(query+filters+locale)}` with 60s TTL
-- [ ] **CACHE-02**: Single listing reads cached under `listings:elder:{id}` (120s TTL); cache invalidated on `PATCH /listings/{id}`
-- [ ] **CACHE-03**: Earnings summary cached under `earnings:elder:{id}` (60s TTL); invalidated on booking status transition to `completed`
-- [ ] **CACHE-04**: KYC status reads cached under `kyc:status:{jobId}` (10s TTL while pending, 300s after terminal state) to absorb the frontend's 2.5s polling cadence
-- [ ] **CACHE-05**: Tair is used as a read-through cache only — NOT as a job queue (per `MULTI-CLOUD-ARCHITECTURE.md`); async work uses `asyncio.create_task`
-
 ### Frontend Wiring
 
 The frontend is preserved as-is except for the additive changes below. No UI feature, layout, copy, or styling is altered.
@@ -110,7 +102,6 @@ Live deploy is a hackathon judging requirement (per Key Decision in PROJECT.md).
 - [ ] **DEPLOY-01**: Frontend hosted on AWS S3 + CloudFront in `ap-southeast-1` (Singapore) with KL/Cyberjaya edge POP
 - [ ] **DEPLOY-02**: Backend Docker image deployed to Alibaba Cloud ECS in `ap-southeast-3` (Kuala Lumpur); container runs `uvicorn` with WebSocket support; load balancer idle timeout ≥300s on the WS path
 - [ ] **DEPLOY-03**: ApsaraDB PostgreSQL instance provisioned in `ap-southeast-3`; connection URL injected via env var
-- [ ] **DEPLOY-04**: Tair (Redis-compatible) instance provisioned in `ap-southeast-3`
 - [ ] **DEPLOY-05**: Alibaba OSS bucket provisioned for provider photos (non-PII); served public-read with CDN-friendly URLs
 - [ ] **DEPLOY-06**: AWS S3 buckets provisioned in `ap-southeast-1`: one for KYC images (24h lifecycle auto-delete), one for batch ASR audio; both with CORS allowing the CloudFront origin for `PUT` and the deployed backend origin for `GET`
 - [ ] **DEPLOY-07**: AWS IAM role(s) for Textract `AnalyzeDocument`, Rekognition `CompareFaces`, Transcribe Streaming + Batch, S3 read/write/presign — least-privilege scoped to the specific buckets and operations
@@ -231,34 +222,28 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | VOICE-05 | Phase 5 | Pending |
 | VOICE-06 | Phase 5 | Pending |
 | VOICE-07 | Phase 5 | Pending |
-| CACHE-01 | Phase 6 | Pending |
-| CACHE-02 | Phase 6 | Pending |
-| CACHE-03 | Phase 6 | Pending |
-| CACHE-04 | Phase 6 | Pending |
-| CACHE-05 | Phase 6 | Pending |
-| FE-01 | Phase 7 | Pending |
-| FE-02 | Phase 7 | Pending |
-| FE-03 | Phase 7 | Pending |
-| FE-04 | Phase 7 | Pending |
-| FE-05 | Phase 7 | Pending |
-| FE-06 | Phase 7 | Pending |
-| FE-07 | Phase 7 | Pending |
-| FE-08 | Phase 7 | Pending |
-| FE-09 | Phase 7 | Pending |
-| DEPLOY-01 | Phase 8 | Pending |
-| DEPLOY-02 | Phase 8 | Pending |
-| DEPLOY-03 | Phase 8 | Pending |
-| DEPLOY-04 | Phase 8 | Pending |
-| DEPLOY-05 | Phase 8 | Pending |
-| DEPLOY-06 | Phase 8 | Pending |
-| DEPLOY-07 | Phase 8 | Pending |
-| DEPLOY-08 | Phase 8 | Pending |
-| DEPLOY-09 | Phase 8 | Pending |
-| DEPLOY-10 | Phase 8 | Pending |
+| FE-01 | Phase 6 | Pending |
+| FE-02 | Phase 6 | Pending |
+| FE-03 | Phase 6 | Pending |
+| FE-04 | Phase 6 | Pending |
+| FE-05 | Phase 6 | Pending |
+| FE-06 | Phase 6 | Pending |
+| FE-07 | Phase 6 | Pending |
+| FE-08 | Phase 6 | Pending |
+| FE-09 | Phase 6 | Pending |
+| DEPLOY-01 | Phase 7 | Pending |
+| DEPLOY-02 | Phase 7 | Pending |
+| DEPLOY-03 | Phase 7 | Pending |
+| DEPLOY-05 | Phase 7 | Pending |
+| DEPLOY-06 | Phase 7 | Pending |
+| DEPLOY-07 | Phase 7 | Pending |
+| DEPLOY-08 | Phase 7 | Pending |
+| DEPLOY-09 | Phase 7 | Pending |
+| DEPLOY-10 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 73 total
-- Mapped to phases: 73
+- v1 requirements: 67 total
+- Mapped to phases: 67
 - Unmapped: 0
 
 ---

@@ -2,7 +2,7 @@
 
 **Defined:** 2026-04-25
 **Granularity:** Standard (5-8 phases)
-**Coverage:** 73/73 v1 requirements mapped
+**Coverage:** 67/67 v1 requirements mapped
 **Core Value:** The frontend continues to work exactly as today — every screen, every persona, every i18n string — but every piece of "data" loads from the database via the existing typed API client. No feature is added, removed, or visually changed.
 
 ## Phases
@@ -12,9 +12,8 @@
 - [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [ ] **Phase 4: eKYC Pipeline** - The 8-step KYC stepper completes end-to-end against AWS S3 + Textract `AnalyzeDocument` + Rekognition `CompareFaces` with a 3-tier (approved / manual_review / failed) outcome.
 - [ ] **Phase 5: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
-- [ ] **Phase 6: Tair Cache Layer** - Read-through cache absorbs the prototype's polling + repeated-search traffic without changing endpoint behaviour.
-- [ ] **Phase 7: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
-- [ ] **Phase 8: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
+- [ ] **Phase 6: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
+- [ ] **Phase 7: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
 
 ## Phase Details
 
@@ -86,19 +85,7 @@
   5. Streaming uses `amazon-transcribe>=0.6.4` (not boto3); batch uses `boto3`; both pin `region="ap-southeast-1"` explicitly so no requests cross to `us-east-1`.
 **Plans**: TBD
 
-### Phase 6: Tair Cache Layer
-**Goal**: Frequently-read endpoints (search, single listing, earnings, KYC status polling) absorb load via Tair without changing any endpoint shape — additive performance, never write-through, write-side invalidation only on the safe targets.
-**Depends on**: Phase 3, Phase 4
-**Requirements**: CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05
-**Success Criteria** (what must be TRUE):
-  1. Listing search returns identical results for the same `(query, max_distance_km, halal_only, open_now, locale)` tuple within a 60s window without re-issuing the underlying Postgres query (verified by query log count).
-  2. `GET /listings/{id}` is cached for 120s under `listings:elder:{id}` and the cache entry is `DEL`-ed within the same request after a successful `PATCH /listings/{id}`.
-  3. Earnings summary cached for 60s under `earnings:elder:{id}` and invalidated on a booking transition to `completed`; KYC status cached for 10s while pending and 300s after a terminal state — front-end polling at 2.5s no longer hits Postgres on every poll.
-  4. Tair is used exclusively as a read-through cache; no code path enqueues a job to Redis (async work uses `asyncio.create_task` per the architecture decision).
-  5. With Tair unreachable, every endpoint still functions correctly — cache layer is purely additive and degrades gracefully.
-**Plans**: TBD
-
-### Phase 7: Frontend Wiring + Type Extensions
+### Phase 6: Frontend Wiring + Type Extensions
 **Goal**: Every prototype mock helper and inline mock data import is replaced with a typed-API import — types are extended additively in `types.ts` first, then mock helpers swap 1:1, then the WebSocket wires to `ElderVoice`. Zero UI/feature/copy/styling change.
 **Depends on**: Phase 3, Phase 4, Phase 5
 **Requirements**: FE-01, FE-02, FE-03, FE-04, FE-05, FE-06, FE-07, FE-08, FE-09
@@ -111,13 +98,13 @@
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 8: Multi-Cloud Live Deployment
+### Phase 7: Multi-Cloud Live Deployment
 **Goal**: A real, public, hackathon-judgeable deployment — frontend on AWS S3+CloudFront, backend on Alibaba ECS, all data services in `ap-southeast-3`, all AI services in `ap-southeast-1` — with a smoke-test demo flow that proves end-to-end correctness from the public CloudFront URL.
-**Depends on**: Phase 7
-**Requirements**: DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, DEPLOY-05, DEPLOY-06, DEPLOY-07, DEPLOY-08, DEPLOY-09, DEPLOY-10
+**Depends on**: Phase 6
+**Requirements**: DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-05, DEPLOY-06, DEPLOY-07, DEPLOY-08, DEPLOY-09, DEPLOY-10
 **Success Criteria** (what must be TRUE):
   1. The frontend is reachable at a public CloudFront URL in `ap-southeast-1`; the backend is reachable at a public Alibaba ECS endpoint in `ap-southeast-3` with WebSocket support and an LB idle timeout ≥300s on the WS path.
-  2. ApsaraDB Postgres + Tair (Redis) + Alibaba OSS (provider photos) all provisioned in `ap-southeast-3`; AWS S3 KYC bucket (24h lifecycle) + audio bucket both in `ap-southeast-1` with CORS allowing the CloudFront + backend origins; AWS IAM is least-privilege scoped to the specific buckets and the specific Textract/Rekognition/Transcribe operations.
+  2. ApsaraDB Postgres + Alibaba OSS (provider photos) are provisioned in `ap-southeast-3`; AWS S3 KYC bucket (24h lifecycle) + audio bucket both in `ap-southeast-1` with CORS allowing the CloudFront + backend origins; AWS IAM is least-privilege scoped to the specific buckets and the specific Textract/Rekognition/Transcribe operations.
   3. `DASHSCOPE_API_KEY` is provisioned and live; an AWS budget alert is configured at $50/$100 thresholds before any judging traffic hits the URL.
   4. Smoke test from the deployed CloudFront URL completes in one sitting: log in as Siti → browse listings as Amir → create booking → log in as Siti → accept booking → voice-to-profile in en-US produces a listing draft → KYC happy path on a sample MyKad image returns `approved`.
   5. The whole frontend renders correctly with `VITE_API_BASE_URL` pointing at the deployed Alibaba ECS endpoint — no CORS errors in the browser console for any of the 5 smoke-test screens.
@@ -132,23 +119,21 @@
 | 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
 | 4. eKYC Pipeline | 0/0 | Not started | - |
 | 5. Voice-to-Profile Pipeline | 0/0 | Not started | - |
-| 6. Tair Cache Layer | 0/0 | Not started | - |
-| 7. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
-| 8. Multi-Cloud Live Deployment | 0/0 | Not started | - |
+| 6. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
+| 7. Multi-Cloud Live Deployment | 0/0 | Not started | - |
 
 ## Phase Ordering Rationale
 
 - **Phase 1 → Phase 2 mandatory sequential.** Auth depends on the `users` table and migrations. Phase 1 also pins `amazon-transcribe`, `bcrypt<5`, `pyjwt[crypto]` so downstream phases inherit a locked dep tree.
 - **Phase 2 → Phase 3/4/5 mandatory.** Every protected endpoint depends on `get_current_user`; centralised JWT decode + bcrypt-off-loop are non-negotiable foundations (PITFALLS #3, #4, #18).
 - **Phase 3, 4, 5 are parallelisable post-auth.** They share zero code paths beyond `deps/auth.py` and `schemas/common.py`. With one developer they execute sequentially in this order (Phase 3 unblocks the most UI; Phase 4 carries the longest critical path within itself; Phase 5 is risk-isolated).
-- **Phase 6 (cache) is last among backend phases.** Additive only — every endpoint works without it; cache-key choices reflect actual query patterns from Phases 3-5.
-- **Phase 7 (frontend wiring) requires the data routers.** Type extensions land first (additive, no break), then mock-helper swap, then `ElderVoice` WebSocket wire-up.
-- **Phase 8 (deploy) is parallelisable from Phase 1.** IaC provisioning (ECS, ApsaraDB, Tair, OSS, S3, CloudFront, IAM) needs no application code; it gates on a runnable Docker image and a working smoke test, so it ships as the final phase.
+- **Phase 6 (frontend wiring) requires the data routers.** Type extensions land first (additive, no break), then mock-helper swap, then `ElderVoice` WebSocket wire-up.
+- **Phase 7 (deploy) is parallelisable from Phase 1.** IaC provisioning (ECS, ApsaraDB, OSS, S3, CloudFront, IAM) needs no application code; it gates on a runnable Docker image and a working smoke test, so it ships as the final phase.
 
 ## Coverage
 
-- v1 requirements: 73 total
-- Mapped to phases: 73
+- v1 requirements: 67 total
+- Mapped to phases: 67
 - Unmapped: 0
 
 ---
