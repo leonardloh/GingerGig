@@ -93,7 +93,7 @@
   4. `ElderVoice` opens the WebSocket via the new `voice.ts` helper for `en-US`/`zh-CN` and uses the batch path with browser-direct S3 PUT for `ms-MY`/`ta-IN`; `window.SpeechRecognition` remains as a graceful fallback.
   5. The 3 quick-login chips on `PrototypeApp.jsx` continue to work end-to-end (now hitting `auth.ts → login` against the real backend) and `VITE_API_BASE_URL` is configured for both local-dev and the deployed Alibaba ECS endpoint.
 **Plans**: 7 plans
-- [ ] 05-01-PLAN.md — Frontend API contracts, endpoint gaps, voice helper, and barrel export (Wave 0)
+- [x] 05-01-PLAN.md — Frontend API contracts, endpoint gaps, voice helper, and barrel export (Wave 0)
 - [ ] 05-02-PLAN.md — Auth quick-login, signout, and onboarding register wiring (Wave 1)
 - [ ] 05-03-PLAN.md — Elder screens mock import removal and API adapters (Wave 2)
 - [ ] 05-04-PLAN.md — Requestor screens mock import removal, search, and listing detail adapters (Wave 2)
@@ -128,7 +128,7 @@
 | 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
 | 3. Persona Routers (Elder + Requestor + Companion) | 5/5 | Complete | 2026-04-25 |
 | 4. Voice-to-Profile Pipeline | 5/5 | Complete | 2026-04-26 |
-| 5. Frontend Wiring + Type Extensions | 0/7 | Planned | - |
+| 5. Frontend Wiring + Type Extensions | 1/7 | In Progress | - |
 | 6. Multi-Cloud Live Deployment | 0/6 | Planned | - |
 
 ## Phase Ordering Rationale

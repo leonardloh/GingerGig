@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-25T18:12:32.421Z"
+last_updated: "2026-04-25T18:17:27.345Z"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 31
-  completed_plans: 18
-  percent: 58
+  completed_plans: 19
+  percent: 61
 ---
 
 # GingerGig backend v1 — Project State
 
-**Last updated:** 2026-04-25 (Phase 04 complete)
+**Last updated:** 2026-04-25 (Phase 05 plan 01 complete)
 
 ## Project Reference
 
@@ -25,15 +25,15 @@ progress:
 
 ## Current Position
 
-Phase: --phase (05) — EXECUTING
-Plan: 1 of --name
+Phase: 05 (frontend-wiring-type-extensions) — EXECUTING
+Plan: 2 of 7
 **Phase:** 05 of 6 (frontend wiring + type extensions)
-**Plan:** Ready for 05-01
-**Status:** Executing Phase --phase
-**Progress:** [████████████░░░░░░░░] 58%
+**Plan:** Ready for 05-02
+**Status:** Executing Phase 05
+**Progress:** [██████░░░░] 61%
 
 ```
-[████████████░░░░░░░░] 58% (18 of 31 plans)
+[██████░░░░] 61% (19 of 31 plans)
 ```
 
 ## Phase Pipeline
@@ -44,16 +44,16 @@ Plan: 1 of --name
 | 2 | Auth + Bearer Middleware | Complete | 1 |
 | 3 | Persona Routers (Elder + Requestor + Companion) | Complete | 2 |
 | 4 | Voice-to-Profile Pipeline | Complete | 2 |
-| 5 | Frontend Wiring + Type Extensions | Not started | 3, 4 |
+| 5 | Frontend Wiring + Type Extensions | In progress | 3, 4 |
 | 6 | Multi-Cloud Live Deployment | Planned | 5 |
 
 ## Performance Metrics
 
-- **Plans complete:** 18
+- **Plans complete:** 19
 - **Verifications passed:** 3
 - **Phases shipped:** 3
 - **Phases inserted (decimal):** 0
-- **Latest phase metric:** Phase 04 plan 05 — unified extraction failure 502/WS message, completed zero-skip route contracts, migration head confirmed, and full voice pytest/ruff/mypy validation passed
+- **Latest phase metric:** Phase 05 plan 01 — frontend API DTOs extended, requestor/companion endpoint gaps closed, voice helpers exported, and frontend typecheck passed
 
 ## Accumulated Context
 
@@ -107,8 +107,8 @@ Plan: 1 of --name
 
 ## Session Continuity
 
-**Last session ended:** 2026-04-25 — completed `04-05-PLAN.md`
-**Next action:** Execute `05-01-PLAN.md` (frontend API contracts, endpoint gaps, voice helper, and barrel export).
+**Last session ended:** 2026-04-25 — completed `05-01-PLAN.md`
+**Next action:** Execute `05-02-PLAN.md` (auth quick-login, signout, and onboarding register wiring).
 
 **Resume context for next session:**
 
@@ -145,3 +145,5 @@ Plan: 1 of --name
 **Completed Plan:** 04-04 (S3 presign, Transcribe batch, async job and status HTTP routes) — 2026-04-25T17:43:32Z
 
 **Completed Plan:** 04-05 (502 unification, contract completion, and full phase verification) — 2026-04-25T17:49:56Z
+
+**Completed Plan:** 05-01 (Frontend API contracts, endpoint gaps, voice helper, and barrel export) — 2026-04-25T18:16:55Z
