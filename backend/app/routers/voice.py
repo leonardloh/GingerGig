@@ -1,3 +1,8 @@
+"""Voice-to-profile routes expose WebSocket `/api/v1/voice-to-profile/stream?token=<JWT>`,
+`POST`/`GET` batch job endpoints, `POST` audio upload URL, and AWS voice integrations
+pinned to `ap-southeast-1`.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -230,7 +235,7 @@ async def stream_voice_to_profile(
     websocket: WebSocket,
     token: str | None = Query(default=None),
 ) -> None:
-    """Streaming voice endpoint documented for Phase 5 as `?token=<JWT>`."""
+    """Authenticate the elder WebSocket token before starting streaming capture."""
     await websocket.accept()
 
     sm = get_sessionmaker(websocket.app.state.engine)
