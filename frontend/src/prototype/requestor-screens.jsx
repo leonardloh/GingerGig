@@ -36,7 +36,9 @@ function adaptListingToProvider(listing) {
     price: formatListingPrice(listing),
     priceUnit: listing.priceUnit,
     distance: listing.distance,
-    matchScore: listing.matchScore,
+    matchScore:
+      listing.matchScore ??
+      Math.round(Math.min(Number(listing.rating) || 0, 5) * 20),
     matchReason: listing.matchReason,
     days: listing.days,
     menu: listing.menu.map((item) => ({
@@ -451,7 +453,33 @@ function RequestorHome({ onSearch, onProvider, user }) {
 function RequestorSearch({ onProvider, onBack, query }) {
   const t = useT();
   const q = query || "halal dinner for 2, weekdays, near Damansara";
-  const matches = PROVIDERS.filter((p) => p.matchScore).slice(0, 3);
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    setError(null);
+    searchListings({ query: q })
+      .then((listings) => {
+        if (!active) return;
+        setMatches(listings.map(adaptListingToProvider));
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [q]);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -580,7 +608,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
                 initials={p.initials}
                 size={60}
                 tone={
-                  p.id === "chen" ? "teal" : p.id === "raju" ? "gold" : "warm"
+                  providerTone(p)
                 }
               />
               <div style={{ flex: 1, minWidth: 0 }}>
