@@ -116,7 +116,7 @@ Plan: 1 of 6
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 260426-4te | Pull main frontend updates, update backend API contracts, and verify local run before phase 6 | 2026-04-25 | 720c3b3 | [260426-4te-pull-main-frontend-updates-update-backen](./quick/260426-4te-pull-main-frontend-updates-update-backen/) |
+| 260426-4te | Pull main frontend updates, update backend API contracts, and verify local run before phase 6 | 2026-04-25 | 9468f2d | [260426-4te-pull-main-frontend-updates-update-backen](./quick/260426-4te-pull-main-frontend-updates-update-backen/) |
 
 ## Session Continuity
 

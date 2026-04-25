@@ -3,7 +3,7 @@ quick_id: 260426-4te
 slug: pull-main-frontend-updates-update-backen
 status: complete
 completed: 2026-04-25
-commit: 720c3b3
+commit: 9468f2d
 ---
 
 # Quick Task 260426-4te Summary
@@ -14,6 +14,7 @@ Pulled the latest `origin/main` frontend updates into the `backend` branch and r
 
 - Merged `origin/main` and kept the new landing/PWA/assets/layout work from the frontend branch.
 - Restored real backend demo login for quick-login cards instead of runtime mock bypass.
+- Preserved the Phase 5 `ElderVoice` backend transport after the main merge so streaming/batch voice still uses `api.voice`.
 - Added backend `elderAge` to listing responses and adapted requestor, elder, and companion API modules to the merged UI shapes.
 - Replaced the KYC stub with a local no-persist contract for session, upload, verify, status, and retry so onboarding can complete without cloud services.
 - Added `backend/tests/test_kyc_local.py`.
@@ -29,3 +30,9 @@ Pulled the latest `origin/main` frontend updates into the `backend` branch and r
 ## Notes
 
 Port `8000` was already occupied by another FastAPI process, so verification used `8001` for this branch's backend and `5175` for Vite with `VITE_API_BASE_URL=http://127.0.0.1:8001`.
+
+## Commits
+
+- `720c3b3` - merge main frontend updates into backend and adapt API contracts.
+- `f39d78f` - remove the local `%VITE_CDN_URL%` Vite warning.
+- `9468f2d` - restore `ElderVoice` WebSocket/batch backend transport after the merge.
