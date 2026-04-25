@@ -22,9 +22,23 @@
 
 ---
 
+## Real vs Mock Auth
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| Keep real auth but simple | Use bcrypt-backed password verification and real registration/login semantics, while avoiding refresh and hardening features | |
+| Mock auth only | Recognize demo accounts, return usable demo bearer tokens, and keep downstream `get_current_user` working without production login security | ✓ |
+
+**User's choice:** `1` for "mock auth only" after clarifying "no need to implement login, just mock it."
+
+**Notes:** Phase 2 context was revised to treat bcrypt/password verification as out of scope. The phase still provides token-shaped responses and current-user dependencies so Phase 3+ can identify Siti, Amir, or Faiz.
+
+---
+
 ## Claude's Discretion
 
 - Exact token lifetime implementation details, with 24 hours recommended as the simple default.
+- Whether `/auth/register` persists a user or returns a deterministic demo-compatible response.
 - Helper function/module names, provided they stay thin and preserve the frontend contract.
 - Claim names beyond required `sub` and `exp`.
 
@@ -32,6 +46,8 @@
 
 - Refresh-token flow.
 - Persisted sessions.
+- Real bcrypt password verification.
+- Production registration semantics.
 - Login rate limiting.
 - MFA / OTP.
 - Password reset / email verification.

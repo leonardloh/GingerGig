@@ -6,9 +6,9 @@
 <domain>
 ## Phase Boundary
 
-Deliver real JWT authentication with bcrypt-backed demo accounts and bearer-token dependencies for protected API routes. The prototype's three quick-login chips must authenticate against `POST /api/v1/auth/login`, return a JWT, and allow subsequent protected requests through the frontend's existing `Authorization: Bearer` injection.
+Deliver a demo auth shim with bearer-token dependencies for protected API routes. The prototype's three quick-login chips must authenticate against `POST /api/v1/auth/login`, return a token, and allow subsequent protected requests through the frontend's existing `Authorization: Bearer` injection.
 
-Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password reset, login rate limiting, social login, production-grade account recovery, and any frontend UI changes.
+Out of scope: real login security, bcrypt password verification, password policy, refresh tokens, persisted frontend sessions, MFA/OTP, password reset, login rate limiting, social login, production-grade account recovery, and any frontend UI changes.
 
 </domain>
 
@@ -16,30 +16,30 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 ## Implementation Decisions
 
 ### Demo-First Auth Policy
-- **D-01:** Keep Phase 2 as simple as possible for the demo. Implement only email/password registration, email/password login, `GET /auth/me`, bearer-token validation, and the helpers downstream routers need.
-- **D-02:** JWT sessions should be long enough for judging and development without refresh-token complexity. Use a simple fixed expiry, preferably 24 hours, surfaced through `expiresIn`.
-- **D-03:** Do not add refresh tokens, session persistence, logout endpoint, account recovery, email verification, MFA, OTP, or login throttling in v1. These are explicitly deferred.
+- **D-01:** Keep Phase 2 as simple as possible for the demo. Implement a mock/demo auth flow only: `POST /auth/login`, `POST /auth/register`, `GET /auth/me`, bearer-token validation, and the helpers downstream routers need.
+- **D-02:** `/auth/login` only needs to recognize the seeded demo accounts (Siti, Amir, Faiz/Companion) and return a usable bearer token. Do not implement real password verification.
+- **D-03:** Tokens should be long enough for judging and development without refresh-token complexity. Use a simple fixed expiry, preferably 24 hours, surfaced through `expiresIn`.
+- **D-04:** Do not add refresh tokens, session persistence, logout endpoint, account recovery, email verification, MFA, OTP, login throttling, or production password hardening in v1. These are explicitly deferred.
 
 ### KYC Access Gate
-- **D-04:** Registration returns `kycRequired: true` only for elders and sets their initial `kycStatus` to `not_started` or the current DB value.
-- **D-05:** Do not over-enforce KYC in Phase 2. A valid elder token may authenticate while KYC is pending so the frontend can continue the onboarding/KYC flow. Later elder business actions can check KYC only if their phase requires it.
+- **D-05:** `/auth/register` may be a demo-compatible stub that creates or returns a token-shaped response matching the frontend contract. It returns `kycRequired: true` only for elders.
+- **D-06:** Do not over-enforce KYC in Phase 2. A valid elder token may authenticate while KYC is pending so the frontend can continue the onboarding/KYC flow. Later elder business actions can check KYC only if their phase requires it.
 
 ### Registration and Error Handling
-- **D-06:** Validate only the basics needed for a clean demo: required fields, valid email syntax through Pydantic, valid role, valid locale, and duplicate email conflict.
-- **D-07:** Password policy stays minimal: require a non-empty password and hash it with bcrypt. Do not add complex strength rules that the existing frontend cannot explain.
-- **D-08:** Duplicate email returns `409` with the standard ApiError envelope. Invalid credentials return `401 {status, message: "Invalid credentials"}` with no account-enumeration detail.
+- **D-07:** Validate only the basics needed for a clean demo: required fields, valid email syntax through Pydantic, valid role, and valid locale.
+- **D-08:** Skip password policy and bcrypt hashing/checking in Phase 2. Password input can be accepted for frontend compatibility, but it is not a production security boundary.
+- **D-09:** Invalid demo credentials return `401 {status, message: "Invalid credentials"}` with no account-enumeration detail. Keep duplicate-email handling simple; if registration writes a user, return `409` for an existing email, otherwise return a deterministic demo response.
 
 ### Protected Route Helpers
-- **D-09:** Build `get_current_user` and `get_current_user_ws` in Phase 2. Add small role helpers only if they simplify Phase 3 planning, but keep them thin wrappers around `get_current_user`.
-- **D-10:** `get_current_user_ws` should read the JWT from a simple `token` query parameter for future WebSocket routes.
+- **D-10:** Build `get_current_user` and `get_current_user_ws` in Phase 2. Add small role helpers only if they simplify Phase 3 planning, but keep them thin wrappers around `get_current_user`.
+- **D-11:** `get_current_user_ws` should read the token from a simple `token` query parameter for future WebSocket routes.
 
-### Security Invariants
-- **D-11:** All bcrypt `hashpw` and `checkpw` calls must run via `await asyncio.to_thread(...)` so auth work does not block the event loop.
-- **D-12:** JWT encode/decode stays centralized in `backend/app/core/security.py`; decode must require `exp` and `sub` and pass `algorithms=["HS256"]` explicitly.
+### Demo Token Invariants
+- **D-12:** Prefer simple signed JWTs for demo tokens so downstream dependencies can decode `sub` and identify the current user. Keep encode/decode centralized in `backend/app/core/security.py`; decode must require `exp` and `sub` and pass `algorithms=["HS256"]` explicitly.
 - **D-13:** In non-debug environments, the app must refuse to start if `JWT_SECRET` is unset or shorter than 32 bytes. Keep existing pydantic settings validation as the enforcement point unless planning finds a smaller local pattern.
 
 ### Claude's Discretion
-- Exact token lifetime implementation details, claim names beyond required `sub` and `exp`, and helper function/module names are flexible as long as they preserve the frontend contract and the security invariants above.
+- Exact token lifetime implementation details, whether `/auth/register` persists users or returns a demo-only response, claim names beyond required `sub` and `exp`, and helper function/module names are flexible as long as they preserve the frontend contract and demo-token invariants above.
 
 </decisions>
 
@@ -53,7 +53,7 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 - `.planning/REQUIREMENTS.md` §Authentication — AUTH-01 through AUTH-07.
 - `.planning/ROADMAP.md` §Phase 2 — Phase goal and five success criteria.
 - `.planning/STATE.md` — Carried-forward locked decisions from Phase 1 and current workflow state.
-- `.planning/phases/01-backend-scaffold-schema-seed/01-CONTEXT.md` — Phase 1 decisions that Phase 2 inherits, including schema, seed, bcrypt, JWT, and test harness constraints.
+- `.planning/phases/01-backend-scaffold-schema-seed/01-CONTEXT.md` — Phase 1 decisions that Phase 2 inherits, including schema, seed, JWT, and test harness constraints. Bcrypt is deliberately not used for Phase 2's mock auth.
 
 ### Backend files
 - `backend/app/routers/auth.py` — Current auth router stub to replace with register/login/me endpoints.
@@ -62,7 +62,7 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 - `backend/app/models/user.py` — User table fields available for auth and profile responses.
 - `backend/app/deps/db.py` — Per-request `AsyncSession` dependency pattern.
 - `backend/app/schemas/common.py` — ApiError envelope model.
-- `backend/pyproject.toml` — Required dependencies: `pyjwt[crypto]`, `bcrypt>=4.2,<5.0.0`, pytest/ruff/mypy tooling.
+- `backend/pyproject.toml` — Required dependencies and pytest/ruff/mypy tooling. `pyjwt[crypto]` is relevant for demo tokens; bcrypt remains installed but is not part of Phase 2 mock auth.
 
 ### Frontend contract
 - `frontend/src/services/api/endpoints/auth.ts` — Client expects `register`, `login`, `logout`, and `getMe`; login/register store returned bearer token in memory.
@@ -88,7 +88,7 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 - Test style is pytest + pytest-asyncio + `httpx.AsyncClient` with `ASGITransport`.
 
 ### Integration Points
-- `/auth/login` and `/auth/register` must return tokens that `frontend/src/services/api/http.ts` can store and attach.
+- `/auth/login` and `/auth/register` must return token-shaped responses that `frontend/src/services/api/http.ts` can store and attach.
 - `/auth/me` is the first protected route and should prove that `Authorization: Bearer` works.
 - `get_current_user` becomes the dependency Phase 3/4/5 routers build on.
 - `get_current_user_ws` exists for Phase 5 voice WebSocket authentication and reads `?token=...`.
@@ -99,6 +99,7 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 ## Specific Ideas
 
 - User explicitly wants the phase kept simple because this is a demo.
+- User confirmed Phase 2 should be mock auth only; no real login implementation.
 - Prefer demo reliability over production auth hardening.
 - Avoid adding frontend-visible validation rules unless the existing UI already supports explaining them.
 
@@ -109,6 +110,8 @@ Out of scope: refresh tokens, persisted frontend sessions, MFA/OTP, password res
 
 - Refresh-token flow.
 - Persisted sessions via httpOnly cookies or localStorage.
+- Real bcrypt password verification for login.
+- Production password hashing on registration.
 - Login rate limiting.
 - MFA / OTP.
 - Password reset / email verification.
