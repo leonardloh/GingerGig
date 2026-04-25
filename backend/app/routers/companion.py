@@ -14,8 +14,9 @@ from app.deps.db import get_db
 from app.models.booking import Booking as BookingModel
 from app.models.companion_alert import CompanionAlert as CompanionAlertModel
 from app.models.listing import Listing as ListingModel
+from app.models.timeline_event import TimelineEvent as TimelineEventModel
 from app.models.user import User
-from app.schemas.persona import CompanionAlert, CompanionDashboard
+from app.schemas.persona import CompanionAlert, CompanionDashboard, TimelineEvent
 from app.services.persona_queries import (
     initials,
     last_7_days_window_kl,
@@ -140,3 +141,31 @@ def _alert_type(kind: str, severity: str) -> str:
     if kind in {"celebration", "success"} or severity == "success":
         return "celebration"
     return "care"
+
+
+@router.get("/elders/{elderId}/timeline", response_model=list[TimelineEvent])
+async def get_companion_timeline(
+    elderId: UUID,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> list[TimelineEvent]:
+    require_role(current_user, "companion")
+    await require_companion_link(db, current_user.id, elderId)
+
+    text_expr = locale_expr(TimelineEventModel, "text", current_user.locale, "text")
+    result = await db.execute(
+        select(TimelineEventModel, text_expr)
+        .where(TimelineEventModel.elder_user_id == elderId)
+        .order_by(TimelineEventModel.occurred_at.desc())
+    )
+    return [
+        TimelineEvent(
+            id=str(event.id),
+            eventType=event.event_type or "activity",
+            text=text,
+            time=event.relative_label or "",
+            occurredAt=event.occurred_at,
+            relatedId=str(event.related_id) if event.related_id else None,
+        )
+        for event, text in result.all()
+    ]
