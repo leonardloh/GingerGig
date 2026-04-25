@@ -4,9 +4,19 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from app.integrations.transcribe_streaming import TranscribeStreamingSession
-from app.services.voice_service import _cleanup_streaming, run_streaming_session
+from app.main import app
+from app.services.voice_service import (
+    STREAMING_CLOSE_AUTH,
+    STREAMING_CLOSE_BATCH_ONLY,
+    TranscriptResult,
+    _cleanup_streaming,
+    _forward_transcribe_results,
+    run_streaming_session,
+)
 
 
 class FakeDbSession:
@@ -18,9 +28,105 @@ class FakeDbSession:
         self.objects.append(obj)
 
 
+class FakeSessionContext:
+    async def __aenter__(self) -> object:
+        return object()
+
+    async def __aexit__(self, *args: object) -> None:
+        return None
+
+
+class FakeSessionMaker:
+    def __call__(self) -> FakeSessionContext:
+        return FakeSessionContext()
+
+
 async def _empty_transcript_events():
     if False:
         yield None
+
+
+async def _many_partial_events():
+    for index in range(20):
+        yield TranscriptResult(text=f"partial {index}", is_partial=True)
+
+
+def _patch_ws_db(monkeypatch: pytest.MonkeyPatch) -> None:
+    app.state.engine = object()
+    monkeypatch.setattr("app.routers.voice.get_sessionmaker", lambda _: FakeSessionMaker())
+
+
+def test_websocket_without_token_closes_unauthorized(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_ws_db(monkeypatch)
+
+    client = TestClient(app)
+    try:
+        with client.websocket_connect("/api/v1/voice-to-profile/stream") as websocket:
+            with pytest.raises(WebSocketDisconnect) as exc:
+                websocket.receive_json()
+    finally:
+        client.close()
+
+    assert exc.value.code == STREAMING_CLOSE_AUTH
+
+
+def test_websocket_requestor_token_closes_forbidden(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_ws_db(monkeypatch)
+
+    async def fake_current_user(token: str | None, db: object) -> object:
+        assert token == "requestor-token"
+        return SimpleNamespace(id=uuid.uuid4(), role="requestor")
+
+    monkeypatch.setattr("app.routers.voice.get_current_user_ws", fake_current_user)
+
+    client = TestClient(app)
+    try:
+        with client.websocket_connect(
+            "/api/v1/voice-to-profile/stream?token=requestor-token"
+        ) as websocket:
+            with pytest.raises(WebSocketDisconnect) as exc:
+                websocket.receive_json()
+    finally:
+        client.close()
+
+    assert exc.value.code == STREAMING_CLOSE_AUTH
+
+
+@pytest.mark.asyncio
+async def test_streaming_session_rejects_batch_only_language() -> None:
+    websocket = SimpleNamespace(
+        receive_json=AsyncMock(return_value={"language": "ms-MY"}),
+        send_json=AsyncMock(),
+        close=AsyncMock(),
+    )
+    factory = AsyncMock()
+
+    await run_streaming_session(
+        websocket,
+        SimpleNamespace(id=uuid.uuid4()),
+        FakeDbSession(),
+        streaming_session_factory=factory,
+    )
+
+    factory.assert_not_called()
+    assert any(
+        call.kwargs == {"code": STREAMING_CLOSE_BATCH_ONLY, "reason": "batch only"}
+        for call in websocket.close.await_args_list
+    )
+
+
+@pytest.mark.asyncio
+async def test_partial_transcripts_are_throttled_to_four_per_second() -> None:
+    websocket = SimpleNamespace(send_json=AsyncMock())
+
+    await _forward_transcribe_results(websocket, _many_partial_events(), [])
+
+    partial_messages = [
+        call.args[0]
+        for call in websocket.send_json.await_args_list
+        if call.args[0].get("type") == "partial"
+    ]
+    assert len(partial_messages) <= 2
 
 
 @pytest.mark.asyncio
