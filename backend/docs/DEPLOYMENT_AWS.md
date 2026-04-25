@@ -70,11 +70,54 @@ Manual checklist:
 
 ## IAM Policy
 
-_Pending task 06-01-04._
+Attach the following least-privilege policy to the backend AWS principal used by Alibaba ECS. Scope is limited to batch voice audio and Transcribe. No S3 provider-photo permissions belong here because Alibaba OSS stores provider photos.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GingerGigAudioBucketAccess",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::gingergig-audio-<env>/*"
+    },
+    {
+      "Sid": "GingerGigTranscribeAccess",
+      "Effect": "Allow",
+      "Action": [
+        "transcribe:StartTranscriptionJob",
+        "transcribe:GetTranscriptionJob",
+        "transcribe:StartStreamTranscription"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Manual checklist:
+
+- [ ] Create or update the backend AWS principal.
+- [ ] Attach the audio S3 + Transcribe policy above.
+- [ ] Confirm no provider-photo or provider photos permissions are granted in AWS S3; provider photos stay in OSS.
+- [ ] Store AWS access keys only in the Alibaba ECS runtime environment or approved secret store.
 
 ## AWS Budgets
 
-_Pending task 06-01-04._
+Configure AWS Budgets actual-cost email alerts before judge/demo traffic:
+
+- AWS account id: `<aws-account-id>`
+- notification email: `<alert-email>`
+- threshold 1: `$50` actual cost
+- threshold 2: `$100` actual cost
+
+Manual checklist:
+
+- [ ] Create an actual-cost budget for `<aws-account-id>`.
+- [ ] Add `$50` alert to `<alert-email>`.
+- [ ] Add `$100` alert to `<alert-email>`.
+- [ ] Verify both budget alerts exist before demo traffic.
 
 ## Outputs For Later Plans
 
