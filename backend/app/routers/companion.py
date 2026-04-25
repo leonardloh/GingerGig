@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
@@ -13,10 +13,16 @@ from app.deps.auth import get_current_user
 from app.deps.db import get_db
 from app.models.booking import Booking as BookingModel
 from app.models.companion_alert import CompanionAlert as CompanionAlertModel
+from app.models.companion_alert_preference import CompanionAlertPreference
 from app.models.listing import Listing as ListingModel
 from app.models.timeline_event import TimelineEvent as TimelineEventModel
 from app.models.user import User
-from app.schemas.persona import CompanionAlert, CompanionDashboard, TimelineEvent
+from app.schemas.persona import (
+    AlertPreferences,
+    CompanionAlert,
+    CompanionDashboard,
+    TimelineEvent,
+)
 from app.services.persona_queries import (
     initials,
     last_7_days_window_kl,
@@ -169,3 +175,31 @@ async def get_companion_timeline(
         )
         for event, text in result.all()
     ]
+
+
+@router.put("/elders/{elderId}/alert-preferences", status_code=status.HTTP_204_NO_CONTENT)
+async def update_companion_alert_preferences(
+    elderId: UUID,
+    payload: AlertPreferences,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> Response:
+    require_role(current_user, "companion")
+    await require_companion_link(db, current_user.id, elderId)
+
+    preferences = await db.get(CompanionAlertPreference, (current_user.id, elderId))
+    if preferences is None:
+        preferences = CompanionAlertPreference(
+            companion_user_id=current_user.id,
+            elder_user_id=elderId,
+        )
+        db.add(preferences)
+
+    preferences.inactivity_24h = payload.inactivity24h
+    preferences.overwork_signals = payload.overworkSignals
+    preferences.earnings_milestones = payload.earningsMilestones
+    preferences.new_bookings = payload.newBookings
+    preferences.reviews = payload.reviews
+    await db.flush()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
