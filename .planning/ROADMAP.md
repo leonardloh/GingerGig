@@ -8,7 +8,7 @@
 ## Phases
 
 - [x] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
-- [x] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
+- [ ] **Phase 2: Auth + Bearer Middleware** - Demo JWT auth shim; the prototype's 3 quick-login chips authenticate against the real backend and return working bearer tokens.
 - [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
 - [ ] **Phase 4: eKYC Pipeline** - The 8-step KYC stepper completes end-to-end against AWS S3 + Textract `AnalyzeDocument` + Rekognition `CompareFaces` with a 3-tier (approved / manual_review / failed) outcome.
 - [ ] **Phase 5: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
@@ -128,7 +128,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Scaffold + Schema + Seed | 7/7 | Complete | 2026-04-25 |
-| 2. Auth + Bearer Middleware | 1/1 | Complete | 2026-04-25 |
+| 2. Auth + Bearer Middleware | 1/1 | Human verification | - |
 | 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
 | 4. eKYC Pipeline | 0/0 | Not started | - |
 | 5. Voice-to-Profile Pipeline | 0/0 | Not started | - |
