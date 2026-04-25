@@ -37,7 +37,36 @@ Manual checklist:
 
 ## Audio S3 Bucket
 
-_Pending task 06-01-03._
+Target state:
+
+- Bucket `gingergig-audio-<env>` lives in `ap-southeast-1`.
+- Backend runtime sets `S3_AUDIO_BUCKET=<audio-bucket-name>`.
+- Browser uploads batch audio directly through presigned PUT URLs; the backend never receives raw audio bytes.
+- Lifecycle expiration deletes uploaded batch audio after 1 day.
+
+CORS example:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "https://<cloudfront-distribution-domain>",
+      "https://<alibaba-ecs-or-slb-host>"
+    ],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+Manual checklist:
+
+- [ ] Create `gingergig-audio-<env>` in `ap-southeast-1`.
+- [ ] Configure the CORS rule above with exact CloudFront and Alibaba origins.
+- [ ] Configure lifecycle expiration for uploaded batch audio after 1 day.
+- [ ] Record the final bucket name in `## Outputs For Later Plans`.
 
 ## IAM Policy
 
