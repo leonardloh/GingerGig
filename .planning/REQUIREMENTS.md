@@ -205,9 +205,9 @@ Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 | VOICE-07 | Phase 4 | Complete |
 | FE-01 | Phase 5 | Pending |
 | FE-02 | Phase 5 | Pending |
-| FE-03 | Phase 5 | Pending |
+| FE-03 | Phase 5 | Complete |
 | FE-04 | Phase 5 | Complete |
-| FE-05 | Phase 5 | Pending |
+| FE-05 | Phase 5 | Complete |
 | FE-06 | Phase 5 | Complete |
 | FE-07 | Phase 5 | Pending |
 | FE-08 | Phase 5 | Pending |
