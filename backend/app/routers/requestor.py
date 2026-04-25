@@ -14,6 +14,7 @@ from app.schemas.persona import Booking, CreateBookingPayload, Listing
 from app.services.persona_queries import (
     booking_snapshot_fields,
     booking_to_response,
+    initials,
     listing_to_response,
     locale_expr,
     menu_items_for_listings,
@@ -86,6 +87,28 @@ async def search_listings(
         )
         for listing, title, match_reason, elder in rows
     ]
+
+
+@router.get("/bookings", response_model=list[Booking])
+async def get_requestor_bookings(
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> list[Booking]:
+    require_role(current_user, "requestor")
+
+    result = await db.execute(
+        select(BookingModel)
+        .where(BookingModel.requestor_user_id == current_user.id)
+        .order_by(BookingModel.scheduled_at.desc(), BookingModel.created_at.desc())
+    )
+    bookings = []
+    for booking in result.scalars():
+        response = booking_to_response(booking)
+        response.requestorName = current_user.name
+        response.requestorInitials = initials(current_user.name)
+        response.requestorAvatarUrl = current_user.avatar_url
+        bookings.append(response)
+    return bookings
 
 
 @router.post("/bookings", response_model=Booking)
