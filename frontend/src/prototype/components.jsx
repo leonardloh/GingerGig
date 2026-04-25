@@ -1,5 +1,7 @@
 // components.jsx — shared atoms for Ginger Gig
 import React, { createContext, useContext, useState } from 'react';
+import { LANGUAGES } from './i18n';
+import { cdnUrl } from '../config/env';
 
 // ─── Icons (inline SVG, Lucide-style 1.5px stroke) ───
 const Icon = ({
@@ -304,6 +306,14 @@ const Icon = ({
           <line x1="21" y1="12" x2="9" y2="12" />
         </svg>
       );
+    case "upload":
+      return (
+        <svg {...props}>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+      );
     default:
       return (
         <svg {...props}>
@@ -585,109 +595,139 @@ const LANG_CTX = createContext("en");
 // Knobby blobby ginger root — bulbous form, with cream leaves sprouting
 // from the top and small dot accents floating around. Inspired by reference:
 // warm terracotta body, soft cream-tan leaves, white ring slices on body.
-const GingerLogo = ({
-  size = 22,
-  fill = "#C2662D",
-  leaf = "#E6D2B5",
-  dot = "#D4A974",
-  ring = "#FFF5EA",
-}) => (
-  <svg
+const GingerLogo = ({ size = 28 }) => (
+  <img
+    src={cdnUrl('/logo.png')}
     width={size}
     height={size}
-    viewBox="0 0 32 32"
-    fill="none"
-    aria-label="Ginger Gig"
-  >
-    <defs>
-      <clipPath id="gg-body-v3">
-        <path
-          d="M14.5 8.5
-                 c1.8 -0.5 3.7 -0.6 5.4 0.1
-                 c2.0 0.8 3.4 2.7 3.6 4.8
-                 c0.1 1.3 -0.3 2.6 -0.2 3.9
-                 c0.1 1.3 0.7 2.5 0.9 3.8
-                 c0.3 1.7 -0.4 3.5 -1.8 4.5
-                 c-1.4 1.0 -3.3 1.2 -5.0 0.7
-                 c-1.1 -0.3 -2.0 -0.9 -3.1 -1.2
-                 c-1.4 -0.4 -2.9 0.0 -4.3 -0.4
-                 c-1.7 -0.5 -3.0 -1.9 -3.2 -3.7
-                 c-0.2 -1.5 0.4 -2.9 0.6 -4.3
-                 c0.2 -1.4 -0.1 -2.8 -0.1 -4.2
-                 c0.0 -2.0 1.4 -3.9 3.4 -4.4
-                 c1.3 -0.3 2.6 0.1 3.8 0.4 z"
-        />
-      </clipPath>
-    </defs>
-
-    {/* Small dot accents — drawn first, behind body */}
-    <circle cx="5.0" cy="10.5" r="1.1" fill={dot} />
-    <circle cx="2.8" cy="14.0" r="0.6" fill={dot} opacity="0.65" />
-    <circle cx="27.5" cy="14" r="0.7" fill={dot} opacity="0.6" />
-    <circle cx="26.5" cy="23" r="0.6" fill={dot} opacity="0.65" />
-
-    {/* Cream leaves on top — stem + 2 leaves */}
-    <g>
-      {/* central stem */}
-      <path
-        d="M16.0 8.2 c-0.2 -1.2 -0.4 -2.5 0.0 -3.8"
-        stroke={leaf}
-        strokeWidth="0.7"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* left smaller leaf */}
-      <path
-        d="M15.7 5.8
-               c-1.4 -0.2 -2.6 -1.0 -3.0 -2.3
-               c1.3 -0.1 2.6 0.6 3.2 1.8
-               c0.1 0.2 0.0 0.5 -0.2 0.5 z"
-        fill={leaf}
-      />
-      {/* right larger leaf */}
-      <path
-        d="M16.3 5.2
-               c0.3 -1.7 1.7 -3.0 3.4 -3.2
-               c0.0 1.7 -1.1 3.3 -2.7 3.7
-               c-0.4 0.1 -0.8 -0.1 -0.7 -0.5 z"
-        fill={leaf}
-      />
-    </g>
-
-    {/* Body — bulbous knobby ginger silhouette */}
-    <path
-      d="M14.5 8.5
-         c1.8 -0.5 3.7 -0.6 5.4 0.1
-         c2.0 0.8 3.4 2.7 3.6 4.8
-         c0.1 1.3 -0.3 2.6 -0.2 3.9
-         c0.1 1.3 0.7 2.5 0.9 3.8
-         c0.3 1.7 -0.4 3.5 -1.8 4.5
-         c-1.4 1.0 -3.3 1.2 -5.0 0.7
-         c-1.1 -0.3 -2.0 -0.9 -3.1 -1.2
-         c-1.4 -0.4 -2.9 0.0 -4.3 -0.4
-         c-1.7 -0.5 -3.0 -1.9 -3.2 -3.7
-         c-0.2 -1.5 0.4 -2.9 0.6 -4.3
-         c0.2 -1.4 -0.1 -2.8 -0.1 -4.2
-         c0.0 -2.0 1.4 -3.9 3.4 -4.4
-         c1.3 -0.3 2.6 0.1 3.8 0.4 z"
-      fill={fill}
-    />
-
-    {/* White flowing ring lines across the body */}
-    <g
-      clipPath="url(#gg-body-v3)"
-      stroke={ring}
-      strokeWidth="1.0"
-      strokeLinecap="round"
-      fill="none"
-      opacity="0.9"
-    >
-      <path d="M6 13.5 q4 -0.9 8 -0.3 q4 0.5 9 -0.4" />
-      <path d="M4 17.5 q5 0.9 11 0.0 q4 -0.6 9 0.5" />
-      <path d="M5 21.5 q5 1.1 10 0.0 q4 -0.5 8 0.5" />
-    </g>
-  </svg>
+    alt="Ginger Gig"
+    style={{ display: 'block', objectFit: 'contain' }}
+  />
 );
 
 
-export { Icon, Avatar, Button, Card, Badge, AILabel, Stars, GingerLogo, BottomNav, PhoneShell, T_CTX, LANG_CTX, useT, useLang };
+// ─── LanguagePicker — standardised pill segmented control ───
+// Renders EN · BM · 中文 · தமிழ் consistently across all app screens.
+// For the dark landing-page bar use variant="dark".
+const LanguagePicker = ({ lang, setLang, variant = 'light' }) => {
+  if (variant === 'dark') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {LANGUAGES.map((l, i) => (
+          <React.Fragment key={l.code}>
+            <button
+              onClick={() => setLang?.(l.code)}
+              style={{
+                appearance: 'none', border: lang === l.code ? '1px solid rgba(194,102,45,0.35)' : 0,
+                background: lang === l.code ? 'rgba(194,102,45,0.22)' : 'transparent',
+                color: lang === l.code ? '#E8A87C' : 'rgba(255,255,255,0.35)',
+                fontSize: 13, fontWeight: 700, padding: '6px 10px',
+                borderRadius: 8, cursor: 'pointer', letterSpacing: '0.04em',
+                transition: 'background .15s, color .15s',
+                fontFamily: 'inherit',
+              }}
+              title={l.name}
+            >
+              {l.short}
+            </button>
+            {i < LANGUAGES.length - 1 && (
+              <span style={{ color: 'rgba(255,255,255,0.14)', fontSize: 12, userSelect: 'none' }}>·</span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="lang-pick">
+      {LANGUAGES.map((l) => (
+        <button
+          key={l.code}
+          data-active={lang === l.code}
+          onClick={() => setLang?.(l.code)}
+          title={l.name}
+        >
+          {l.short}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ─── Site Footer ───────────────────────────────────────────────────────────
+const SiteFooter = ({ variant = 'light' }) => (
+  <footer className={`site-footer${variant === 'dark' ? ' lp-footer' : ''}`}>
+    <span className="site-footer-copy">
+      © {new Date().getFullYear()} BLUE PATHERS · Financial Inclusion
+    </span>
+    <div className="site-footer-links">
+      <a href="#privacy-policy" className="site-footer-link" onClick={(e) => e.preventDefault()}>
+        Privacy Policy
+      </a>
+      <span className="site-footer-divider">·</span>
+      <a href="#terms-of-use" className="site-footer-link" onClick={(e) => e.preventDefault()}>
+        Terms of Use
+      </a>
+    </div>
+  </footer>
+);
+
+// ─── EarningsHeroCard — shared gold gradient card used on elder + companion dashboards ───
+// Shows this-month amount (animated count-up), delta vs last month, and an optional
+// lifetime figure. Pass monthlyAmount + lifetimeAmount as numbers, deltaLabel as string.
+const EarningsHeroCard = ({ monthlyAmount, deltaLabel, lifetimeAmount, lifetimeSince, style, children }) => {
+  const t = useT();
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() => {
+    let r = 0;
+    const steps = 32;
+    const id = setInterval(() => {
+      r += monthlyAmount / steps;
+      if (r >= monthlyAmount) { setCount(monthlyAmount); clearInterval(id); }
+      else setCount(Math.floor(r));
+    }, 22);
+    return () => clearInterval(id);
+  }, [monthlyAmount]);
+
+  return (
+    <Card
+      style={{
+        padding: 26,
+        background: 'linear-gradient(135deg, var(--accent-subtle) 0%, #FFF3D6 100%)',
+        border: '1px solid #F0E0B8',
+        ...style,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20, rowGap: 16 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: '#8a6614', fontSize: 13, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            {t('thisMonth')}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(44px, 5vw, 60px)', lineHeight: 1, marginTop: 8, color: 'var(--text-1)', fontVariantNumeric: 'tabular-nums', fontWeight: 400 }}>
+            RM {count}
+          </div>
+          {deltaLabel && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, color: 'var(--success)', fontSize: 14, fontWeight: 600 }}>
+              <Icon name="trending-up" size={16} strokeWidth={2.2} />
+              <span>{deltaLabel}</span>
+            </div>
+          )}
+        </div>
+        {lifetimeAmount != null && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>Lifetime</div>
+            <div style={{ fontSize: 24, fontFamily: 'var(--font-display)', color: 'var(--text-1)', marginTop: 4, whiteSpace: 'nowrap' }}>
+              RM {lifetimeAmount.toLocaleString()}
+            </div>
+            {lifetimeSince && (
+              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{lifetimeSince}</div>
+            )}
+          </div>
+        )}
+      </div>
+      {children}
+    </Card>
+  );
+};
+
+export { Icon, Avatar, Button, Card, Badge, AILabel, Stars, GingerLogo, EarningsHeroCard, BottomNav, PhoneShell, T_CTX, LANG_CTX, useT, useLang, LanguagePicker, SiteFooter };

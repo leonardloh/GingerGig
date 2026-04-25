@@ -2,8 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ginger Gig Frontend</title>
+
+    <!-- Responsive viewport — viewport-fit=cover fills iPhone notch/island area -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA / mobile web meta -->
+    <meta name="theme-color" content="#C2662D" />
+    <meta name="description" content="Hyperlocal gig marketplace for Malaysian elders — earn with dignity, book with trust." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Ginger Gig" />
+
+    <!-- Open Graph (for sharing links on WhatsApp, Telegram, etc.) -->
+    <meta property="og:title" content="Ginger Gig" />
+    <meta property="og:description" content="Hyperlocal gig marketplace for Malaysian elders." />
+    <meta property="og:type" content="website" />
+    <!-- %VITE_CDN_URL% is replaced at build time with the CloudFront URL (empty in local dev) -->
+    <meta property="og:image" content="%VITE_CDN_URL%/logo.png" />
+
+    <!-- Icons -->
+    <link rel="icon" href="/logo.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <title>Ginger Gig</title>
   </head>
   <body>
     <div id="root"></div>

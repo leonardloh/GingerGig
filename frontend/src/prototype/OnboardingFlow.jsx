@@ -5,19 +5,23 @@
  * the backend is ready — swap the MOCK_* constants and the apiCall()
  * helper for real imports from src/services/api/endpoints/.
  *
+ * eKYC is required for ALL roles:
+ *   - Elder     : receives payments — required by Malaysian law (AML/CFT)
+ *   - Requestor : visits elderly providers' homes — must be vetted for safety
+ *   - Companion : accesses sensitive data about an elderly person — identity must be confirmed
+ *
  * Steps:
- *   1  Role selection  (elder / requestor / companion)
+ *   1  Role selection
  *   2  Basic info      (name, email, phone, password)
- *   3a eKYC intro      (elder only)
- *   3b IC upload       (elder only) — front + back MyKad
- *   3c Selfie          (elder only)
- *   3d Processing      (Textract → Rekognition simulation)
- *   3e KYC result      (extracted data confirmation or failure)
- *   4  Done            (account created)
+ *   3  eKYC intro
+ *   4  IC upload       — front + back MyKad
+ *   5  Selfie
+ *   6  Processing      (Textract → Rekognition simulation)
+ *   7  KYC result      (extracted data confirmation or failure)
+ *   8  Done            (account created)
  */
-import { useRef, useState } from 'react';
-import { GingerLogo, Icon } from './components';
-import { LANGUAGES } from './i18n';
+import { useEffect, useRef, useState } from 'react';
+import { GingerLogo, Icon, LanguagePicker } from './components';
 
 // ─── API shim (replace with real imports when backend is ready) ─────────────
 // import { register }         from '../services/api/endpoints/auth';
@@ -30,8 +34,8 @@ async function apiRegister(payload) {
   return {
     userId: 'mock-user-' + Date.now(),
     accessToken: 'mock-token',
-    kycRequired: payload.role === 'elder',
-    kycStatus: payload.role === 'elder' ? 'not_started' : 'approved',
+    kycRequired: true,       // eKYC required for all roles
+    kycStatus: 'not_started',
   };
 }
 
@@ -74,6 +78,7 @@ const ROLE_OPTIONS = [
     gradient: 'linear-gradient(135deg,#fff5ea,#fbe4cc)',
     border: '#F0D4B0',
     badge: 'eKYC required',
+    kycReason: 'Required by Malaysian law to receive payments (AML/CFT compliance).',
   },
   {
     id: 'requestor',
@@ -83,7 +88,8 @@ const ROLE_OPTIONS = [
     desc: 'Book trusted local services from vetted elders near you',
     gradient: 'linear-gradient(135deg,#e6f5f5,#c8eaea)',
     border: '#B0D8D8',
-    badge: null,
+    badge: 'eKYC required',
+    kycReason: 'You may visit providers at their homes — identity verification keeps everyone safe.',
   },
   {
     id: 'companion',
@@ -93,7 +99,8 @@ const ROLE_OPTIONS = [
     desc: "Watch over a family elder's activity and earnings gently",
     gradient: 'linear-gradient(135deg,#fff8e7,#fdefc0)',
     border: '#F0DFA0',
-    badge: null,
+    badge: 'eKYC required',
+    kycReason: "You'll access sensitive data about your family member — we need to confirm who you are.",
   },
 ];
 
@@ -156,7 +163,13 @@ function FormField({ label, type = 'text', value, onChange, placeholder, hint })
 
 function UploadBox({ label, sublabel, file, onFile, icon = 'upload' }) {
   const ref = useRef(null);
-  const preview = file ? URL.createObjectURL(file) : null;
+  const [preview, setPreview] = useState(null);
+  useEffect(() => {
+    if (!file) { setPreview(null); return; }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
   return (
     <div>
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }}>{label}</div>
@@ -437,10 +450,21 @@ function KycResultScreen({ result, onDone, onRetry }) {
 
 // ─── Main OnboardingFlow ─────────────────────────────────────────────────────
 
+function calcAge(dob) {
+  if (!dob) return null;
+  const today = new Date();
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
-  const [step, setStep] = useState(1);      // 1=role, 2=info, 3=kyc-intro, 4=ic-upload, 5=selfie, 6=processing, 7=result, 8=done
+  // steps: 1=role, 2=info, 3=kyc-intro, 4=ic-upload, 5=selfie, 6=processing, 7=result, 8=done, 9=not-eligible
+  const [step, setStep] = useState(1);
   const [role, setRole] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', dob: '' });
   const [icFront, setIcFront] = useState(null);
   const [icBack, setIcBack] = useState(null);
   const [selfie, setSelfie] = useState(null);
@@ -452,18 +476,8 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
 
   const setField = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Total steps varies by role
-  const totalSteps = role === 'elder' ? 5 : 3;
-  const stepLabels = {
-    1: 'Choose role',
-    2: 'Your details',
-    3: role === 'elder' ? 'Identity verification' : 'All done',
-    4: 'Upload MyKad',
-    5: 'Selfie',
-    6: 'Verifying',
-    7: 'Confirm details',
-    8: 'Complete',
-  };
+  // All roles go through the full 5-step KYC flow
+  const totalSteps = 5;
 
   // ── Step transitions ──
 
@@ -472,6 +486,11 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
   const handleInfoSubmit = async () => {
     if (!form.name || !form.email || !form.phone || !form.password) {
       setError('Please fill in all fields.'); return;
+    }
+    if (role === 'elder') {
+      if (!form.dob) { setError('Please enter your date of birth.'); return; }
+      const age = calcAge(form.dob);
+      if (age < 50) { setStep(9); return; }
     }
     setError('');
     setLoading(true);
@@ -549,10 +568,11 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
       position: 'sticky', top: 0, zIndex: 20,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {step > 1 && step < 8 && (
+        {step > 1 && step !== 8 && (
           <button
             onClick={() => {
-              if (step === 5) setStep(4);
+              if (step === 9) setStep(2);
+              else if (step === 5) setStep(4);
               else if (step === 4) setStep(3);
               else if (step === 3) setStep(2);
               else if (step === 2) setStep(1);
@@ -575,7 +595,7 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 2px 8px rgba(194,102,45,0.2)',
           }}>
-            <GingerLogo size={20} />
+            <GingerLogo size={26} />
           </div>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-1)', fontWeight: 400 }}>
             Ginger Gig
@@ -584,24 +604,7 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Language picker */}
-        <div style={{ display: 'flex', gap: 2, padding: 3, background: 'var(--bg-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
-          {LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => setLang?.(l.code)}
-              style={{
-                appearance: 'none', border: 0,
-                background: lang === l.code ? 'var(--surface)' : 'transparent',
-                cursor: 'pointer', width: 28, height: 26, borderRadius: 6,
-                fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
-                color: lang === l.code ? 'var(--text-1)' : 'var(--text-3)',
-              }}
-            >
-              {l.short}
-            </button>
-          ))}
-        </div>
+        <LanguagePicker lang={lang} setLang={setLang} />
       </div>
     </header>
   );
@@ -674,6 +677,30 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
               <FormField label="Email address" type="email" value={form.email} onChange={setField('email')} placeholder="your@email.com" />
               <FormField label="Phone number" type="tel" value={form.phone} onChange={setField('phone')} placeholder="+601X-XXXXXXX" hint="Used for booking confirmations" />
               <FormField label="Password" type="password" value={form.password} onChange={setField('password')} placeholder="At least 8 characters" />
+              {role === 'elder' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
+                    Date of birth
+                  </label>
+                  <input
+                    type="date"
+                    value={form.dob}
+                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                    onChange={(e) => setField('dob')(e.target.value)}
+                    style={{
+                      height: 48, padding: '0 14px', borderRadius: 12,
+                      border: '1.5px solid var(--border)', background: 'var(--surface)',
+                      fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--text-1)',
+                      outline: 'none', width: '100%', boxSizing: 'border-box',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = 'var(--primary)')}
+                    onBlur={(e) => (e.target.style.borderColor = 'var(--border)')}
+                  />
+                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                    Elder Provider registration is open to those aged 50 and above
+                  </div>
+                </div>
+              )}
             </div>
             {error && <div style={{ padding: '10px 14px', borderRadius: 10, background: '#FBE6E6', color: 'var(--error)', fontSize: 13, marginTop: 16 }}>{error}</div>}
             <button
@@ -692,7 +719,7 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
           </>
         )}
 
-        {/* ── Step 3: eKYC intro (elder only) ── */}
+        {/* ── Step 3: eKYC intro (all roles) ── */}
         {step === 3 && (
           <>
             <StepHeader step={2} total={totalSteps} label="Identity verification" />
@@ -707,9 +734,21 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 400, color: 'var(--text-1)', margin: '0 0 12px' }}>
                 Verify your identity
               </h2>
-              <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 28px' }}>
-                To receive payments, Malaysian law requires us to verify your identity using your <strong>MyKad</strong> (IC).
-                <br /><br />
+              <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 16px' }}>
+                All Ginger Gig accounts require identity verification using your <strong>MyKad</strong> (IC).
+              </p>
+              {/* Role-specific reason */}
+              <div style={{
+                background: 'var(--bg-2)', border: '1px solid var(--border)',
+                borderRadius: 12, padding: '12px 16px', marginBottom: 20, textAlign: 'left',
+                display: 'flex', gap: 10, alignItems: 'flex-start',
+              }}>
+                <Icon name="shield" size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                  {ROLE_OPTIONS.find((r) => r.id === role)?.kycReason}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, margin: 0 }}>
                 This uses <strong>AWS Textract</strong> to read your IC and <strong>AWS Rekognition</strong> to match your face.
               </p>
             </div>
@@ -854,6 +893,92 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
           </>
         )}
 
+        {/* ── Step 9: Not eligible (elder age check) ── */}
+        {step === 9 && (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%',
+              background: '#FFF8E7', border: '2px solid #F0DFA0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 24px',
+            }}>
+              <Icon name="alert-triangle" size={36} color="#B58423" />
+            </div>
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 400,
+              color: 'var(--text-1)', margin: '0 0 12px',
+            }}>
+              Not eligible yet
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 12px' }}>
+              The <strong>Elder Provider</strong> role is open to individuals aged <strong>50 and above</strong>.
+            </p>
+            <p style={{ fontSize: 14, color: 'var(--text-3)', lineHeight: 1.6, margin: '0 0 32px' }}>
+              Based on your date of birth, you do not meet the minimum age requirement at this time.
+            </p>
+
+            {/* Suggest alternatives */}
+            <div style={{
+              background: 'var(--bg-2)', border: '1px solid var(--border)',
+              borderRadius: 14, padding: '18px 20px', marginBottom: 28, textAlign: 'left',
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                Other ways to join Ginger Gig
+              </div>
+              {[
+                { icon: 'search', label: 'Requestor', desc: 'Book services from trusted elder providers near you' },
+                { icon: 'calendar-heart', label: 'Family Member', desc: 'Watch over and support an elderly family member' },
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  onClick={() => {
+                    const id = opt.label === 'Requestor' ? 'requestor' : 'companion';
+                    setRole(id);
+                    setForm((f) => ({ ...f, dob: '' }));
+                    setError('');
+                    setStep(2);
+                  }}
+                  style={{
+                    width: '100%', appearance: 'none', cursor: 'pointer',
+                    background: 'var(--surface)', border: '1.5px solid var(--border)',
+                    borderRadius: 12, padding: '12px 14px', marginBottom: 8,
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    fontFamily: 'var(--font-body)', textAlign: 'left',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                >
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    background: 'var(--primary-subtle)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Icon name={opt.icon} size={20} color="var(--primary)" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{opt.desc}</div>
+                  </div>
+                  <Icon name="chevron-right" size={16} color="var(--text-3)" style={{ marginLeft: 'auto' }} />
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => { setStep(1); setRole(null); setForm((f) => ({ ...f, dob: '' })); setError(''); }}
+              style={{
+                width: '100%', height: 48, borderRadius: 14,
+                border: '1.5px solid var(--border)', background: 'transparent',
+                color: 'var(--text-2)', fontFamily: 'var(--font-body)',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Back to role selection
+            </button>
+          </div>
+        )}
+
         {/* ── Step 8: Done ── */}
         {step === 8 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -864,14 +989,13 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
               margin: '0 auto 24px',
               boxShadow: '0 4px 20px rgba(194,102,45,0.2)',
             }}>
-              <GingerLogo size={44} />
+              <GingerLogo size={56} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, color: 'var(--text-1)', margin: '0 0 12px' }}>
               You're all set!
             </h2>
             <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.65, margin: '0 0 36px' }}>
-              Your account has been created
-              {role === 'elder' ? ' and your identity has been verified.' : '.'}<br />
+              Your account has been created and your identity has been verified.<br />
               Welcome to the Ginger Gig community.
             </p>
             <button

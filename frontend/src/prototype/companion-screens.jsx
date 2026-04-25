@@ -1,24 +1,11 @@
 import { COMPANION_ALERTS, ELDER_BOOKINGS, HERO_ELDER, TIMELINE } from './mock-data';
-import { Avatar, Card, Icon, useLang, useT } from './components';
+import { Avatar, Card, EarningsHeroCard, Icon, useLang, useT } from './components';
 // companion-screens.jsx — Family Companion Dashboard
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function CompanionDashboard() {
   const t = useT();
   const lang = useLang();
-  const [count, setCount] = useState(0);
-  const target = 680;
-  useEffect(() => {
-    let r = 0;
-    const id = setInterval(() => {
-      r += target / 32;
-      if (r >= target) {
-        setCount(target);
-        clearInterval(id);
-      } else setCount(Math.floor(r));
-    }, 22);
-    return () => clearInterval(id);
-  }, []);
 
   const alertStyles = {
     success: {
@@ -102,95 +89,12 @@ function CompanionDashboard() {
 
       {/* Earnings: full-width on mobile, 2/3 on desktop */}
       <div className="wide-grid" style={{ padding: "24px 16px 0" }}>
-        <Card
-          style={{
-            padding: 26,
-            background:
-              "linear-gradient(135deg, var(--accent-subtle) 0%, #FFF3D6 100%)",
-            border: "1px solid #F0E0B8",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 20,
-              rowGap: 16,
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  color: "#8a6614",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {t("thisMonth")}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "clamp(44px, 5vw, 60px)",
-                  lineHeight: 1,
-                  marginTop: 8,
-                  color: "var(--text-1)",
-                  fontVariantNumeric: "tabular-nums",
-                  fontWeight: 400,
-                }}
-              >
-                RM {count}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  marginTop: 14,
-                  color: "var(--success)",
-                  fontSize: 14,
-                  fontWeight: 600,
-                }}
-              >
-                <Icon name="trending-up" size={16} strokeWidth={2.2} />
-                <span>+RM 180 {t("moreThanLast")}</span>
-              </div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-3)",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  fontWeight: 600,
-                }}
-              >
-                Lifetime
-              </div>
-              <div
-                style={{
-                  fontSize: 24,
-                  fontFamily: "var(--font-display)",
-                  color: "var(--text-1)",
-                  marginTop: 4,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                RM 4,820
-              </div>
-              <div
-                style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}
-              >
-                since Aug 2025
-              </div>
-            </div>
-          </div>
-        </Card>
+        <EarningsHeroCard
+          monthlyAmount={680}
+          deltaLabel={`+RM 180 ${t("moreThanLast")}`}
+          lifetimeAmount={4820}
+          lifetimeSince="since Aug 2025"
+        />
 
         {/* Bookings inline on right column */}
         <div>
@@ -360,7 +264,7 @@ function CompanionDashboard() {
                     lineHeight: 1.4,
                   }}
                 >
-                  {e.text_en}
+                  {e[`text_${lang}`] ?? e.text_en}
                 </div>
               </div>
             ))}
@@ -377,7 +281,6 @@ function CompanionDashboard() {
 // should be: glancing in on her day from across the country.
 // ---------------------------------------------------------------
 function CompanionAlerts() {
-  const t = useT();
   const lang = useLang();
   const [now, setNow] = useState(new Date());
   useEffect(() => {

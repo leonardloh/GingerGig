@@ -9,9 +9,13 @@ export interface LoginPayload {
 /**
  * POST /api/v1/auth/register
  *
- * Creates a new account. For elder role the backend will also provision
- * a KYC session and return kycRequired=true. Frontend should then call
- * kyc.initiateSession() to get presigned upload URLs.
+ * Creates a new account. eKYC is required for ALL roles:
+ *   - Elder     : required by Malaysian law to receive payments (AML/CFT)
+ *   - Requestor : visits providers' homes — must be vetted for safety
+ *   - Companion : accesses sensitive elder data — identity must be confirmed
+ *
+ * The backend always returns kycRequired=true and kycStatus="not_started".
+ * Frontend should call kyc.initiateSession() to get presigned S3 upload URLs.
  */
 export async function register(payload: RegisterPayload): Promise<RegisterResponse> {
   const response = await apiRequest<RegisterResponse>("/auth/register", {

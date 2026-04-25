@@ -86,6 +86,8 @@ export interface UserProfile {
   locale: "ms" | "en" | "zh" | "ta";
 }
 
+// ─── Base / backend-contract types ────────────────────────────────────────
+
 export interface Listing {
   id: string;
   elderId: string;
@@ -124,4 +126,86 @@ export interface CompanionDashboard {
   weeklyEarnings: EarningsSummary;
   activeDays: number;
   completedBookings: number;
+}
+
+// ─── Rich UI types (returned by search / dashboard endpoints) ─────────────
+
+export type ProviderTone = "warm" | "professional" | "sand" | "plum";
+
+/** Full provider card as returned by GET /requestor/listings/search */
+export interface Provider {
+  id: string;
+  name: string;
+  age: number;
+  area: string;
+  distance: string;
+  initials: string;
+  portrait: string | null;
+  service: string;
+  serviceEn?: string;
+  category: string;
+  rating: number;
+  reviews: number;
+  price: string;
+  priceUnit: string;
+  halal: boolean;
+  tone: ProviderTone;
+  description: string;
+  matchScore?: number;
+  matchReason?: string;
+  menu?: Array<{ name: string; price: string }>;
+  days: string[];
+}
+
+/** Elder's own listing card (richer than the base Listing type) */
+export interface ElderListing {
+  id: string;
+  title: string;
+  titleEn?: string;
+  category: string;
+  price: string;
+  priceUnit: string;
+  rating: number;
+  bookings: number;
+  isActive: boolean;
+}
+
+/** A booking item as shown in the elder dashboard or requestor bookings list */
+export interface BookingItem {
+  id: string;
+  requestor: string;
+  requestorInitials: string;
+  portrait: string | null;
+  date: string;
+  qty: string;
+  item: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  price: string;
+  rating?: number;
+}
+
+/** Earnings data including weekly bar chart (8 weeks, oldest → newest) */
+export interface ElderEarningsData {
+  monthTotal: number;
+  lifetimeTotal: number;
+  completedCount: number;
+  weeklyBar: number[];
+}
+
+/** Companion dashboard — overview of the elder they watch over */
+export interface CompanionDashboardData {
+  elderName: string;
+  elderStatus: string;
+  lastActiveText: string;
+  weeklyEarnings: number;
+  bookingsCompleted: number;
+  activeDays: number;
+  timeline: Array<{ id: string; time: string; text: string }>;
+}
+
+/** A single companion alert item (already localised by the server/mock) */
+export interface CompanionAlertItem {
+  id: string;
+  type: "success" | "info" | "warning" | "care";
+  text: string;
 }

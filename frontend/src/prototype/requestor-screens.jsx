@@ -1,7 +1,7 @@
 import { ELDER_BOOKINGS, PORTRAITS, PROVIDERS, REVIEWS } from './mock-data';
 import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 // requestor-screens.jsx — Home, Search results, Provider detail
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
@@ -725,7 +725,12 @@ function ProviderDetail({ providerId, onBack }) {
               display: "inline-flex",
             }}
           >
-            <GingerLogo size={18} fill={faved ? "#C2662D" : "#C2662D"} />
+            <Icon
+              name="heart"
+              size={22}
+              color={faved ? "var(--primary)" : "var(--text-3)"}
+              fill={faved ? "var(--primary)" : "none"}
+            />
           </span>
           <span>{faved ? "Favourited" : "Favourite"}</span>
         </button>
@@ -754,7 +759,7 @@ function ProviderDetail({ providerId, onBack }) {
           transition: "opacity 0.22s ease, transform 0.22s ease",
         }}
       >
-        <GingerLogo size={16} fill="#F4A155" />
+        <Icon name="heart" size={20} color="#F4A155" fill="#F4A155" />
         <span>Saved to favourites</span>
       </div>
 

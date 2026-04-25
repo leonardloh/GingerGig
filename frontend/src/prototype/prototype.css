@@ -61,8 +61,8 @@ textarea {
 .app-shell {
   min-height: 100vh;
   background: var(--bg);
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
 }
 
 .top-nav {
@@ -199,21 +199,103 @@ textarea {
   border: 0;
   background: transparent;
   cursor: pointer;
-  width: 30px;
+  padding: 0 9px;
   height: 28px;
   border-radius: 7px;
   font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-3);
+  white-space: nowrap;
+  word-break: keep-all;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
 }
 
 .lang-pick button[data-active="true"] {
   background: var(--surface);
   color: var(--text-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Elder mode toggle (desktop top-bar pill) ── */
+.elder-mode-toggle {
+  display: flex;
+  gap: 0;
+  padding: 3px;
+  background: var(--bg-2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.elder-mode-toggle button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 11px;
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.elder-mode-toggle button[data-active="true"] {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(194, 102, 45, 0.3);
+}
+
+.elder-mode-toggle button:not([data-active="true"]):hover {
+  background: var(--surface);
+  color: var(--text-1);
+}
+
+/* ── Elder mode toggle (mobile — full-width strip below top-bar) ── */
+.elder-mode-toggle-mobile {
+  display: none;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.elder-mode-toggle-mobile button {
+  appearance: none;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: all 0.15s ease;
+}
+
+.elder-mode-toggle-mobile button[data-active="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(194, 102, 45, 0.3);
 }
 
 .content-frame {
+  flex: 1;
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
@@ -230,25 +312,46 @@ textarea {
   flex-direction: column;
 }
 
+/* ── Tablet: 769px–1100px — icon-only top nav, no bottom bar ── */
 @media (max-width: 1100px) {
   .brand-text {
     display: none;
   }
 
-  .nav-tabs {
-    display: none !important;
+  /* Hide the text label inside each tab button, keep the icon */
+  .nav-tab span {
+    display: none;
+  }
+
+  /* Tighten tab button to a square-ish icon pill */
+  .nav-tab {
+    padding: 8px 10px;
+  }
+
+  /* Hide the user's full name, just show avatar circle */
+  .user-name {
+    display: none;
   }
 }
 
-@media (max-width: 1099px) {
-  .top-nav-inner {
-    padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 10px;
+/* ── Mobile: ≤ 768px — bottom navigation bar ── */
+@media (max-width: 768px) {
+  /* Show the full-width mode strip, hide the top-bar pill */
+  .elder-mode-toggle {
+    display: none;
   }
 
+  .elder-mode-toggle-mobile {
+    display: flex;
+  }
+  .top-nav-inner {
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  /* Hide top-bar tabs entirely on true mobile — bottom bar takes over */
   .nav-tabs {
-    display: none;
+    display: none !important;
   }
 
   .persona-switch button {
@@ -295,7 +398,8 @@ textarea {
   }
 }
 
-@media (min-width: 1100px) {
+/* ── Desktop: > 768px — no bottom nav ── */
+@media (min-width: 769px) {
   .mobile-bottom-nav {
     display: none;
   }
@@ -481,6 +585,70 @@ textarea {
 @media (min-width: 769px) {
   .section-h {
     font-size: 26px;
+  }
+}
+
+/* ─── Site Footer ─────────────────────────────────────────────────────────── */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.site-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-footer-link {
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.site-footer-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.site-footer-divider {
+  color: var(--border);
+}
+
+/* Landing page footer — dark theme override to match the dark scroll container */
+.lp-footer {
+  background: rgba(255,255,255,0.04);
+  border-top-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.3);
+}
+
+.lp-footer .site-footer-link {
+  color: rgba(255,255,255,0.35);
+}
+
+.lp-footer .site-footer-link:hover {
+  color: #e8a87c;
+}
+
+.lp-footer .site-footer-divider {
+  color: rgba(255,255,255,0.12);
+}
+
+/* Hide footer on mobile bottom-nav screens to avoid overlap */
+@media (max-width: 768px) {
+  .app-shell .site-footer {
+    display: none;
   }
 }
 

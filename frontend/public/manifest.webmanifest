@@ -1,0 +1,34 @@
+{
+  "name": "Ginger Gig",
+  "short_name": "Ginger Gig",
+  "description": "Hyperlocal gig marketplace for Malaysian elders — earn with dignity, book with trust.",
+  "theme_color": "#C2662D",
+  "background_color": "#FBF6EE",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "en-MY",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["lifestyle", "shopping"],
+  "shortcuts": [
+    {
+      "name": "Sign in",
+      "url": "/",
+      "description": "Open the app"
+    }
+  ]
+}
