@@ -1042,8 +1042,8 @@ function CompanionAlerts({ elderId, user }) {
 // CompanionProfile — about ME as a carer / safety net for mum.
 // Care circle, alert preferences, emergency contacts, permissions.
 // ───────────────────────────────────────────────────────────────
-function CompanionProfile() {
-  const elder = elderSnapshotFallback();
+function CompanionProfile({ elderId, user }) {
+  const [elder, setElder] = useState(() => elderSnapshotFallback(user));
   const [alertPrefs, setAlertPrefs] = useState({
     inactivity: true,
     overwork: true,
@@ -1053,6 +1053,30 @@ function CompanionProfile() {
     appUpdates: false,
   });
   const [digest, setDigest] = useState("weekly"); // "off" | "daily" | "weekly"
+  const companionName = user?.name || "Faiz Rahman";
+  const companionInitials = user?.initials || "FR";
+
+  useEffect(() => {
+    let active = true;
+    if (!elderId) {
+      setElder(elderSnapshotFallback(user));
+      return () => {
+        active = false;
+      };
+    }
+
+    getCompanionDashboard(elderId)
+      .then((dashboardData) => {
+        if (active) setElder({ ...elderSnapshotFallback(user), ...dashboardData.elder });
+      })
+      .catch(() => {
+        if (active) setElder(elderSnapshotFallback(user));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [elderId, user]);
 
   const careCircle = [
     {
@@ -1071,7 +1095,15 @@ function CompanionProfile() {
     },
   ];
 
-  const toggle = (k) => setAlertPrefs((p) => ({ ...p, [k]: !p[k] }));
+  const toggle = (k) => {
+    const previousPrefs = alertPrefs;
+    const nextPrefs = { ...alertPrefs, [k]: !alertPrefs[k] };
+    setAlertPrefs(nextPrefs);
+    if (k === "appUpdates" || !elderId) return;
+    updateCompanionAlertPreferences(elderId, mapAlertPrefsToApi(nextPrefs)).catch(() => {
+      setAlertPrefs(previousPrefs);
+    });
+  };
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1084,7 +1116,7 @@ function CompanionProfile() {
           gap: 16,
         }}
       >
-        <Avatar initials="FR" size={68} tone="warm" border />
+        <Avatar src={user?.avatarUrl} initials={companionInitials} size={68} tone="warm" border />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -1107,7 +1139,7 @@ function CompanionProfile() {
               fontWeight: 400,
             }}
           >
-            Faiz Rahman
+            {companionName}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-2)", marginTop: 4 }}>
             Watching over Makcik Siti · Connected since Aug 2025
