@@ -2,18 +2,22 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps.auth import get_current_user
 from app.deps.db import get_db
+from app.models.booking import Booking as BookingModel
 from app.models.listing import Listing as ListingModel
 from app.models.user import User
 from app.schemas.persona import (
+    Booking,
     Listing,
     ListingDetail,
     ListingPatch,
 )
 from app.services.persona_queries import (
+    booking_to_response,
     listing_detail_to_response,
     listing_locale_select,
     listing_to_response,
@@ -45,6 +49,24 @@ async def get_elder_listings(
         .where(ListingModel.elder_id == elderId)
         .order_by(ListingModel.created_at.desc())
     )
+
+
+@router.get("/elders/{elderId}/bookings", response_model=list[Booking])
+async def get_elder_bookings(
+    elderId: UUID,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> list[Booking]:
+    require_role(current_user, "elder")
+    require_self(current_user, elderId)
+
+    result = await db.execute(
+        select(BookingModel)
+        .join(ListingModel, ListingModel.id == BookingModel.listing_id)
+        .where(ListingModel.elder_id == elderId)
+        .order_by(BookingModel.scheduled_at.desc(), BookingModel.created_at.desc())
+    )
+    return [booking_to_response(booking) for booking in result.scalars()]
     rows = result.all()
     menu_by_listing = await menu_items_for_listings(
         db,
