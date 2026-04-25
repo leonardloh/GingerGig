@@ -1,7 +1,9 @@
 """D-17 #3: scripts.seed is idempotent across consecutive runs.
 
-Row counts remain unchanged and Siti's password_hash is preserved (D-08).
+Canonical row snapshots remain unchanged and Siti's password_hash is preserved (D-08).
 """
+
+# ruff: noqa: S608
 
 import os
 
@@ -25,25 +27,34 @@ TABLES = [
 ]
 
 
-async def _snapshot(engine: AsyncEngine) -> tuple[dict[str, int], str | None]:
+async def _snapshot(engine: AsyncEngine) -> tuple[dict[str, str], str | None]:
     async with engine.connect() as conn:
-        counts = {}
+        snapshots = {}
         for table in TABLES:
-            counts[table] = (
-                await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))  # noqa: S608
+            snapshot_sql = text(
+                "SELECT md5(COALESCE("
+                "jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text)::text, "
+                "'[]')) "
+                f"FROM {table} AS t"
+            )
+            snapshots[table] = (
+                await conn.execute(snapshot_sql)
             ).scalar_one()
         siti_hash = (
             await conn.execute(
                 text("SELECT password_hash FROM users WHERE email='siti@gingergig.my'")
             )
         ).scalar_one_or_none()
-    return counts, siti_hash
+    return snapshots, siti_hash
 
 
 async def test_seed_idempotent(engine: AsyncEngine) -> None:
-    counts1, hash1 = await _snapshot(engine)
-    assert counts1["users"] >= 8, (
-        f"expected at least 8 users (3 demo + 5 providers), got {counts1['users']}"
+    snapshot1, hash1 = await _snapshot(engine)
+    assert snapshot1["users"], "users snapshot hash is empty"
+    async with engine.connect() as conn:
+        users_count = (await conn.execute(text("SELECT COUNT(*) FROM users"))).scalar_one()
+    assert users_count >= 8, (
+        f"expected at least 8 users (3 demo + 5 providers), got {users_count}"
     )
     assert hash1 is not None, "siti@gingergig.my missing; Plan 05 seed not applied"
 
@@ -61,8 +72,8 @@ async def test_seed_idempotent(engine: AsyncEngine) -> None:
     rc = await seed.main()
     assert rc == 0, f"seed exit code {rc}"
 
-    counts2, hash2 = await _snapshot(engine)
-    assert counts1 == counts2, f"row counts drifted: {counts1} -> {counts2}"
+    snapshot2, hash2 = await _snapshot(engine)
+    assert snapshot1 == snapshot2, "canonical seed snapshots drifted across re-run"
     assert hash1 == hash2, "siti's password_hash changed across re-run"
 
 

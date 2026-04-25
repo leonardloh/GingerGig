@@ -15,6 +15,8 @@ import pytest_asyncio
 from httpx import ASGITransport
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+os.environ.setdefault("ENABLE_TEST_ROUTES", "true")
+
 from app.core.config import Settings, settings
 from app.db.session import build_engine
 from app.deps.db import get_db

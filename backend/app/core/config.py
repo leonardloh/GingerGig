@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # CORS (FOUND-03 — allowlist, never "*")
     cors_origins_csv: str = Field(default="http://localhost:5173")
+    enable_test_routes: bool = Field(default=False)
 
     @property
     def cors_origins(self) -> list[str]:

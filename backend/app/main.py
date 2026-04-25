@@ -66,14 +66,15 @@ app.include_router(companion_router.router, prefix=API)
 app.include_router(kyc_router.router, prefix=API)
 app.include_router(voice_router.router, prefix=API)
 
-# Test-only route exercising the global Exception handler (D-17 #4).
-# Mounted under /__test__ so production tooling can identify and exclude it.
-_test_router = APIRouter(prefix="/__test__", tags=["__test__"])
+if settings.enable_test_routes:
+    # Test-only route exercising the global Exception handler (D-17 #4).
+    # Disabled by default so deployed apps do not expose an intentional 500 route.
+    _test_router = APIRouter(prefix="/__test__", tags=["__test__"])
 
 
-@_test_router.get("/boom")
-async def _boom() -> dict[str, Any]:
-    raise RuntimeError("kaboom")  # Intentional test fixture.
+    @_test_router.get("/boom")
+    async def _boom() -> dict[str, Any]:
+        raise RuntimeError("kaboom")  # Intentional test fixture.
 
 
-app.include_router(_test_router)
+    app.include_router(_test_router)

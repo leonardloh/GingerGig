@@ -11,7 +11,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import bcrypt
-from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -114,7 +113,6 @@ async def _seed_users(session: AsyncSession) -> None:
             "area": stmt.excluded.area,
             "age": stmt.excluded.age,
             "avatar_url": stmt.excluded.avatar_url,
-            "updated_at": func.now(),
         },
     )
     await session.execute(stmt)
@@ -137,7 +135,6 @@ async def _seed_companion_links(session: AsyncSession) -> None:
         index_elements=[CompanionLink.companion_user_id, CompanionLink.elder_user_id],
         set_={
             "relationship": stmt.excluded.relationship,
-            "updated_at": func.now(),
         },
     )
     await session.execute(stmt)
@@ -190,7 +187,7 @@ async def _seed_listings(session: AsyncSession) -> None:
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[Listing.id],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 
@@ -212,8 +209,7 @@ async def _seed_listing_menu_items(session: AsyncSession) -> None:
     stmt = pg_insert(ListingMenuItem).values(rows)
     stmt = stmt.on_conflict_do_update(
         index_elements=[ListingMenuItem.id],
-        set_={c: stmt.excluded[c] for c in ["listing_id", "name", "price", "sort_order"]}
-        | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in ["listing_id", "name", "price", "sort_order"]},
     )
     await session.execute(stmt)
 
@@ -261,7 +257,7 @@ async def _seed_bookings(session: AsyncSession) -> None:
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[Booking.id],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 
@@ -299,7 +295,7 @@ async def _seed_reviews(session: AsyncSession) -> None:
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[Review.id],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 
@@ -343,7 +339,7 @@ async def _seed_companion_alerts(session: AsyncSession) -> None:
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[CompanionAlert.id],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 
@@ -377,7 +373,7 @@ async def _seed_companion_alert_preferences(session: AsyncSession) -> None:
             CompanionAlertPreference.companion_user_id,
             CompanionAlertPreference.elder_user_id,
         ],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 
@@ -415,7 +411,7 @@ async def _seed_timeline_events(session: AsyncSession) -> None:
     ]
     stmt = stmt.on_conflict_do_update(
         index_elements=[TimelineEvent.id],
-        set_={c: stmt.excluded[c] for c in cols} | {"updated_at": func.now()},
+        set_={c: stmt.excluded[c] for c in cols},
     )
     await session.execute(stmt)
 

@@ -37,3 +37,27 @@ async def test_alembic_upgrade_creates_all_tables(engine: AsyncEngine) -> None:
     assert revision == "0001_initial_schema", (
         f"expected revision 0001_initial_schema, got {revision}"
     )
+
+
+async def test_timestamp_columns_are_timezone_aware(engine: AsyncEngine) -> None:
+    """Every TimestampMixin column must be TIMESTAMPTZ, not a naive timestamp."""
+    async with engine.connect() as conn:
+        rows = await conn.execute(
+            text(
+                """
+                SELECT table_name, column_name, data_type
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = ANY(:tables)
+                  AND column_name IN ('created_at', 'updated_at')
+                """
+            ),
+            {"tables": sorted(EXPECTED_TABLES)},
+        )
+
+    bad = [
+        f"{row.table_name}.{row.column_name}={row.data_type}"
+        for row in rows.fetchall()
+        if row.data_type != "timestamp with time zone"
+    ]
+    assert not bad, f"timestamp columns must be TIMESTAMPTZ: {bad}"

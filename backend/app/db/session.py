@@ -26,18 +26,12 @@ def build_engine(s: Settings) -> AsyncEngine:
     )
 
 
-_sessionmaker: async_sessionmaker[AsyncSession] | None = None
-
-
 def get_sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-    global _sessionmaker
-    if _sessionmaker is None:
-        _sessionmaker = async_sessionmaker(
-            engine,
-            class_=AsyncSession,
-            expire_on_commit=False,
-        )
-    return _sessionmaker
+    return async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
 
 
 async def dispose_engine(engine: AsyncEngine) -> None:
