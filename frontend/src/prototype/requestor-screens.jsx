@@ -1602,7 +1602,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
 // RequestorProfile — about MY needs as a service-buyer.
 // Saved providers, preferences, area, payment, notifications.
 // ═══════════════════════════════════════════════════════════════
-function RequestorProfile() {
+function RequestorProfile({ user }) {
   const t = useT();
   const [diet, setDiet] = useState(["halal"]);
   const [notifs, setNotifs] = useState({
@@ -1610,6 +1610,9 @@ function RequestorProfile() {
     deals: false,
     reminders: true,
   });
+  const [saved, setSaved] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const toggleDiet = (k) =>
     setDiet((d) => (d.includes(k) ? d.filter((x) => x !== k) : [...d, k]));
 
@@ -1622,7 +1625,29 @@ function RequestorProfile() {
 
   const cuisineLikes = ["Malay", "Chinese", "Indian", "Western"];
 
-  const saved = PROVIDERS.slice(0, 3);
+  useEffect(() => {
+    let active = true;
+
+    setLoading(true);
+    setError(null);
+    searchListings({})
+      .then((listings) => {
+        if (!active) return;
+        setSaved(listings.map(adaptListingToProvider).slice(0, 3));
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="screen mobile-px" style={{ padding: "8px 0 40px" }}>
@@ -1636,8 +1661,8 @@ function RequestorProfile() {
         }}
       >
         <Avatar
-          src={PORTRAITS.amir}
-          initials="AR"
+          src={user?.avatarUrl}
+          initials={user?.initials || "AR"}
           size={68}
           tone="warm"
           border
@@ -1664,7 +1689,7 @@ function RequestorProfile() {
               fontWeight: 400,
             }}
           >
-            Amir bin Razak
+            {user?.name || "Amir bin Razak"}
           </div>
           <div
             style={{
@@ -1676,7 +1701,8 @@ function RequestorProfile() {
               gap: 6,
             }}
           >
-            <Icon name="map-pin" size={13} /> Damansara Utama, KL
+            <Icon name="map-pin" size={13} />{" "}
+            {user?.area || "Damansara Utama, KL"}
           </div>
         </div>
         <button
