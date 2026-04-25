@@ -27,7 +27,7 @@ def upgrade() -> None:
     op.add_column("listings", sa.Column("match_reason_zh", sa.Text(), nullable=True))
     op.add_column("listings", sa.Column("match_reason_ta", sa.Text(), nullable=True))
     op.create_check_constraint(
-        "ck_listings_match_score_range",
+        op.f("ck_listings_match_score_range"),
         "listings",
         "match_score IS NULL OR (match_score >= 0 AND match_score <= 100)",
     )
@@ -35,10 +35,16 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint(
-        "ck_listings_match_score_range",
-        "listings",
-        type_="check",
+    op.execute(
+        sa.text(
+            "ALTER TABLE listings DROP CONSTRAINT IF EXISTS ck_listings_match_score_range"
+        )
+    )
+    op.execute(
+        sa.text(
+            "ALTER TABLE listings DROP CONSTRAINT IF EXISTS "
+            "ck_listings_ck_listings_match_score_range"
+        )
     )
     op.drop_column("listings", "match_reason_ta")
     op.drop_column("listings", "match_reason_zh")
