@@ -1,11 +1,11 @@
 ---
 phase: 04-voice-to-profile-pipeline
 status: all_fixed
-findings_in_scope: 5
-fixed: 5
+findings_in_scope: 8
+fixed: 8
 skipped: 0
-iteration: 1
-completed_at: 2026-04-25T17:58:26Z
+iteration: 2
+completed_at: 2026-04-25T18:04:59Z
 ---
 
 # Phase 04 Review Fixes
@@ -43,5 +43,26 @@ completed_at: 2026-04-25T17:58:26Z
 
 - `uv run pytest -q`: 79 passed, 2 existing warnings.
 - `uv run pytest tests/test_voice_qwen.py tests/test_voice_streaming.py tests/test_voice_batch.py tests/test_voice_contract.py -q`: 26 passed.
+- `uv run ruff check .`: all checks passed.
+- `uv run mypy app`: success, no issues found in 47 source files.
+
+## Iteration 2
+
+- WR-001: Fixed in `4df823eb07370c557947bf1725f0a57f53ee3524`.
+  - Streaming infrastructure failures after `VoiceSession` creation now log server-side, mark the persisted session `failed` with `Voice streaming failed`, send safe WebSocket error JSON, and close with `STREAMING_CLOSE_ERROR`.
+  - Added regression coverage for a failing streaming session factory.
+
+- WR-002: Fixed in `ed6de673378c9f01b7f357af7013cdef419c8fc8`.
+  - Qwen extraction now uses one guarded retry loop so retry-time transport/client exceptions, empty-content errors, and exhausted validation all convert to `ListingExtractionError("Listing extraction failed")`.
+  - Added regression coverage for validation failure followed by retry transport failure.
+
+- WR-003: Fixed in `ce19d3c0ec96b3779e4ce81dac63e4b2650d95c6`.
+  - Batch submit now validates S3 object metadata with `HeadObject` before DB/job scheduling and rejects missing or unsupported content types safely.
+  - Added regression coverage for allowed-extension keys with unsupported and missing S3 `ContentType`.
+
+## Iteration 2 Verification
+
+- `uv run pytest -q`: 83 passed, 2 existing warnings.
+- `uv run pytest tests/test_voice_qwen.py tests/test_voice_streaming.py tests/test_voice_batch.py tests/test_voice_contract.py -q`: 30 passed.
 - `uv run ruff check .`: all checks passed.
 - `uv run mypy app`: success, no issues found in 47 source files.
