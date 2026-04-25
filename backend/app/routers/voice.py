@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from collections.abc import Coroutine
 from typing import Annotated
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Depends,
     FastAPI,
     HTTPException,
@@ -81,7 +81,6 @@ async def create_audio_upload_url(
 async def submit_voice_batch(
     payload: VoiceBatchRequest,
     request: Request,
-    background_tasks: BackgroundTasks,
     db: DbDep,
     current_user: CurrentUserDep,
 ) -> VoiceBatchSubmitResponse:
@@ -99,12 +98,8 @@ async def submit_voice_batch(
     db.add(voice_session)
     await db.commit()
 
-    background_tasks.add_task(
-        run_batch_voice_job,
-        request.app,
-        voice_session.id,
-        payload.s3Key,
-        payload.language,
+    _schedule_batch_job(
+        run_batch_voice_job(request.app, voice_session.id, payload.s3Key, payload.language)
     )
     return VoiceBatchSubmitResponse(jobId=voice_session.id, status="pending", estimatedSeconds=10)
 
@@ -221,6 +216,10 @@ def _safe_batch_error(exc: Exception) -> str:
         return "Voice batch timed out"
     message = str(exc).strip()
     return message if message else "Voice batch processing failed"
+
+
+def _schedule_batch_job(coro: Coroutine[object, object, None]) -> None:
+    asyncio.create_task(coro)
 
 
 @router.websocket("/stream")
