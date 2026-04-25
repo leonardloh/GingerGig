@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     dashscope_base_url: str = Field(
         default="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     )
+    dashscope_chat_model: str = Field(default="qwen-max")
 
     # Alibaba OSS
     oss_region: str = Field(default="ap-southeast-3")
