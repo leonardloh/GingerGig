@@ -23,14 +23,15 @@ The frontend continues to work exactly as today — every screen, every persona,
 - ✓ 4-language i18n (`ms` / `en` / `zh` / `ta`) with runtime language switcher — existing
 - ✓ Typed API client at `frontend/src/services/api/` covering auth, kyc, elder, requestor, companion endpoints — existing
 - ✓ Generic HTTP wrapper with `Authorization: Bearer` injection, `AbortController` timeout, `ApiError` envelope — existing
+- ✓ Phase 1 backend foundation — FastAPI scaffold, async SQLAlchemy/Alembic schema, ApsaraDB connectivity, idempotent prototype seed data, demo bcrypt accounts, and backend test harness validated on 2026-04-25
 
 ### Active
 
 <!-- Backend milestone v1 — hypotheses until shipped. Frontend is NOT changed except: (a) swap inline mock helpers for typed-API imports, (b) extend types where the prototype showed fields not yet in DTOs. -->
 
-- [ ] FastAPI backend scaffolded with `uv` (Python 3.12+), running at `localhost:8000` and serving `/api/v1/*`
-- [ ] Postgres schema covering users, listings, bookings, reviews, earnings, companion alerts, timeline events, KYC sessions
-- [ ] Seed script that loads the existing prototype constants (PROVIDERS, HERO_ELDER, ELDER_LISTINGS, ELDER_BOOKINGS, ELDER_COMPLETED, REVIEWS, COMPANION_ALERTS, TIMELINE) plus the 3 DEMO_ACCOUNTS into the database
+- [x] FastAPI backend scaffolded with `uv` (Python 3.12+), running at `localhost:8000` and serving `/api/v1/*` — validated in Phase 1
+- [x] Postgres schema covering users, listings, bookings, reviews, earnings, companion alerts, timeline events, KYC sessions — validated in Phase 1
+- [x] Seed script that loads the existing prototype constants (PROVIDERS, HERO_ELDER, ELDER_LISTINGS, ELDER_BOOKINGS, ELDER_COMPLETED, REVIEWS, COMPANION_ALERTS, TIMELINE) plus the 3 DEMO_ACCOUNTS into the database — validated in Phase 1
 - [ ] Real auth: bcrypt password hashing, JWT issuance, `Authorization: Bearer` middleware
 - [ ] Auth endpoints implemented (`POST /auth/register`, `POST /auth/login`, `GET /auth/me`)
 - [ ] Elder endpoints implemented (listings CRUD, bookings list, respond, earnings summary)

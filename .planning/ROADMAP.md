@@ -35,7 +35,7 @@
 - [x] 01-04-PLAN.md — Alembic init + 0001_initial_schema.py + [BLOCKING] migration apply against gingergig_test (Wave 3)
 - [x] 01-05-PLAN.md — scripts/seed_data.py (hand-ported mocks) + scripts/seed.py (idempotent + SeedRefusedError + bcrypt rounds=12) + [BLOCKING] two-run idempotency test (Wave 3)
 - [x] 01-06-PLAN.md — Wave 0 conftest + 4 pinned tests (D-17) + 5 recommended tests (dep_pins, no_forbidden_imports, cors_no_wildcard, no_create_all, seed_refused_without_env) (Wave 4)
-- [ ] 01-07-PLAN.md — ApsaraDB Postgres provisioning runbook + smoke test (autonomous: false, gates Wave 3) (Wave 4)
+- [x] 01-07-PLAN.md — ApsaraDB Postgres provisioning runbook + smoke test (autonomous: false, gates Wave 3) (Wave 4)
 
 ### Phase 2: Auth + Bearer Middleware
 **Goal**: Real authentication wired end-to-end so the prototype's 3 quick-login chips authenticate against the deployed backend and return a JWT that the frontend's existing `Authorization: Bearer` injection accepts on every protected call.
