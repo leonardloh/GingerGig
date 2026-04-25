@@ -54,6 +54,21 @@ async def get_elder_listings(
         .where(ListingModel.elder_id == elderId)
         .order_by(ListingModel.created_at.desc())
     )
+    rows = result.all()
+    menu_by_listing = await menu_items_for_listings(
+        db,
+        [listing.id for listing, _title, _match_reason in rows],
+    )
+    return [
+        listing_to_response(
+            listing,
+            title=title,
+            menu=menu_by_listing.get(listing.id, []),
+            match_reason=match_reason,
+            locale=current_user.locale,
+        )
+        for listing, title, match_reason in rows
+    ]
 
 
 @router.get("/elders/{elderId}/bookings", response_model=list[Booking])
@@ -146,21 +161,6 @@ async def get_elder_earnings_summary(
         lifetimeTotal=float(lifetime_total),
         completedCount=completed_count,
     )
-    rows = result.all()
-    menu_by_listing = await menu_items_for_listings(
-        db,
-        [listing.id for listing, _title, _match_reason in rows],
-    )
-    return [
-        listing_to_response(
-            listing,
-            title=title,
-            menu=menu_by_listing.get(listing.id, []),
-            match_reason=match_reason,
-            locale=current_user.locale,
-        )
-        for listing, title, match_reason in rows
-    ]
 
 
 @router.patch("/listings/{listingId}", response_model=Listing)
