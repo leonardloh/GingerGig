@@ -1,0 +1,147 @@
+# Roadmap: GingerGig backend v1
+
+**Defined:** 2026-04-25
+**Granularity:** Standard (5-8 phases)
+**Coverage:** 73/73 v1 requirements mapped
+**Core Value:** The frontend continues to work exactly as today — every screen, every persona, every i18n string — but every piece of "data" loads from the database via the existing typed API client. No feature is added, removed, or visually changed.
+
+## Phases
+
+- [ ] **Phase 1: Backend Scaffold + Schema + Seed** - FastAPI app boots, Postgres schema migrated via Alembic, prototype constants + demo accounts seeded; the contract for five parallel router tracks is locked.
+- [ ] **Phase 2: Auth + Bearer Middleware** - Real JWT auth with bcrypt; the prototype's 3 quick-login chips authenticate against the real backend and return working tokens.
+- [ ] **Phase 3: Persona Routers (Elder + Requestor + Companion)** - All non-AI CRUD endpoints serve the three persona shells from real DB reads with locale-aware projections and denormalised booking snapshots.
+- [ ] **Phase 4: eKYC Pipeline** - The 8-step KYC stepper completes end-to-end against AWS S3 + Textract `AnalyzeDocument` + Rekognition `CompareFaces` with a 3-tier (approved / manual_review / failed) outcome.
+- [ ] **Phase 5: Voice-to-Profile Pipeline** - WebSocket streaming (en-US/zh-CN) and batch (ms-MY/ta-IN) both deliver a Pydantic-validated `ListingDraft` from the elder's voice, with disciplined session cleanup.
+- [ ] **Phase 6: Tair Cache Layer** - Read-through cache absorbs the prototype's polling + repeated-search traffic without changing endpoint behaviour.
+- [ ] **Phase 7: Frontend Wiring + Type Extensions** - Every prototype mock helper is replaced with a typed-API import; types extended additively; no UI/feature change.
+- [ ] **Phase 8: Multi-Cloud Live Deployment** - Frontend on AWS S3+CloudFront (`ap-southeast-1`), backend on Alibaba ECS (`ap-southeast-3`), full smoke test from the public CloudFront URL.
+
+## Phase Details
+
+### Phase 1: Backend Scaffold + Schema + Seed
+**Goal**: A runnable FastAPI app at `localhost:8000` with the full Postgres schema migrated and the prototype's mock data + demo accounts seeded — the contract that unblocks every parallel router track downstream.
+**Depends on**: Nothing (first phase)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05, FOUND-06, FOUND-07, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
+**Success Criteria** (what must be TRUE):
+  1. `uv run uvicorn app.main:app` boots the backend and `GET http://localhost:8000/health` returns `200 {"status":"ok"}` with CORS configured for the frontend origin (no `*`).
+  2. `alembic upgrade head` against a fresh Postgres creates every table (`users`, `companion_links`, `listings`, `listing_menu_items`, `bookings`, `reviews`, `companion_alerts`, `companion_alert_preferences`, `timeline_events`, `kyc_sessions`, `voice_sessions`) — no `Base.metadata.create_all` anywhere.
+  3. `python scripts/seed.py` is idempotent: running it twice in a row leaves the same DB state with no unique-constraint errors and the 3 `DEMO_ACCOUNTS` (siti/amir/faiz) plus the 6 `PROVIDERS` + `HERO_ELDER` + listings/bookings/reviews/alerts/timeline are all present.
+  4. A deliberately-thrown error from any route returns the frontend's `ApiError` envelope (`{status, message, detail?}`) — `debug=False`, no Python traceback in the response body.
+  5. `pyproject.toml` pins all the non-obvious deps (`amazon-transcribe>=0.6.4`, `bcrypt>=4.2.0,<5.0.0`, `pyjwt[crypto]`, `alibabacloud-oss-v2`) so downstream phases have a locked `uv.lock` to build on.
+**Plans**: TBD
+
+### Phase 2: Auth + Bearer Middleware
+**Goal**: Real authentication wired end-to-end so the prototype's 3 quick-login chips authenticate against the deployed backend and return a JWT that the frontend's existing `Authorization: Bearer` injection accepts on every protected call.
+**Depends on**: Phase 1
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07
+**Success Criteria** (what must be TRUE):
+  1. The quick-login chip on the prototype login screen for "Siti" (`siti@gingergig.my` / `demo`) authenticates against `POST /api/v1/auth/login` and returns a working JWT — same for Amir and Faiz/Companion.
+  2. `POST /api/v1/auth/register` issues a JWT and returns `kycRequired: true` iff the chosen role is `elder`; `GET /api/v1/auth/me` returns the extended `UserProfile` (with `kycStatus`, `avatarUrl`, `area`, `age`, `phone`, `initials`) for the bearer-authenticated user.
+  3. JWT decoding lives in exactly one place (`core/security.py`) with explicit `algorithms=["HS256"]` and required `exp`+`sub` claims; a unit test sending `{"alg":"none"}` is rejected.
+  4. Every `bcrypt.checkpw`/`hashpw` call goes through `await asyncio.to_thread(...)` so a login during voice streaming does not stall the event loop; `passlib` is not in the dependency tree.
+  5. Boot-time validation: starting in non-debug mode with `JWT_SECRET` unset (or shorter than 32 bytes) refuses to start.
+**Plans**: TBD
+
+### Phase 3: Persona Routers (Elder + Requestor + Companion)
+**Goal**: Every non-AI screen in the elder, requestor, and companion shells loads from real DB reads with locale-aware projection and denormalised booking snapshots — the prototype runs entirely on Postgres data with KYC/voice routes still stubbed.
+**Depends on**: Phase 2
+**Requirements**: ELDER-01, ELDER-02, ELDER-03, ELDER-04, ELDER-05, REQ-01, REQ-02, REQ-03, REQ-04, REQ-05, COMP-01, COMP-02, COMP-03, COMP-04
+**Success Criteria** (what must be TRUE):
+  1. Logged in as Siti (elder), the elder dashboard shows her seeded listings with `category`, `priceUnit`, `rating`, `halal`, `days`, `menu`, multi-locale titles, and pending bookings render denormalised `requestorInitials`, `requestorAvatarUrl`, `listingTitle`, `qty`, `itemDescription`; accept/decline transitions a booking from `pending` → `confirmed`/`cancelled` and is rejected with 403 for non-owners.
+  2. Logged in as Amir (requestor), the search screen returns the 6 seeded providers with Qwen-generated `matchScore` + `matchReason` (deterministic distance+rating fallback when DashScope is down) and `POST /requestor/bookings` creates a pending booking visible on the elder's dashboard within one refresh.
+  3. Logged in as the Companion, the dashboard renders Siti's snapshot + weekly-earnings + active-days; the alerts feed projects exactly one `text_<locale>` column based on the companion's `users.locale`; `PUT /companions/elders/{id}/alert-preferences` returns 204 and persists the boolean toggles.
+  4. The earnings summary endpoint computes `monthTotal` over the elder's `completed` bookings using the `Asia/Kuala_Lumpur` calendar-month boundary; result matches what the prototype renders today on the seeded data.
+  5. Listings + alerts + timeline queries select a single locale column at the SQL level (no client-side `getattr(row, f"text_{locale}")`) and fall back to English via `coalesce` when the requested locale column is NULL.
+**Plans**: TBD
+
+### Phase 4: eKYC Pipeline
+**Goal**: The 8-step onboarding KYC stepper completes end-to-end against real AWS — IC + selfie upload via presigned PUT, OCR via Textract `AnalyzeDocument` + IC regex, face match via Rekognition `CompareFaces`, with a 3-tier outcome the frontend's polling loop already understands.
+**Depends on**: Phase 2
+**Requirements**: KYC-01, KYC-02, KYC-03, KYC-04, KYC-05, KYC-06, KYC-07, KYC-08
+**Success Criteria** (what must be TRUE):
+  1. `POST /api/v1/kyc/session` returns three S3 presigned PUT URLs valid for 15 minutes; the browser PUTs IC front + back + selfie directly to S3 with no `CORS error` from a deployed CloudFront origin and the backend never sees raw image bytes.
+  2. The verification pipeline uses Textract `AnalyzeDocument` (FORMS+TABLES) + a Malaysian IC-number regex parser (`YYMMDD-PB-####`) — NOT `AnalyzeID` — and Rekognition `CompareFaces` between IC front and selfie, persisting raw responses + extracted fields + similarity score to `kyc_sessions`.
+  3. `GET /api/v1/kyc/status/{jobId}` polled at 2.5s intervals up to 60s returns one of `pending → approved | manual_review | failed`; the 3-tier decision rule (similarity≥80 + confidence≥85 → approved; ≥70 → manual_review; else failed-with-reason) is exercised by integration tests.
+  4. The KYC bucket has a 24-hour S3 lifecycle rule auto-deleting uploaded objects; IAM scope is `s3:PutObject`/`GetObject` on the specific KYC bucket prefix only.
+  5. `POST /api/v1/kyc/retry` invalidates the current session and returns a fresh `{sessionId, frontUrl, backUrl, selfieUrl}` only when the current status is `failed` (not while pending).
+**Plans**: TBD
+
+### Phase 5: Voice-to-Profile Pipeline
+**Goal**: The elder's "speak to create a listing" flow produces a Pydantic-validated `ListingDraft` from real audio in all 4 locales — streaming for `en-US`/`zh-CN` (2-3s target), batch async-job for `ms-MY`/`ta-IN` (8-12s) — with WebSocket cleanup discipline that survives 30+ demo attempts.
+**Depends on**: Phase 2
+**Requirements**: VOICE-01, VOICE-02, VOICE-03, VOICE-04, VOICE-05, VOICE-06, VOICE-07
+**Success Criteria** (what must be TRUE):
+  1. WS `wss://<backend>/api/v1/voice-to-profile/stream` accepts `{language: "en-US"|"zh-CN"}`, then 16kHz PCM frames, emits `{type:"partial",text}` during speech (≤4 messages/sec) and `{type:"final",listing:ListingDraft}` after the user pauses — end-to-end latency 2-3s on a real connection.
+  2. Closing the browser tab mid-recording tears down the upstream Transcribe stream within 5 seconds (verified in CloudWatch); a 90-second max-session timer kills hung handlers; `try/finally` calls `input_stream.end_stream()` and cancels the partial reader on every disconnect path.
+  3. `POST /api/v1/voice-to-profile/batch` returns `{jobId,status:"pending",estimatedSeconds}` immediately (no inline polling, no 504); the frontend polls a status endpoint and a background task drives Transcribe Batch + Qwen + DB persist.
+  4. Both streaming and batch flows route the final transcript through `services/qwen_service.py::extract_listing` (DashScope OpenAI-compatible endpoint, `response_format={"type":"json_object"}`); markdown fences are stripped before parse; on `ValidationError` the prompt is retried once with the error appended; persistent failure returns `502 {message:"Listing extraction failed"}`.
+  5. Streaming uses `amazon-transcribe>=0.6.4` (not boto3); batch uses `boto3`; both pin `region="ap-southeast-1"` explicitly so no requests cross to `us-east-1`.
+**Plans**: TBD
+
+### Phase 6: Tair Cache Layer
+**Goal**: Frequently-read endpoints (search, single listing, earnings, KYC status polling) absorb load via Tair without changing any endpoint shape — additive performance, never write-through, write-side invalidation only on the safe targets.
+**Depends on**: Phase 3, Phase 4
+**Requirements**: CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05
+**Success Criteria** (what must be TRUE):
+  1. Listing search returns identical results for the same `(query, max_distance_km, halal_only, open_now, locale)` tuple within a 60s window without re-issuing the underlying Postgres query (verified by query log count).
+  2. `GET /listings/{id}` is cached for 120s under `listings:elder:{id}` and the cache entry is `DEL`-ed within the same request after a successful `PATCH /listings/{id}`.
+  3. Earnings summary cached for 60s under `earnings:elder:{id}` and invalidated on a booking transition to `completed`; KYC status cached for 10s while pending and 300s after a terminal state — front-end polling at 2.5s no longer hits Postgres on every poll.
+  4. Tair is used exclusively as a read-through cache; no code path enqueues a job to Redis (async work uses `asyncio.create_task` per the architecture decision).
+  5. With Tair unreachable, every endpoint still functions correctly — cache layer is purely additive and degrades gracefully.
+**Plans**: TBD
+
+### Phase 7: Frontend Wiring + Type Extensions
+**Goal**: Every prototype mock helper and inline mock data import is replaced with a typed-API import — types are extended additively in `types.ts` first, then mock helpers swap 1:1, then the WebSocket wires to `ElderVoice`. Zero UI/feature/copy/styling change.
+**Depends on**: Phase 3, Phase 4, Phase 5
+**Requirements**: FE-01, FE-02, FE-03, FE-04, FE-05, FE-06, FE-07, FE-08, FE-09
+**Success Criteria** (what must be TRUE):
+  1. `frontend/src/services/api/types.ts` is extended additively only — `Listing` gains `category`/`priceUnit`/`priceMax`/`rating`/`reviewCount`/`halal`/`titleMs/En/Zh/Ta`/`days`/`menu`/`matchScore`/`matchReason`/`distance`/elder-snapshot fields; `Booking` gains `requestorInitials`/`requestorAvatarUrl`/`listingTitle`/`qty`/`itemDescription`; `UserProfile` gains `kycStatus`/`avatarUrl`/`area`/`age`/`phone`/`initials`; `CompanionAlert` gains `title`; new types `ListingDraft`/`Review`/`TimelineEvent`. No field renamed or removed.
+  2. The 4 inline helpers in `OnboardingFlow.jsx` (`apiRegister`, `apiInitiateKycSession`, `apiStartVerification`, `apiWaitForResult`) are replaced 1:1 with imports from `src/services/api/endpoints/{auth,kyc}`; the 8-step KYC stepper UI is byte-identical.
+  3. `elder-screens.jsx` / `requestor-screens.jsx` / `companion-screens.jsx` no longer import from `mock-data.js`; every screen drives data via `useEffect` + the typed API client; loading/error states reuse the prototype's existing inline patterns (no new libraries — no router, no TanStack Query, no SWR).
+  4. `ElderVoice` opens the WebSocket via the new `voice.ts` helper for `en-US`/`zh-CN` and uses the batch path with browser-direct S3 PUT for `ms-MY`/`ta-IN`; `window.SpeechRecognition` remains as a graceful fallback.
+  5. The 3 quick-login chips on `PrototypeApp.jsx` continue to work end-to-end (now hitting `auth.ts → login` against the real backend) and `VITE_API_BASE_URL` is configured for both local-dev and the deployed Alibaba ECS endpoint.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 8: Multi-Cloud Live Deployment
+**Goal**: A real, public, hackathon-judgeable deployment — frontend on AWS S3+CloudFront, backend on Alibaba ECS, all data services in `ap-southeast-3`, all AI services in `ap-southeast-1` — with a smoke-test demo flow that proves end-to-end correctness from the public CloudFront URL.
+**Depends on**: Phase 7
+**Requirements**: DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, DEPLOY-05, DEPLOY-06, DEPLOY-07, DEPLOY-08, DEPLOY-09, DEPLOY-10
+**Success Criteria** (what must be TRUE):
+  1. The frontend is reachable at a public CloudFront URL in `ap-southeast-1`; the backend is reachable at a public Alibaba ECS endpoint in `ap-southeast-3` with WebSocket support and an LB idle timeout ≥300s on the WS path.
+  2. ApsaraDB Postgres + Tair (Redis) + Alibaba OSS (provider photos) all provisioned in `ap-southeast-3`; AWS S3 KYC bucket (24h lifecycle) + audio bucket both in `ap-southeast-1` with CORS allowing the CloudFront + backend origins; AWS IAM is least-privilege scoped to the specific buckets and the specific Textract/Rekognition/Transcribe operations.
+  3. `DASHSCOPE_API_KEY` is provisioned and live; an AWS budget alert is configured at $50/$100 thresholds before any judging traffic hits the URL.
+  4. Smoke test from the deployed CloudFront URL completes in one sitting: log in as Siti → browse listings as Amir → create booking → log in as Siti → accept booking → voice-to-profile in en-US produces a listing draft → KYC happy path on a sample MyKad image returns `approved`.
+  5. The whole frontend renders correctly with `VITE_API_BASE_URL` pointing at the deployed Alibaba ECS endpoint — no CORS errors in the browser console for any of the 5 smoke-test screens.
+**Plans**: TBD
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Backend Scaffold + Schema + Seed | 0/0 | Not started | - |
+| 2. Auth + Bearer Middleware | 0/0 | Not started | - |
+| 3. Persona Routers (Elder + Requestor + Companion) | 0/0 | Not started | - |
+| 4. eKYC Pipeline | 0/0 | Not started | - |
+| 5. Voice-to-Profile Pipeline | 0/0 | Not started | - |
+| 6. Tair Cache Layer | 0/0 | Not started | - |
+| 7. Frontend Wiring + Type Extensions | 0/0 | Not started | - |
+| 8. Multi-Cloud Live Deployment | 0/0 | Not started | - |
+
+## Phase Ordering Rationale
+
+- **Phase 1 → Phase 2 mandatory sequential.** Auth depends on the `users` table and migrations. Phase 1 also pins `amazon-transcribe`, `bcrypt<5`, `pyjwt[crypto]` so downstream phases inherit a locked dep tree.
+- **Phase 2 → Phase 3/4/5 mandatory.** Every protected endpoint depends on `get_current_user`; centralised JWT decode + bcrypt-off-loop are non-negotiable foundations (PITFALLS #3, #4, #18).
+- **Phase 3, 4, 5 are parallelisable post-auth.** They share zero code paths beyond `deps/auth.py` and `schemas/common.py`. With one developer they execute sequentially in this order (Phase 3 unblocks the most UI; Phase 4 carries the longest critical path within itself; Phase 5 is risk-isolated).
+- **Phase 6 (cache) is last among backend phases.** Additive only — every endpoint works without it; cache-key choices reflect actual query patterns from Phases 3-5.
+- **Phase 7 (frontend wiring) requires the data routers.** Type extensions land first (additive, no break), then mock-helper swap, then `ElderVoice` WebSocket wire-up.
+- **Phase 8 (deploy) is parallelisable from Phase 1.** IaC provisioning (ECS, ApsaraDB, Tair, OSS, S3, CloudFront, IAM) needs no application code; it gates on a runnable Docker image and a working smoke test, so it ships as the final phase.
+
+## Coverage
+
+- v1 requirements: 73 total
+- Mapped to phases: 73
+- Unmapped: 0
+
+---
+*Roadmap defined: 2026-04-25*

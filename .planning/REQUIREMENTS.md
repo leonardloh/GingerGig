@@ -177,90 +177,90 @@ Explicitly excluded from v1 to prevent scope creep.
 
 ## Traceability
 
-Updated during roadmap creation. Each v1 requirement maps to exactly one phase.
+Each v1 requirement maps to exactly one phase in `ROADMAP.md`.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase ? | Pending |
-| FOUND-02 | Phase ? | Pending |
-| FOUND-03 | Phase ? | Pending |
-| FOUND-04 | Phase ? | Pending |
-| FOUND-05 | Phase ? | Pending |
-| FOUND-06 | Phase ? | Pending |
-| FOUND-07 | Phase ? | Pending |
-| DATA-01 | Phase ? | Pending |
-| DATA-02 | Phase ? | Pending |
-| DATA-03 | Phase ? | Pending |
-| DATA-04 | Phase ? | Pending |
-| DATA-05 | Phase ? | Pending |
-| DATA-06 | Phase ? | Pending |
-| DATA-07 | Phase ? | Pending |
-| AUTH-01 | Phase ? | Pending |
-| AUTH-02 | Phase ? | Pending |
-| AUTH-03 | Phase ? | Pending |
-| AUTH-04 | Phase ? | Pending |
-| AUTH-05 | Phase ? | Pending |
-| AUTH-06 | Phase ? | Pending |
-| AUTH-07 | Phase ? | Pending |
-| ELDER-01 | Phase ? | Pending |
-| ELDER-02 | Phase ? | Pending |
-| ELDER-03 | Phase ? | Pending |
-| ELDER-04 | Phase ? | Pending |
-| ELDER-05 | Phase ? | Pending |
-| REQ-01 | Phase ? | Pending |
-| REQ-02 | Phase ? | Pending |
-| REQ-03 | Phase ? | Pending |
-| REQ-04 | Phase ? | Pending |
-| REQ-05 | Phase ? | Pending |
-| COMP-01 | Phase ? | Pending |
-| COMP-02 | Phase ? | Pending |
-| COMP-03 | Phase ? | Pending |
-| COMP-04 | Phase ? | Pending |
-| KYC-01 | Phase ? | Pending |
-| KYC-02 | Phase ? | Pending |
-| KYC-03 | Phase ? | Pending |
-| KYC-04 | Phase ? | Pending |
-| KYC-05 | Phase ? | Pending |
-| KYC-06 | Phase ? | Pending |
-| KYC-07 | Phase ? | Pending |
-| KYC-08 | Phase ? | Pending |
-| VOICE-01 | Phase ? | Pending |
-| VOICE-02 | Phase ? | Pending |
-| VOICE-03 | Phase ? | Pending |
-| VOICE-04 | Phase ? | Pending |
-| VOICE-05 | Phase ? | Pending |
-| VOICE-06 | Phase ? | Pending |
-| VOICE-07 | Phase ? | Pending |
-| CACHE-01 | Phase ? | Pending |
-| CACHE-02 | Phase ? | Pending |
-| CACHE-03 | Phase ? | Pending |
-| CACHE-04 | Phase ? | Pending |
-| CACHE-05 | Phase ? | Pending |
-| FE-01 | Phase ? | Pending |
-| FE-02 | Phase ? | Pending |
-| FE-03 | Phase ? | Pending |
-| FE-04 | Phase ? | Pending |
-| FE-05 | Phase ? | Pending |
-| FE-06 | Phase ? | Pending |
-| FE-07 | Phase ? | Pending |
-| FE-08 | Phase ? | Pending |
-| FE-09 | Phase ? | Pending |
-| DEPLOY-01 | Phase ? | Pending |
-| DEPLOY-02 | Phase ? | Pending |
-| DEPLOY-03 | Phase ? | Pending |
-| DEPLOY-04 | Phase ? | Pending |
-| DEPLOY-05 | Phase ? | Pending |
-| DEPLOY-06 | Phase ? | Pending |
-| DEPLOY-07 | Phase ? | Pending |
-| DEPLOY-08 | Phase ? | Pending |
-| DEPLOY-09 | Phase ? | Pending |
-| DEPLOY-10 | Phase ? | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Pending |
+| FOUND-05 | Phase 1 | Pending |
+| FOUND-06 | Phase 1 | Pending |
+| FOUND-07 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| AUTH-06 | Phase 2 | Pending |
+| AUTH-07 | Phase 2 | Pending |
+| ELDER-01 | Phase 3 | Pending |
+| ELDER-02 | Phase 3 | Pending |
+| ELDER-03 | Phase 3 | Pending |
+| ELDER-04 | Phase 3 | Pending |
+| ELDER-05 | Phase 3 | Pending |
+| REQ-01 | Phase 3 | Pending |
+| REQ-02 | Phase 3 | Pending |
+| REQ-03 | Phase 3 | Pending |
+| REQ-04 | Phase 3 | Pending |
+| REQ-05 | Phase 3 | Pending |
+| COMP-01 | Phase 3 | Pending |
+| COMP-02 | Phase 3 | Pending |
+| COMP-03 | Phase 3 | Pending |
+| COMP-04 | Phase 3 | Pending |
+| KYC-01 | Phase 4 | Pending |
+| KYC-02 | Phase 4 | Pending |
+| KYC-03 | Phase 4 | Pending |
+| KYC-04 | Phase 4 | Pending |
+| KYC-05 | Phase 4 | Pending |
+| KYC-06 | Phase 4 | Pending |
+| KYC-07 | Phase 4 | Pending |
+| KYC-08 | Phase 4 | Pending |
+| VOICE-01 | Phase 5 | Pending |
+| VOICE-02 | Phase 5 | Pending |
+| VOICE-03 | Phase 5 | Pending |
+| VOICE-04 | Phase 5 | Pending |
+| VOICE-05 | Phase 5 | Pending |
+| VOICE-06 | Phase 5 | Pending |
+| VOICE-07 | Phase 5 | Pending |
+| CACHE-01 | Phase 6 | Pending |
+| CACHE-02 | Phase 6 | Pending |
+| CACHE-03 | Phase 6 | Pending |
+| CACHE-04 | Phase 6 | Pending |
+| CACHE-05 | Phase 6 | Pending |
+| FE-01 | Phase 7 | Pending |
+| FE-02 | Phase 7 | Pending |
+| FE-03 | Phase 7 | Pending |
+| FE-04 | Phase 7 | Pending |
+| FE-05 | Phase 7 | Pending |
+| FE-06 | Phase 7 | Pending |
+| FE-07 | Phase 7 | Pending |
+| FE-08 | Phase 7 | Pending |
+| FE-09 | Phase 7 | Pending |
+| DEPLOY-01 | Phase 8 | Pending |
+| DEPLOY-02 | Phase 8 | Pending |
+| DEPLOY-03 | Phase 8 | Pending |
+| DEPLOY-04 | Phase 8 | Pending |
+| DEPLOY-05 | Phase 8 | Pending |
+| DEPLOY-06 | Phase 8 | Pending |
+| DEPLOY-07 | Phase 8 | Pending |
+| DEPLOY-08 | Phase 8 | Pending |
+| DEPLOY-09 | Phase 8 | Pending |
+| DEPLOY-10 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 73 total
-- Mapped to phases: 0 (filled by roadmapper)
-- Unmapped: 73 ⚠️ (will be 0 after roadmap creation)
+- Mapped to phases: 73
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-25*
-*Last updated: 2026-04-25 after initial definition*
+*Last updated: 2026-04-25 after roadmap creation (traceability filled)*
