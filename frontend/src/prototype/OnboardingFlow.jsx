@@ -18,22 +18,12 @@
 import { useRef, useState } from 'react';
 import { GingerLogo, Icon } from './components';
 import { LANGUAGES } from './i18n';
+import { register } from '../services/api/endpoints/auth';
 
-// ─── API shim (replace with real imports when backend is ready) ─────────────
-// import { register }         from '../services/api/endpoints/auth';
+// ─── Local KYC demo shim ────────────────────────────────────────────────────
 // import { initiateSession, uploadDocument, startVerification, waitForVerification } from '../services/api/endpoints/kyc';
 
 const MOCK_DELAY = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function apiRegister(payload) {
-  await MOCK_DELAY(1200);
-  return {
-    userId: 'mock-user-' + Date.now(),
-    accessToken: 'mock-token',
-    kycRequired: payload.role === 'elder',
-    kycStatus: payload.role === 'elder' ? 'not_started' : 'approved',
-  };
-}
 
 async function apiInitiateKycSession() {
   await MOCK_DELAY(600);
@@ -476,7 +466,14 @@ export function OnboardingFlow({ onComplete, onBack, lang, setLang }) {
     setError('');
     setLoading(true);
     try {
-      const res = await apiRegister({ ...form, role, locale: lang });
+      const res = await register({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role,
+        locale: lang,
+      });
       setUserId(res.userId);
       if (res.kycRequired) {
         setStep(3); // KYC intro
