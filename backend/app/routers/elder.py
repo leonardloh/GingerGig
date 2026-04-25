@@ -12,6 +12,7 @@ from app.models.listing import Listing as ListingModel
 from app.models.user import User
 from app.schemas.persona import (
     Booking,
+    BookingResponsePayload,
     Listing,
     ListingDetail,
     ListingPatch,
@@ -67,6 +68,38 @@ async def get_elder_bookings(
         .order_by(BookingModel.scheduled_at.desc(), BookingModel.created_at.desc())
     )
     return [booking_to_response(booking) for booking in result.scalars()]
+
+
+@router.post("/bookings/{bookingId}/respond", response_model=Booking)
+async def respond_to_booking(
+    bookingId: UUID,
+    payload: BookingResponsePayload,
+    db: DbDep,
+    current_user: CurrentUserDep,
+) -> Booking:
+    require_role(current_user, "elder")
+
+    result = await db.execute(
+        select(BookingModel, ListingModel)
+        .join(ListingModel, ListingModel.id == BookingModel.listing_id)
+        .where(BookingModel.id == bookingId)
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    booking, listing = row
+    if str(listing.elder_id) != str(current_user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    if booking.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Booking is no longer pending",
+        )
+
+    booking.status = "confirmed" if payload.action == "accept" else "cancelled"
+    await db.flush()
+    return booking_to_response(booking)
     rows = result.all()
     menu_by_listing = await menu_items_for_listings(
         db,
