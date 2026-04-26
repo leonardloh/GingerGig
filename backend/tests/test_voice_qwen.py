@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from app.routers import voice as voice_router
 from app.schemas.voice import ListingDraft
 from app.services.qwen_service import ListingExtractionError, extract_listing
 
@@ -48,6 +49,23 @@ async def test_extract_listing_strips_markdown_fences() -> None:
     assert listing.service_offer == "Home-cooked nasi lemak"
     assert patched_client.create.await_count == 1
     assert patched_client.create.await_args.kwargs["response_format"] == {"type": "json_object"}
+
+
+@pytest.mark.asyncio
+async def test_extract_listing_prompt_requests_concise_service_title() -> None:
+    patched_client = _mock_async_openai(_valid_listing(service_offer="Fried rice", capacity=10))
+
+    with patch("app.services.qwen_service.AsyncOpenAI", patched_client):
+        listing = await extract_listing("I can cook fried rice for 10 people", "en-US")
+
+    prompt = patched_client.create.await_args.kwargs["messages"][-1]["content"]
+    assert "service_offer must be a concise display title" in prompt
+    assert "Do not copy the whole transcript into service_offer" in prompt
+    assert "Example transcript: \"I can cook fried rice for 10 people\"" in prompt
+    assert '"service_offer": "Fried rice"' in prompt
+    assert '"capacity": 10' in prompt
+    assert listing.service_offer == "Fried rice"
+    assert listing.capacity == 10
 
 
 @pytest.mark.asyncio
@@ -132,3 +150,14 @@ def test_listing_draft_coerces_currency_price_string() -> None:
     listing = ListingDraft.model_validate_json(_valid_listing(price_amount="RM 40"))
 
     assert listing.price_amount == 40.0
+
+
+def test_text_fallback_distills_service_offer_from_transcript() -> None:
+    listing = voice_router._fallback_listing_draft(
+        "I can cook fried rice for 10 people.",
+        "en-US",
+    )
+
+    assert listing.service_offer == "Fried rice"
+    assert listing.category == "home_cooking"
+    assert listing.capacity == 10

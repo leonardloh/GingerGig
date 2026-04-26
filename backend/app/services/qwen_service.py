@@ -40,8 +40,19 @@ def _build_messages(
         "Allowed categories: home_cooking, traditional_crafts, pet_sitting, "
         "household_help, other.\n"
         "Allowed price_unit values: per_meal, per_hour, per_day, per_month, null.\n"
-        "Use null for unknown optional values. Preserve free-text fields in the "
-        "speaker's language. Do not include markdown fences.\n\n"
+        "Field rules:\n"
+        "- service_offer must be a concise display title naming the main "
+        "service, skill, or item offered. Use a noun phrase, ideally 2-6 words.\n"
+        "- Do not copy the whole transcript into service_offer. Remove first-person "
+        "phrasing, capacity, price, schedule, and location from service_offer.\n"
+        "- Put quantities such as people, meals, pets, or items into capacity when "
+        "an integer limit is stated.\n"
+        "- Preserve extracted free-text labels in the speaker's language, but "
+        "summarize them into listing fields instead of quoting the transcript.\n"
+        'Example transcript: "I can cook fried rice for 10 people"\n'
+        'Example JSON excerpt: {"service_offer": "Fried rice", '
+        '"category": "home_cooking", "capacity": 10}\n'
+        "Use null for unknown optional values. Do not include markdown fences.\n\n"
         f"Transcript:\n{transcript}"
     )
     if validation_error is not None:

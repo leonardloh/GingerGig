@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import uuid
 from collections.abc import Coroutine
 from typing import Annotated
@@ -64,6 +65,40 @@ SUPPORTED_BATCH_CONTENT_TYPES = {
 SUPPORTED_BATCH_MEDIA_FORMATS = frozenset(SUPPORTED_BATCH_CONTENT_TYPES.values())
 VOICE_BATCH_PROCESSING_FAILED_MSG = "Voice batch processing failed"
 
+_FALLBACK_LEADING_PHRASES = (
+    re.compile(
+        r"^(?:i|we)\s+(?:can|could|will|am able to|offer to|provide|sell|cook|make|prepare|"
+        r"sew|weave|clean|help with|take care of)\s+",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^(?:saya|kami)\s+(?:boleh|dapat|akan)?\s*(?:masak|buat|jual|menyediakan|"
+        r"tawarkan|jahit|tenun|bersihkan|jaga)\s+",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^(?:can|could|will|cook|make|prepare|sell|offer|provide|sew|weave|clean|"
+        r"help with|take care of)\s+",
+        re.IGNORECASE,
+    ),
+)
+_FALLBACK_DETAIL_PHRASES = (
+    re.compile(r"\s+\b(?:for|untuk)\s+\d+\b.*$", re.IGNORECASE),
+    re.compile(
+        r"\s+\b\d+\s*(?:people|persons|pax|orang|servings?|meals?|packs?|bungkus|"
+        r"pets?|cats?|dogs?)\b.*$",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\s+\b(?:rm|myr)\s*\d+(?:[.,]\d+)?\b.*$", re.IGNORECASE),
+)
+_FALLBACK_CAPACITY_RE = re.compile(
+    r"\b(?:for|untuk)\s+(\d+)\s*(?:people|persons|pax|orang|servings?|meals?|packs?|"
+    r"bungkus|pets?|cats?|dogs?)?\b|"
+    r"\b(\d+)\s*(?:people|persons|pax|orang|servings?|meals?|packs?|bungkus|pets?|"
+    r"cats?|dogs?)\b",
+    re.IGNORECASE,
+)
+
 
 @router.post(
     "/audio-upload-url",
@@ -120,15 +155,40 @@ def _fallback_listing_draft(transcript: str, language: str) -> ListingDraft:
 
     return ListingDraft(
         name=None,
-        service_offer=text,
+        service_offer=_fallback_service_offer(text),
         category=category,  # type: ignore[arg-type]
         price_amount=None,
         price_unit=None,
-        capacity=None,
+        capacity=_fallback_capacity(text),
         dietary_tags=["halal"] if "halal" in lowered else [],
         location_hint=None,
         language=language,  # type: ignore[arg-type]
     )
+
+
+def _fallback_service_offer(transcript: str) -> str:
+    service_offer = transcript.strip()
+    for pattern in _FALLBACK_LEADING_PHRASES:
+        service_offer = pattern.sub("", service_offer, count=1).strip()
+    for pattern in _FALLBACK_DETAIL_PHRASES:
+        service_offer = pattern.sub("", service_offer, count=1).strip()
+
+    service_offer = re.sub(r"\s+", " ", service_offer).strip(" .,!?:;")
+    if not service_offer:
+        return "Service offering"
+
+    words = service_offer.split()
+    if len(words) > 6:
+        service_offer = " ".join(words[:6])
+    return service_offer[:1].upper() + service_offer[1:]
+
+
+def _fallback_capacity(transcript: str) -> int | None:
+    match = _FALLBACK_CAPACITY_RE.search(transcript)
+    if match is None:
+        return None
+    value = next(group for group in match.groups() if group is not None)
+    return int(value)
 
 
 @router.post(
