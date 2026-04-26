@@ -503,8 +503,16 @@ function App() {
   const [elderMode, setElderMode] = useState('provider');    // 'provider' | 'buyer'
   const [companionMode, setCompanionMode] = useState('carer'); // 'carer' | 'buyer'
   const [providerId, setProviderId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryByContext, setSearchQueryByContext] = useState({
+    elderBuyer: '',
+    requestor: '',
+    companionBuyer: '',
+  });
   const [generatedElderListings, setGeneratedElderListings] = useState([]);
+  const getSearchQuery = (contextKey) => searchQueryByContext[contextKey] || '';
+  const setSearchQuery = (contextKey, value) => {
+    setSearchQueryByContext((current) => ({ ...current, [contextKey]: value }));
+  };
 
   const signOut = () => {
     api.auth.logout();
@@ -515,21 +523,21 @@ function App() {
     setElderMode('provider');
     setCompanionMode('carer');
     setProviderId(null);
-    setSearchQuery('');
+    setSearchQueryByContext({ elderBuyer: '', requestor: '', companionBuyer: '' });
     setGeneratedElderListings([]);
   };
 
   const switchElderMode = (mode) => {
     setElderMode(mode);
     setProviderId(null);
-    setSearchQuery('');
+    setSearchQuery('elderBuyer', '');
     setTab((s) => ({ ...s, elderBuyer: 'home' }));
   };
 
   const switchCompanionMode = (mode) => {
     setCompanionMode(mode);
     setProviderId(null);
-    setSearchQuery('');
+    setSearchQuery('companionBuyer', '');
     setTab((s) => ({ ...s, companionBuyer: 'home' }));
   };
 
@@ -602,7 +610,7 @@ function App() {
   };
 
   // Shared buyer-flow body resolver — used by elder-buyer, requestor, and companion-buyer
-  const resolveBuyerBody = (currentTab, setTabFn, tabKey) => {
+  const resolveBuyerBody = (currentTab, setTabFn, tabKey, searchQuery) => {
     const goToProvider = (id) => { setProviderId(id); setTab((s) => ({ ...s, [tabKey]: 'providerDetail' })); };
     const goBack = () => setTab((s) => ({ ...s, [tabKey]: searchQuery ? 'search' : 'home' }));
     if (currentTab === 'search')
@@ -619,7 +627,10 @@ function App() {
     if (currentTab === 'profile') return <RequestorProfile />;
     return (
       <RequestorHome
-        onSearch={(q) => { setSearchQuery(q); setTabFn('search'); }}
+        onSearch={(q) => {
+          setSearchQuery(tabKey, q);
+          setTabFn('search');
+        }}
         onProvider={goToProvider}
       />
     );
@@ -631,7 +642,7 @@ function App() {
     tabs = REQUESTOR_TABS;
     activeTab = tab.elderBuyer === 'providerDetail' ? 'home' : tab.elderBuyer;
     onTabChange = setElderBuyerTab;
-    body = resolveBuyerBody(tab.elderBuyer, setElderBuyerTab, 'elderBuyer');
+    body = resolveBuyerBody(tab.elderBuyer, setElderBuyerTab, 'elderBuyer', getSearchQuery('elderBuyer'));
   } else if (persona === 'elder') {
     tabs = ELDER_TABS;
     activeTab = tab.elder;
@@ -662,12 +673,17 @@ function App() {
     tabs = REQUESTOR_TABS;
     activeTab = tab.requestor === 'providerDetail' ? 'home' : tab.requestor;
     onTabChange = setReqTab;
-    body = resolveBuyerBody(tab.requestor, setReqTab, 'requestor');
+    body = resolveBuyerBody(tab.requestor, setReqTab, 'requestor', getSearchQuery('requestor'));
   } else if (persona === 'companion' && companionMode === 'buyer') {
     tabs = REQUESTOR_TABS;
     activeTab = tab.companionBuyer === 'providerDetail' ? 'home' : tab.companionBuyer;
     onTabChange = setCompBuyerTab;
-    body = resolveBuyerBody(tab.companionBuyer, setCompBuyerTab, 'companionBuyer');
+    body = resolveBuyerBody(
+      tab.companionBuyer,
+      setCompBuyerTab,
+      'companionBuyer',
+      getSearchQuery('companionBuyer'),
+    );
   } else {
     tabs = COMPANION_TABS;
     activeTab = tab.companion;

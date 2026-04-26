@@ -257,6 +257,9 @@ export interface Provider {
   portrait: string | null;
   service: string;
   serviceEn?: string;
+  serviceMs?: string;
+  serviceZh?: string;
+  serviceTa?: string;
   category: string;
   rating: number;
   reviews: number;

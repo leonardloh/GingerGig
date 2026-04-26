@@ -4,11 +4,20 @@ import { REVIEWS } from './mock-data';
 import { AILabel, Avatar, Badge, Button, Card, Icon, Stars, useLang, useT } from './components';
 import { api } from '../services/api';
 
+function localizeProviderService(provider, lang) {
+  if (lang === "ms" && provider.serviceMs) return provider.serviceMs;
+  if (lang === "zh" && provider.serviceZh) return provider.serviceZh;
+  if (lang === "ta" && provider.serviceTa) return provider.serviceTa;
+  if (lang === "en" && provider.serviceEn) return provider.serviceEn;
+  return provider.service;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 4 — Requestor Home
 // ═══════════════════════════════════════════════════════════════
 function RequestorHome({ onSearch, onProvider }) {
   const t = useT();
+  const lang = useLang();
   const [q, setQ] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [providers, setProviders] = useState([]);
@@ -82,7 +91,7 @@ function RequestorHome({ onSearch, onProvider }) {
           {/* Mic — secondary, soft style */}
           <button
             onClick={() => setVoiceOpen(true)}
-            title="Speak instead"
+            title={t("speakInstead")}
             style={{
               appearance: "none",
               border: "1px solid var(--border)",
@@ -135,7 +144,7 @@ function RequestorHome({ onSearch, onProvider }) {
               color={q.trim() ? "#fff" : "var(--text-3)"}
               strokeWidth={2.2}
             />
-            <span>Search</span>
+            <span>{t("search")}</span>
           </button>
         </div>
       </div>
@@ -272,7 +281,7 @@ function RequestorHome({ onSearch, onProvider }) {
                   fontWeight: 400,
                 }}
               >
-                {p.service}
+                {localizeProviderService(p, lang)}
               </div>
               <div
                 style={{
@@ -364,7 +373,7 @@ function RequestorHome({ onSearch, onProvider }) {
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {p.service}
+                  {localizeProviderService(p, lang)}
                 </div>
               </div>
               <Icon name="chevron-right" size={18} color="var(--text-3)" />
@@ -391,9 +400,16 @@ function RequestorHome({ onSearch, onProvider }) {
 // ═══════════════════════════════════════════════════════════════
 function RequestorSearch({ onProvider, onBack, query }) {
   const t = useT();
+  const lang = useLang();
   const q = query || "";
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const filterChips = [
+    t("matchFilterHalal"),
+    t("matchFilterWeekdays"),
+    t("matchFilterBudget"),
+    t("matchFilterDistance"),
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -432,7 +448,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
           }}
         >
           <Icon name="chevron-left" size={22} />
-          <span>Back</span>
+          <span>{t("back")}</span>
         </button>
         <div
           style={{
@@ -476,7 +492,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
         <div
           style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}
         >
-          {["Halal", "Weekdays", "Under RM50/meal", "< 2 km"].map((c) => (
+          {filterChips.map((c) => (
             <Badge key={c} tone="teal">
               {c}
             </Badge>
@@ -556,7 +572,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
                     fontWeight: 400,
                   }}
                 >
-                  {p.service}
+                  {localizeProviderService(p, lang)}
                 </div>
                 <p
                   style={{
@@ -594,7 +610,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
                   marginBottom: 4,
                 }}
               >
-                <Icon name="sparkles" size={12} /> Why this match
+                <Icon name="sparkles" size={12} /> {t("whyThisMatch")}
               </div>
               <div
                 style={{
@@ -663,6 +679,7 @@ function RequestorSearch({ onProvider, onBack, query }) {
 // ═══════════════════════════════════════════════════════════════
 function ProviderDetail({ providerId, onBack }) {
   const t = useT();
+  const lang = useLang();
   const [p, setP] = useState(null);
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const [faved, setFaved] = useState(false);
@@ -716,12 +733,12 @@ function ProviderDetail({ providerId, onBack }) {
           }}
         >
           <Icon name="chevron-left" size={22} />
-          <span>Back</span>
+          <span>{t("back")}</span>
         </button>
         <div style={{ flex: 1 }} />
         <button
           onClick={toggleFav}
-          aria-label={faved ? "Remove from favourites" : "Save to favourites"}
+          aria-label={faved ? t("favourited") : t("favourite")}
           style={{
             appearance: "none",
             cursor: "pointer",
@@ -755,7 +772,7 @@ function ProviderDetail({ providerId, onBack }) {
               fill={faved ? "var(--primary)" : "none"}
             />
           </span>
-          <span>{faved ? "Favourited" : "Favourite"}</span>
+          <span>{faved ? t("favourited") : t("favourite")}</span>
         </button>
       </div>
 
@@ -783,7 +800,7 @@ function ProviderDetail({ providerId, onBack }) {
         }}
       >
         <Icon name="heart" size={20} color="#F4A155" fill="#F4A155" />
-        <span>Saved to favourites</span>
+        <span>{t("savedToFavourites")}</span>
       </div>
 
       <div className="wide-grid" style={{ padding: "16px 16px 0" }}>
@@ -819,7 +836,7 @@ function ProviderDetail({ providerId, onBack }) {
                 alignItems: "center",
               }}
             >
-              <span>Age {p.age}</span>
+              <span>{t("age")} {p.age}</span>
               <span
                 style={{
                   width: 3,
@@ -847,7 +864,7 @@ function ProviderDetail({ providerId, onBack }) {
                 <Icon name="shield" size={12} /> {t("verified")}
               </Badge>
               <Badge tone="accent">
-                <Icon name="star" size={12} /> {p.rating} stars
+                <Icon name="star" size={12} /> {p.rating} {t("stars")}
               </Badge>
               <Badge tone="teal">
                 {p.reviews} {t("bookings")}
@@ -865,7 +882,7 @@ function ProviderDetail({ providerId, onBack }) {
                 fontWeight: 400,
               }}
             >
-              {p.service}
+              {localizeProviderService(p, lang)}
             </h2>
             <p
               style={{
@@ -1006,7 +1023,7 @@ function ProviderDetail({ providerId, onBack }) {
                     fontWeight: 600,
                   }}
                 >
-                  From
+                  {t("from")}
                 </div>
                 <div
                   style={{
@@ -1156,7 +1173,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
                 textTransform: "uppercase",
               }}
             >
-              What do you need?
+              {t("whatDoYouNeed")}
             </div>
             <div
               style={{
@@ -1168,7 +1185,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
                 fontWeight: 400,
               }}
             >
-              Tell us in your own words
+              {t("tellOwnWords")}
             </div>
           </div>
           <button
@@ -1203,8 +1220,8 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
           }}
         >
           {[
-            { id: "voice", label: "Talk", icon: "mic" },
-            { id: "type", label: "Type", icon: "edit" },
+            { id: "voice", label: t("talk"), icon: "mic" },
+            { id: "type", label: t("type"), icon: "edit" },
           ].map((m) => (
             <button
               key={m.id}
@@ -1345,13 +1362,13 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
                 textAlign: "center",
               }}
             >
-              {state === "ready" && "Tap and tell us what you're looking for"}
+              {state === "ready" && t("tapTellLookingFor")}
               {state === "recording" && (
                 <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                  Listening… {mm}:{ss} · tap to stop
+                  {t("listeningTapStop").replace("{time}", `${mm}:${ss}`)}
                 </span>
               )}
-              {state === "done" && "Got it. Review and search below."}
+              {state === "done" && t("gotItReviewSearch")}
             </div>
             {transcript && (
               <div
@@ -1386,7 +1403,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
                   textDecoration: "underline",
                 }}
               >
-                Or try a sample: "{fallback}"
+                {t("sampleSearch").replace("{sample}", fallback)}
               </button>
             )}
           </div>
@@ -1416,7 +1433,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
               }}
             />
             <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 8 }}>
-              Be as specific as you like — meal type, dietary, area, timing.
+              {t("searchHintDetailed")}
             </div>
           </div>
         )}
@@ -1439,7 +1456,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
               fontSize: 15,
             }}
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             disabled={!canSubmit}
@@ -1469,7 +1486,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
               color={canSubmit ? "#fff" : "var(--text-3)"}
               strokeWidth={2.2}
             />
-            Find matches
+            {t("findMatches")}
           </button>
         </div>
       </div>
@@ -1483,6 +1500,7 @@ function RequestorVoiceModal({ onClose, onSubmit }) {
 // ═══════════════════════════════════════════════════════════════
 function RequestorProfile() {
   const t = useT();
+  const lang = useLang();
   const [diet, setDiet] = useState(["halal"]);
   const [notifs, setNotifs] = useState({
     matches: true,
@@ -1741,7 +1759,7 @@ function RequestorProfile() {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {p.service}
+                    {localizeProviderService(p, lang)}
                   </div>
                   <div
                     style={{
