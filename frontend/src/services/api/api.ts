@@ -44,13 +44,17 @@ const DEMO_MODE_KEY = "gg_demo_mode";
  */
 export function setDemoMode(enabled: boolean): void {
   if (typeof window === "undefined") return;
+  if (!env.useMockApi) {
+    window.sessionStorage.removeItem(DEMO_MODE_KEY);
+    return;
+  }
   if (enabled) window.sessionStorage.setItem(DEMO_MODE_KEY, "true");
   else window.sessionStorage.removeItem(DEMO_MODE_KEY);
 }
 
 function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
-  return window.sessionStorage.getItem(DEMO_MODE_KEY) === "true";
+  return env.useMockApi && window.sessionStorage.getItem(DEMO_MODE_KEY) === "true";
 }
 
 function useMock(): boolean {
