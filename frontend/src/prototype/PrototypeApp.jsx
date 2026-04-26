@@ -613,11 +613,16 @@ function App() {
   const resolveBuyerBody = (currentTab, setTabFn, tabKey, searchQuery) => {
     const goToProvider = (id) => { setProviderId(id); setTab((s) => ({ ...s, [tabKey]: 'providerDetail' })); };
     const goBack = () => setTab((s) => ({ ...s, [tabKey]: searchQuery ? 'search' : 'home' }));
+    const goToSearch = (q) => {
+      setSearchQuery(tabKey, q);
+      setTabFn('search');
+    };
     if (currentTab === 'search')
       return (
         <RequestorSearch
           query={searchQuery}
           onBack={() => setTabFn('home')}
+          onSearch={goToSearch}
           onProvider={goToProvider}
         />
       );
@@ -627,10 +632,7 @@ function App() {
     if (currentTab === 'profile') return <RequestorProfile />;
     return (
       <RequestorHome
-        onSearch={(q) => {
-          setSearchQuery(tabKey, q);
-          setTabFn('search');
-        }}
+        onSearch={goToSearch}
         onProvider={goToProvider}
       />
     );

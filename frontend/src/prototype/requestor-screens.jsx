@@ -398,10 +398,11 @@ function RequestorHome({ onSearch, onProvider }) {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN 5 — Search Results
 // ═══════════════════════════════════════════════════════════════
-function RequestorSearch({ onProvider, onBack, query }) {
+function RequestorSearch({ onProvider, onBack, onSearch, query }) {
   const t = useT();
   const lang = useLang();
   const q = query || "";
+  const [draft, setDraft] = useState(q);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const filterChips = [
@@ -410,6 +411,16 @@ function RequestorSearch({ onProvider, onBack, query }) {
     t("matchFilterBudget"),
     t("matchFilterDistance"),
   ];
+
+  useEffect(() => {
+    setDraft(q);
+  }, [q]);
+
+  const submitSearch = () => {
+    const nextQuery = draft.trim();
+    if (!nextQuery) return;
+    onSearch && onSearch(nextQuery);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -465,18 +476,51 @@ function RequestorSearch({ onProvider, onBack, query }) {
           }}
         >
           <Icon name="search" size={18} color="var(--text-3)" />
-          <div
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitSearch();
+            }}
+            placeholder={t("searchPlaceholder")}
             style={{
+              border: 0,
+              outline: 0,
+              background: "transparent",
+              fontFamily: "var(--font-body)",
               fontSize: 14,
               color: "var(--text-1)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
               flex: 1,
+              minWidth: 0,
+            }}
+          />
+          <button
+            onClick={submitSearch}
+            disabled={!draft.trim()}
+            title="Search"
+            style={{
+              appearance: "none",
+              border: 0,
+              cursor: draft.trim() ? "pointer" : "not-allowed",
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: draft.trim() ? "var(--primary)" : "var(--bg-2)",
+              color: draft.trim() ? "#fff" : "var(--text-3)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              transition: "background 0.15s ease",
             }}
           >
-            "{q}"
-          </div>
+            <Icon
+              name="search"
+              size={16}
+              color={draft.trim() ? "#fff" : "var(--text-3)"}
+              strokeWidth={2.2}
+            />
+          </button>
         </div>
       </div>
 
